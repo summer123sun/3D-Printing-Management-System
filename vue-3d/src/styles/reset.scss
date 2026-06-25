@@ -1,0 +1,100 @@
+// ============================================
+// 浏览器默认样式重置（最常用部分）
+// ============================================
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $text-primary;
+  background-color: $bg-page;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: $primary-color;
+  text-decoration: none;
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 500;
+}
+
+p {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+// ----- 通用工具类 -----
+.flex {
+  display: flex;
+}
+.flex-1 {
+  flex: 1;
+}
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.text-center {
+  text-align: center;
+}
+
+// ----- 滚动条美化 -----
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  &:hover {
+    background: rgba(0, 0, 0, 0.25);
+  }
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}

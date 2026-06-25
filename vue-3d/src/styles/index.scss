@@ -1,0 +1,26 @@
+// ============================================
+// 全局样式入口（main.ts 引入）
+// ============================================
+
+// 变量和重置（顺序：先变量，再 reset 用到变量）
+@import './variables.scss';
+@import './reset.scss';
+
+// ----- 通用容器 -----
+.page-container {
+  padding: $spacing-medium;
+  background: $bg-card;
+  border-radius: $border-radius-large;
+  box-shadow: $shadow-light;
+  min-height: calc(100vh - #{$header-height} - #{$spacing-medium} * 2);
+}
+
+// ----- el-table 美化 -----
+.el-table {
+  border-radius: $border-radius-base;
+}
+
+// ----- el-card 默认 padding 调整 -----
+.el-card {
+  border-radius: $border-radius-large;
+}
