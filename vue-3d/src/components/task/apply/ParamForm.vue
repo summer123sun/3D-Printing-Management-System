@@ -3,31 +3,15 @@
  * 打印参数表单（**B**）
  *
  * 用于提交申请页和编辑任务
+ * 使用 defineModel 实现双向绑定，避免循环更新问题
  */
-import { reactive, watch } from 'vue'
 import type { TaskApplyDTO } from '@/types/task'
 import {
   MaterialType, MaterialColor,
   Priority, PriorityText,
 } from '@/types/task'
 
-interface Props {
-  modelValue: TaskApplyDTO
-}
-const props = defineProps<Props>()
-const emit = defineEmits<{
-  (e: 'update:modelValue', val: TaskApplyDTO): void
-}>()
-
-const form = reactive<TaskApplyDTO>({ ...props.modelValue })
-
-watch(form, (val) => {
-  emit('update:modelValue', { ...val })
-}, { deep: true })
-
-watch(() => props.modelValue, (val) => {
-  Object.assign(form, val)
-})
+const form = defineModel<TaskApplyDTO>({ required: true })
 </script>
 
 <template>

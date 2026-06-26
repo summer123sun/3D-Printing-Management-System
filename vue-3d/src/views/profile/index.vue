@@ -8,6 +8,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import { useAuthStore } from '@/stores/auth'
 import { RoleText, SkillLevelText, type Member } from '@/types/member'
 import { formatDate } from '@/utils/format'
+import { getUserStats } from '@/api/user'
 
 const authStore = useAuthStore()
 const stats = ref({ totalPrints: 0, totalProjects: 0, totalArtworks: 0 })
@@ -18,7 +19,15 @@ onMounted(async () => {
       await authStore.fetchUserInfo()
     } catch {}
   }
-  // TODO: 拉个人统计，api/user.ts 的 getUserStats
+  // 拉取个人统计数据
+  if (authStore.user?.studentId) {
+    try {
+      const result = await getUserStats(authStore.user.studentId)
+      stats.value = result as unknown as typeof stats.value
+    } catch {
+      // 统计接口失败不提示
+    }
+  }
 })
 
 const changePasswordDialogVisible = ref(false)

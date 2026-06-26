@@ -11,7 +11,7 @@ import 'nprogress/nprogress.css'
 
 NProgress.configure({ showSpinner: false })
 
-export const setupRouterGuard: NavigationGuardWithThis<undefined> = function (to) {
+export const setupRouterGuard: NavigationGuardWithThis<undefined> = async function (to) {
   NProgress.start()
 
   const authStore = useAuthStore()
@@ -47,6 +47,17 @@ export const setupRouterGuard: NavigationGuardWithThis<undefined> = function (to
   // 角色权限校验
   const requiredRoles = to.meta?.roles as number[] | undefined
   if (requiredRoles && requiredRoles.length > 0) {
+    // 如果 user 信息丢失（如旧版本未持久化），尝试从后端重新获取
+    if (!authStore.user) {
+      try {
+        await authStore.fetchUserInfo()
+      } catch {
+        // 获取失败则清除认证状态，跳转登录
+        authStore.logout()
+        NProgress.done()
+        return { path: '/login', query: { redirect: to.fullPath } }
+      }
+    }
     const userRole = authStore.user?.role ?? 0
     if (!requiredRoles.includes(userRole)) {
       NProgress.done()

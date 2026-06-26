@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { LoginDTO, LoginResult, Member, ChangePasswordDTO } from '@/types/member'
 import { Role } from '@/types/member'
-import { getToken, setToken, clearAuth, getUserInfo } from '@/utils/auth'
+import { getToken, setToken, clearAuth, getUserInfo, setUserInfo, removeUserInfo } from '@/utils/auth'
 import * as authApi from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -25,7 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = result.token
     user.value = result.user
     setToken(result.token)
-    // 注意：user 由路由守卫或 App.vue 启动时持久化
+    setUserInfo(result.user) // 持久化用户信息，防止刷新后权限丢失
     return result
   }
 
@@ -44,6 +44,7 @@ export const useAuthStore = defineStore('auth', () => {
   const fetchUserInfo = async () => {
     const info = await authApi.getUserInfo() as unknown as Member
     user.value = info
+    setUserInfo(info) // 同步持久化
     return info
   }
 

@@ -50,8 +50,11 @@ const handleSubmit = async () => {
     const taskId = await taskStore.apply(form)
     ElMessage.success(`提交成功！任务编号：${taskId}`)
     router.push(`/task/${taskId}`)
-  } catch (e) {
-    // 错误已由 axios 拦截器提示
+  } catch (e: unknown) {
+    // 打印详细错误便于排查
+    console.error('[提交申请] 失败：', e)
+    const errMsg = e instanceof Error ? e.message : String(e)
+    ElMessage.error(errMsg || '提交失败，请稍后再试')
   } finally {
     submitting.value = false
   }

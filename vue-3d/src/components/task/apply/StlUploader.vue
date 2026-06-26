@@ -3,13 +3,11 @@
  * STL 文件上传（**B**）
  *
  * 上传成功后返回服务器 URL（用于 task.stlFilePath）
- *
- * 简化方案：调通用上传接口 /api/file/upload（待 D 实现）
- * 这里 mock：直接用文件名作为路径，不真上传
  */
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { validateFileSize, validateStlType } from '@/utils/validate'
+import { uploadFile } from '@/api/file'
 
 const props = withDefaults(defineProps<{
   modelValue?: string
@@ -24,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const uploadRef = ref()
+const uploading = ref(false)
 const fileList = ref<Array<{ name: string; url: string }>>([])
 
 if (props.modelValue) {
@@ -42,24 +41,23 @@ const beforeUpload = (file: File) => {
   return true
 }
 
-/**
- * 自定义上传：调 /api/file/upload
- *
- * TODO: 后端 D 同学实现 /api/file/upload 后，改成真实调用：
- *   const form = new FormData()
- *   form.append('file', file)
- *   form.append('type', 'stl')
- *   const res = await uploadFile(form)
- *   emit('update:modelValue', res.data.url)
- */
-const customUpload = (options: { file: File }): Promise<void> => {
+/** 真实上传到 /api/file/upload */
+const customUpload = async (options: { file: File }) => {
   const file = options.file
-  // mock：直接用文件名作为路径（生产环境会改成真实上传）
-  const fakeUrl = `/uploads/stl/${file.name}`
-  fileList.value = [{ name: file.name, url: fakeUrl }]
-  emit('update:modelValue', fakeUrl)
-  ElMessage.success('STL 文件已上传（mock）')
-  return Promise.resolve()
+  uploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const result = await uploadFile(formData)
+    const url = result.url
+    fileList.value = [{ name: file.name, url }]
+    emit('update:modelValue', url)
+    ElMessage.success('STL 文件上传成功')
+  } catch {
+    // 错误已由 axios 拦截器提示
+  } finally {
+    uploading.value = false
+  }
 }
 
 const handleRemove = () => {

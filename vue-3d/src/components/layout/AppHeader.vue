@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { Fold, Expand, Moon, Sunny, SwitchButton, User } from '@element-plus/icons-vue'
+import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled } from '@element-plus/icons-vue'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { RoleText } from '@/types/member'
@@ -10,19 +10,16 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const router = useRouter()
 
-const handleLogout = async () => {
-  try {
-    await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-      confirmButtonText: '退出',
-      cancelButtonText: '取消',
-      type: 'warning',
-    })
-    authStore.logout()
-    ElMessageBox.close()
-    router.push('/login')
-  } catch {
-    // 用户取消
-  }
+const logoutVisible = ref(false)
+
+const confirmLogout = () => {
+  logoutVisible.value = false
+  authStore.logout()
+  router.push('/login')
+}
+
+const cancelLogout = () => {
+  logoutVisible.value = false
 }
 </script>
 
@@ -61,13 +58,36 @@ const handleLogout = async () => {
             <el-dropdown-item @click="router.push('/profile')">
               <el-icon><User /></el-icon> 个人中心
             </el-dropdown-item>
-            <el-dropdown-item divided @click="handleLogout">
+            <el-dropdown-item divided @click="logoutVisible = true">
               <el-icon><SwitchButton /></el-icon> 退出登录
             </el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
     </div>
+
+    <!-- 退出登录确认对话框 毛玻璃 -->
+    <el-dialog
+      v-model="logoutVisible"
+      :close-on-click-modal="false"
+      :show-close="false"
+      width="400px"
+      modal-class="glass-modal"
+      custom-class="logout-dialog"
+      append-to-body
+    >
+      <div class="logout-content">
+        <div class="logout-icon">
+          <el-icon :size="48"><WarningFilled /></el-icon>
+        </div>
+        <h3 class="logout-title">退出登录</h3>
+        <p class="logout-desc">确定要退出登录吗？</p>
+        <div class="logout-actions">
+          <el-button size="large" class="btn-cancel" @click="cancelLogout">取消</el-button>
+          <el-button size="large" type="danger" class="btn-confirm" @click="confirmLogout">退出</el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -115,5 +135,116 @@ const handleLogout = async () => {
   background: $brand-color-light;
   color: $brand-color;
   border-radius: $border-radius-small;
+}
+
+/* ========== 退出登录对话框 - scoped 部分需穿透，核心样式放全局 ========== */
+</style>
+<!-- 全局非 scoped，确保 ElDialog 子组件生效 -->
+<style lang="scss">
+/* 毛玻璃遮罩层 */
+.glass-modal {
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  background: rgba(255, 255, 255, 0.25) !important;
+
+  html.dark & {
+    background: rgba(20, 20, 30, 0.4) !important;
+  }
+}
+
+/* 毛玻璃对话框卡片 */
+.logout-dialog {
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  padding: 0 !important;
+
+  html.dark & {
+    background: rgba(40, 40, 55, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .el-dialog__header {
+    display: none;
+  }
+
+  .el-dialog__body {
+    padding: 0;
+  }
+}
+
+.logout-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 32px 32px;
+}
+
+.logout-icon {
+  color: #e6a23c;
+  margin-bottom: 16px;
+  animation: logoutPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoutPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+.logout-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+
+  html.dark & {
+    color: #e5e7eb;
+  }
+}
+
+.logout-desc {
+  margin: 0 0 28px;
+  font-size: 15px;
+  color: #909399;
+}
+
+.logout-actions {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  justify-content: center;
+
+  .btn-cancel {
+    width: 120px;
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    html.dark & {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #c7c7cc;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+
+      html.dark & {
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+  }
+
+  .btn-confirm {
+    width: 120px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
 }
 </style>
