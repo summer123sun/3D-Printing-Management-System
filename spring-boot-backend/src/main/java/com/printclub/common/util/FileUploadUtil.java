@@ -9,6 +9,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -57,11 +61,18 @@ public class FileUploadUtil {
         String relativePath = type + "/" + monthDir + "/" + fileName;
         File dest = new File(uploadDir, relativePath);
 
-        // 3. 自动创建父目录
-        FileUtil.mkParentDirs(dest);
+        // 3. 兜底：绝对化路径 + 自动创建父目录（解决相对路径 + 路径不存在问题）
+        Path destPath = Paths.get(dest.toURI());
+        File parent = destPath.getParent().toFile();
+        if (!parent.exists()) {
+            FileUtil.mkParentDirs(dest);
+            log.info("创建上传父目录：{}", parent.getAbsolutePath());
+        }
 
-        // 4. 写入磁盘
-        file.transferTo(dest);
+        // 4. 用 Files.copy 流复制（不依赖 multipart temp 文件，避免 transferTo 的 FileNotFoundException）
+        try (var in = file.getInputStream()) {
+            Files.copy(in, destPath, StandardCopyOption.REPLACE_EXISTING);
+        }
 
         log.info("文件保存成功：{}", dest.getAbsolutePath());
 

@@ -9,6 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import TaskTimeline from '@/components/task/detail/TaskTimeline.vue'
 import { useTaskStore } from '@/stores/task'
 import { useAuthStore } from '@/stores/auth'
@@ -160,7 +161,7 @@ const handleCancel = async () => {
               <el-button v-if="canCancel" type="danger" plain style="width:100%; margin-bottom: 8px" @click="handleCancel">
                 取消任务
               </el-button>
-              <el-empty v-if="!canPickup && !canCancel" description="暂无可执行的操作" :image-size="60" />
+              <EmptyState v-if="!canPickup && !canCancel" description="暂无可执行的操作" :show-icon="false" />
             </template>
 
             <!-- 技术骨干操作 -->
@@ -188,8 +189,8 @@ const handleCancel = async () => {
               </el-button>
             </template>
 
-            <el-empty v-if="!isMine && !isStaff" description="您是普通社员，只能查看" :image-size="60" />
-            <el-empty v-else-if="isStaff && taskStore.currentTask.status >= TaskStatus.DONE" description="任务已结束" :image-size="60" />
+            <EmptyState v-if="!isMine && !isStaff" description="您是普通社员，只能查看" :show-icon="false" />
+            <EmptyState v-else-if="isStaff && taskStore.currentTask.status >= TaskStatus.DONE" description="任务已结束" :show-icon="false" />
           </el-card>
 
           <!-- STL 文件 -->

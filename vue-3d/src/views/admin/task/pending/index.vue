@@ -54,7 +54,10 @@ const handleReject = async () => {
 
     <el-card v-loading="taskStore.loading">
       <template v-if="!taskStore.pendingTasks || taskStore.pendingTasks.list.length === 0">
-        <EmptyState description="没有待审批任务" />
+        <EmptyState
+          description="没有待审批任务"
+          hint="所有提交的任务都已处理完。社员提交新任务后会出现在这里。"
+        />
       </template>
 
       <template v-else>

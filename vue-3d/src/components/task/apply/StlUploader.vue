@@ -49,12 +49,18 @@ const customUpload = async (options: { file: File }) => {
     const formData = new FormData()
     formData.append('file', file)
     const result = await uploadFile(formData)
-    const url = result.url
+    console.log('[StlUploader] 上传响应:', result, 'typeof:', typeof result, 'keys:', result ? Object.keys(result) : 'null')
+    const url = result?.url ?? ''
+    console.log('[StlUploader] 提取的 url:', url, '是否为空:', !url)
     fileList.value = [{ name: file.name, url }]
     emit('update:modelValue', url)
-    ElMessage.success('STL 文件上传成功')
-  } catch {
-    // 错误已由 axios 拦截器提示
+    if (url) {
+      ElMessage.success('STL 文件上传成功')
+    } else {
+      ElMessage.error('上传成功但未返回文件 URL，请联系管理员检查后端 /api/file/upload 返回格式')
+    }
+  } catch (e) {
+    console.error('[StlUploader] 上传失败:', e)
   } finally {
     uploading.value = false
   }

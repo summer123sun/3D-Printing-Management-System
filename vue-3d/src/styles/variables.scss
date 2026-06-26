@@ -67,3 +67,36 @@ $status-queued: #e6a23c;        // 排队中
 $status-printing: #409eff;      // 打印中
 $status-done: #67c23a;          // 已完成
 $status-cancelled: #c0c4cc;     // 已取消
+
+// ============================================
+// 响应式断点（与 Element Plus 默认断点对齐）
+// ============================================
+$breakpoint-xs: 480px;   // 手机
+$breakpoint-sm: 768px;   // 平板
+$breakpoint-md: 992px;   // 小桌面
+$breakpoint-lg: 1200px;  // 桌面
+$breakpoint-xl: 1920px;  // 大屏
+
+// 媒体查询 mixin（用 SCSS @content 在不同断点注入样式）
+@mixin xs {
+  @media (max-width: #{$breakpoint-xs - 1px}) { @content; }
+}
+@mixin sm {
+  @media (max-width: #{$breakpoint-sm - 1px}) { @content; }
+}
+@mixin md {
+  @media (max-width: #{$breakpoint-md - 1px}) { @content; }
+}
+@mixin lg {
+  @media (max-width: #{$breakpoint-lg - 1px}) { @content; }
+}
+
+// 移动端判断（用 @include sm 即可）
+@mixin mobile {
+  @include sm { @content; }
+}
+
+// 桌面端（>= sm）
+@mixin desktop {
+  @media (min-width: #{$breakpoint-sm}) { @content; }
+}

@@ -1,10 +1,14 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # ⚠️ 本地开发：直接写密码（git 提交前改回 ${DB_PASSWORD:root}）
-    url: jdbc:mysql://localhost:3306/print_club_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    # ⚠️ 不要提交真实密码！用 ${DB_PASSWORD:xxx} 占位符，启动时设环境变量
+    # ⚠️ 字符集三大件（防中文乱码）：
+    #   useUnicode=true         — 启用 Unicode
+    #   characterEncoding=UTF-8 — JDBC 客户端解码用 UTF-8（**大写**，不要写 utf8）
+    #   connectionCollation=utf8mb4_unicode_ci — 连接排序规则
+    url: jdbc:mysql://localhost:3306/print_club_db?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: ${DB_PASSWORD:root}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2

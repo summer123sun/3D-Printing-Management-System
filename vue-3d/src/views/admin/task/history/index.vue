@@ -47,6 +47,12 @@ const statusOptions = Object.entries(TaskStatusText).map(([k, v]) => ({
   value: Number(k),
   label: v,
 }))
+
+const resetFilter = () => {
+  filter.value.status = TaskStatus.DONE
+  filter.value.page = 1
+  fetchData()
+}
 </script>
 
 <template>
@@ -65,7 +71,12 @@ const statusOptions = Object.entries(TaskStatusText).map(([k, v]) => ({
 
     <el-card v-loading="loading">
       <template v-if="!list || list.list.length === 0">
-        <EmptyState description="没有符合条件的历史任务" />
+        <EmptyState
+          description="没有符合条件的历史任务"
+          hint="尝试调整筛选条件，或换个时间段看看。"
+        >
+          <el-button @click="resetFilter">重置筛选</el-button>
+        </EmptyState>
       </template>
 
       <template v-else>

@@ -4,6 +4,7 @@ import com.printclub.common.annotation.RequireAuth;
 import com.printclub.common.annotation.RequireRole;
 import com.printclub.common.result.PageResult;
 import com.printclub.common.result.Result;
+import com.printclub.common.util.SecurityContext;
 import com.printclub.module.user.dto.*;
 import com.printclub.module.user.entity.Member;
 import com.printclub.module.user.service.UserService;
@@ -64,6 +65,17 @@ public class UserController {
     @RequireAuth
     public Result<UserStatsVO> stats(@PathVariable String studentId) {
         return Result.success(userService.stats(studentId));
+    }
+
+    @Operation(summary = "获取当前登录用户信息（前端路由守卫用）")
+    @GetMapping("/info")
+    @RequireAuth
+    public Result<Member> currentInfo() {
+        String studentId = SecurityContext.getCurrentUserId();
+        if (studentId == null) {
+            return Result.error(401, "未登录");
+        }
+        return Result.success(userService.getByStudentId(studentId));
     }
 
     @Operation(summary = "修改个人信息")

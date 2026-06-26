@@ -83,7 +83,12 @@ const handleFinish = async () => {
 
     <el-card v-loading="taskStore.loading">
       <template v-if="!taskStore.queue || taskStore.queue.list.length === 0">
-        <EmptyState description="队列里没有进行中的任务" />
+        <EmptyState
+          description="队列里没有进行中的任务"
+          hint="所有任务都已完成或还在排队。等审批通过后任务会自动进入队列。"
+        >
+          <el-button @click="fetchData">刷新一下</el-button>
+        </EmptyState>
       </template>
 
       <template v-else>

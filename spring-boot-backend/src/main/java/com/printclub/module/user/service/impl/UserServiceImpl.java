@@ -91,6 +91,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Member getByStudentId(String studentId) {
+        Member member = findMemberOrThrow(studentId);
+        // 不返回密码
+        member.setPassword(null);
+        return member;
+    }
+
+    @Override
     @Transactional
     public void updateInfo(UpdateUserInfoDTO dto) {
         String studentId = SecurityContext.getCurrentUserId();

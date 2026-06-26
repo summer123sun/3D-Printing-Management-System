@@ -59,6 +59,8 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <!-- 锁定版本：避免 Spring Boot parent 默认版本（8.0.33）与本地缓存（8.3.0）冲突 -->
+            <version>8.3.0</version>
             <scope>runtime</scope>
         </dependency>
 

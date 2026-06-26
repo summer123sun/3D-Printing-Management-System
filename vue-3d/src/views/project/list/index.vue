@@ -6,6 +6,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Plus } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -61,7 +62,15 @@ const onTabChange = () => {
 
       <div v-loading="projectStore.loading">
         <template v-if="!projectStore.projectList || projectStore.projectList.list.length === 0">
-          <EmptyState :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目'" />
+          <EmptyState
+            :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目'"
+            :hint="activeTab === 'mine' ? '请联系管理员把你加入项目，或切换到【全部项目】看看。' : '立项第一个项目，把分散的打印任务组织起来。'"
+          >
+            <el-button v-if="activeTab === 'all'" type="primary" @click="router.push('/project/create')">
+              <el-icon><Plus /></el-icon> 创建项目
+            </el-button>
+            <el-button v-else @click="activeTab = 'all'">查看全部项目</el-button>
+          </EmptyState>
         </template>
 
         <el-table

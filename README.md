@@ -132,10 +132,23 @@ npm run dev
 
 ## 文档
 
+### 项目文档（设计 + 规划）
+
 - 需求规格说明书：[docs/requirements_v2.md](./docs/requirements_v2.md)
 - 前端开发大纲：[docs/frontend_outline_v1.md](./docs/frontend_outline_v1.md)
 - 后端开发大纲：[docs/backend_outline_v1.md](./docs/backend_outline_v1.md)
+- 团队分工 + 接口契约：[docs/team_outline_v1.md](./docs/team_outline_v1.md)
 - 数据库设计 SQL：[docs/db_design.sql](./docs/db_design.sql)
+
+### 工程文档（开发用）
+
+| 文档 | 用途 | 谁该读 |
+|---|---|---|
+| **[CONTRIBUTING.md](./CONTRIBUTING.md)** | 分支命名、commit 规范、PR 流程 | 所有贡献者 |
+| **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** | 13 大类常见问题 + 解决方案 | 遇到问题时 |
+| **[DATA_DICTIONARY.md](./DATA_DICTIONARY.md)** | 11 张表的字段含义 + 枚举值 | 后端 + 前端 + 测试 |
+| **[PERMISSION_MATRIX.md](./PERMISSION_MATRIX.md)** | 4 角色 × 所有接口/页面/操作权限 | 后端 + 前端 + 产品 |
+| **[API.md](./API.md)** | 26 个接口的完整定义 + curl 示例 | 前端 + 联调 + 测试 |
 
 ## 许可
 

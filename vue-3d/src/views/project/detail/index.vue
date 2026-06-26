@@ -7,9 +7,10 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -46,17 +47,99 @@ const fetchData = async () => {
 }
 onMounted(fetchData)
 
+/**
+ * 通用：判断异常是否是 ElMessageBox 用户取消
+ */
+const isUserCancel = (e: unknown): boolean => {
+  return e === 'cancel' || (e instanceof Error && e.message === 'cancel')
+}
+
 const handleComplete = async () => {
-  await ElMessageBox.confirm('确认标记项目完成？此操作不可撤销', '提示', { type: 'warning' })
+  const proj = projectStore.currentProject
+  const memberCount = proj?.members?.length ?? 0
+  const taskCount = proj?.relatedTasks?.length ?? 0
+  const currentStatus = proj?.project.status === 1 ? '进行中' : proj?.project.status === 0 ? '筹备中' : '未知'
+
+  try {
+    await ElMessageBox.confirm(
+      `<div style="line-height:1.9;padding:4px 0">
+        <p style="font-size:14px;margin:0 0 12px">
+          确认标记项目 <b style="color:#67c23a">「${proj?.project.projectName ?? '该项目'}」</b> 为已完成？
+        </p>
+        <div style="background:#f5f7fa;padding:10px 14px;border-radius:6px;font-size:13px;color:#606266;margin-bottom:8px">
+          <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#67c23a">已完成</b></div>
+          <div>👥 关联成员：<b>${memberCount}</b> 人</div>
+          <div>📋 关联任务：<b>${taskCount}</b> 个</div>
+        </div>
+        <p style="color:#909399;font-size:12px;margin:0">
+          ⚠️ 完成后项目不可再修改，但成员仍可查看项目内容
+        </p>
+      </div>`,
+      '标记项目完成',
+      {
+        type: 'success',
+        confirmButtonText: '✓ 确认完成',
+        cancelButtonText: '再看看',
+        center: true,
+        dangerouslyUseHTMLString: true,
+      }
+    )
+  } catch (e) {
+    if (isUserCancel(e)) return
+    throw e
+  }
+
   await projectStore.complete(projectId.value)
-  ElMessage.success('项目已完成')
+  ElNotification.success({
+    title: '项目已完成',
+    message:     `「${proj?.project.projectName}」已标记为完成`,
+    duration: 3000,
+  })
   fetchData()
 }
 
 const handleCancel = async () => {
-  await ElMessageBox.confirm('确认取消项目？此操作不可撤销', '提示', { type: 'warning' })
+  const proj = projectStore.currentProject
+  const memberCount = proj?.members?.length ?? 0
+  const taskCount = proj?.relatedTasks?.length ?? 0
+  const currentStatus = proj?.project.status === 1 ? '进行中' : proj?.project.status === 0 ? '筹备中' : '未知'
+
+  try {
+    await ElMessageBox.confirm(
+      `<div style="line-height:1.9;padding:4px 0">
+        <p style="font-size:14px;margin:0 0 12px">
+          确认取消项目 <b style="color:#f56c6c">「${proj?.project.projectName ?? '该项目'}」</b>？
+        </p>
+        <div style="background:#fef0f0;padding:10px 14px;border-radius:6px;font-size:13px;color:#606266;margin-bottom:8px">
+          <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#f56c6c">已取消</b></div>
+          <div>👥 关联成员：<b>${memberCount}</b> 人</div>
+          <div>📋 关联任务：<b>${taskCount}</b> 个</div>
+        </div>
+        <p style="color:#f56c6c;font-size:12px;margin:0;font-weight:500">
+          ⚠️ 此操作不可撤销！项目数据将进入只读状态，所有阶段进度会丢失
+        </p>
+      </div>`,
+      '取消项目',
+      {
+        type: 'warning',
+        confirmButtonText: '✓ 确认取消',
+        cancelButtonText: '再想想',
+        confirmButtonClass: 'el-button--danger',
+        center: true,
+        dangerouslyUseHTMLString: true,
+      }
+    )
+  } catch (e) {
+    if (isUserCancel(e)) return
+    throw e
+  }
+
   await projectStore.cancel(projectId.value)
-  ElMessage.success('项目已取消')
+  ElNotification.warning({
+    title: '项目已取消',
+    message:     `「${proj?.project.projectName}」已取消，数据进入只读`,
+    duration: 3000,
+  })
   fetchData()
 }
 
@@ -77,9 +160,39 @@ const handleAddMember = async () => {
 }
 
 const handleRemoveMember = async (mid: string) => {
-  await ElMessageBox.confirm(`确认移除成员 ${mid}？`, '提示', { type: 'warning' })
+  // 查一下成员的姓名展示
+  const member = projectStore.currentProject?.members?.find((m: any) => m.memberId === mid)
+  const memberName = member?.memberName || mid
+
+  try {
+    await ElMessageBox.confirm(
+      `<div style="line-height:1.8">
+        <p style="margin:0 0 8px">确认移除成员 <b style="color:#f56c6c">${memberName}</b>（学号：${mid}）？</p>
+        <p style="color:#909399;font-size:13px;margin:0">
+          该成员将无法再访问此项目，但其本人的账号不会被删除。
+        </p>
+      </div>`,
+      '移除项目成员',
+      {
+        type: 'warning',
+        confirmButtonText: '✓ 确认移除',
+        cancelButtonText: '取消',
+        confirmButtonClass: 'el-button--danger',
+        center: true,
+        dangerouslyUseHTMLString: true,
+      }
+    )
+  } catch (e) {
+    if (isUserCancel(e)) return
+    throw e
+  }
+
   await projectStore.removeMember(projectId.value, mid)
-  ElMessage.success('已移除')
+  ElNotification.success({
+    title: '成员已移除',
+    message: `${memberName} 不再属于此项目`,
+    duration: 3000,
+  })
   fetchData()
 }
 
@@ -268,7 +381,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
             </template>
           </el-table-column>
         </el-table>
-        <el-empty v-else description="还没有上传文件" />
+        <EmptyState v-else description="还没有上传文件" hint="上传 STL/3MF 文件，打印任务会更顺畅。" />
       </el-card>
 
       <!-- 关联任务 Tab -->
@@ -286,7 +399,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
             <template #default="{ row }">{{ formatDate(row.applyTime) }}</template>
           </el-table-column>
         </el-table>
-        <el-empty v-else description="还没有关联的打印任务" />
+        <EmptyState v-else description="还没有关联的打印任务" hint="在打印任务申请时选择关联到此项目即可。" />
       </el-card>
     </template>
 

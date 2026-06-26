@@ -19,10 +19,10 @@ server:
   port: 8080
   servlet:
     context-path: /
-  # 强制 UTF-8 编码（防中文乱码：PowerShell / 老浏览器 POST JSON 时默认 ISO-8859-1）
-  encoding:
-    charset: UTF-8
-    force: true
+    # 强制 UTF-8 编码（防中文乱码：PowerShell / 老浏览器 POST JSON 时默认 ISO-8859-1）
+    encoding:
+      charset: UTF-8
+      force: true
 
 # MyBatis-Plus 配置
 mybatis-plus:
@@ -49,8 +49,9 @@ jwt:
   prefix: "Bearer "
 
 # 文件上传路径（开发环境）
+# ⚠️ 用绝对路径，避免 Spring Boot 工作目录漂移到 Tomcat temp 目录导致上传失败
 file:
-  upload-dir: ./uploads/
+  upload-dir: D:/summer/3D-Printing-Management-System/spring-boot-backend/uploads/
   access-prefix: /uploads/
 
 # Knife4j 接口文档

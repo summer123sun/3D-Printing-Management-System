@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled } from '@element-plus/icons-vue'
+import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled, Menu as MenuIcon } from '@element-plus/icons-vue'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { RoleText } from '@/types/member'
@@ -9,6 +9,10 @@ import { RoleText } from '@/types/member'
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const router = useRouter()
+
+defineEmits<{
+  (e: 'toggle-sidebar'): void
+}>()
 
 const logoutVisible = ref(false)
 
@@ -26,10 +30,15 @@ const cancelLogout = () => {
 <template>
   <div class="header-container">
     <div class="header-left">
-      <el-button text @click="appStore.toggleSidebar()">
+      <!-- 桌面端：折叠/展开 sidebar -->
+      <el-button text class="desktop-only" @click="appStore.toggleSidebar()">
         <el-icon :size="20">
           <component :is="appStore.sidebarCollapsed ? Expand : Fold" />
         </el-icon>
+      </el-button>
+      <!-- 移动端：汉堡菜单（emit 给父组件 AppLayout 控制抽屉） -->
+      <el-button text class="mobile-only" @click="$emit('toggle-sidebar')">
+        <el-icon :size="20"><MenuIcon /></el-icon>
       </el-button>
       <span class="header-title">{{ $route.meta?.title || '' }}</span>
     </div>
@@ -135,6 +144,19 @@ const cancelLogout = () => {
   background: $brand-color-light;
   color: $brand-color;
   border-radius: $border-radius-small;
+}
+
+// 响应式：按平台显示不同按钮
+.desktop-only {
+  @include mobile { display: none; }
+}
+.mobile-only {
+  @include desktop { display: none; }
+}
+
+// 移动端隐藏用户角色标签（节省空间）
+.user-role {
+  @include mobile { display: none; }
 }
 
 /* ========== 退出登录对话框 - scoped 部分需穿透，核心样式放全局 ========== */

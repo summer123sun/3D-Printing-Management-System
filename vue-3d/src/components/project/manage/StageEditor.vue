@@ -6,6 +6,7 @@
  */
 import { reactive, watch } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import type { StageDTO } from '@/types/project'
 
 interface Props {
@@ -61,7 +62,7 @@ const moveDown = (idx: number) => {
 <template>
   <div class="stage-editor">
     <div v-if="stages.length === 0" class="empty-tip">
-      <el-empty description="还没有阶段，点下方按钮添加" :image-size="60" />
+      <EmptyState description="还没有阶段" hint="把项目拆成几个阶段会更容易跟踪进度。" />
     </div>
 
     <div v-for="(stage, idx) in stages" :key="idx" class="stage-row">

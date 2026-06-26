@@ -32,6 +32,11 @@ public interface UserService {
     UserStatsVO stats(String studentId);
 
     /**
+     * 根据学号查用户
+     */
+    Member getByStudentId(String studentId);
+
+    /**
      * 修改当前登录用户个人信息
      */
     void updateInfo(UpdateUserInfoDTO dto);

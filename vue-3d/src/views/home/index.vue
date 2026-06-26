@@ -7,6 +7,7 @@ import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { Role } from '@/types/member'
 import { Printer, Folder, Picture, Bell, Promotion } from '@element-plus/icons-vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 const authStore = useAuthStore()
 
@@ -74,7 +75,7 @@ const todoList = [
       <template #header>
         <span>📌 我的待办</span>
       </template>
-      <el-empty v-if="todoList.length === 0" description="暂无待办" />
+      <EmptyState v-if="todoList.length === 0" description="暂无待办" hint="所有任务都处理完了，可以去打印区转转~" />
       <ul v-else class="todo-list">
         <li v-for="(todo, i) in todoList" :key="i" class="todo-item">
           <el-icon><component :is="todo.icon" /></el-icon>

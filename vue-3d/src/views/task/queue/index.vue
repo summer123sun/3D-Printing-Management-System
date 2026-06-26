@@ -6,6 +6,7 @@
  */
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Plus } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -26,7 +27,14 @@ onMounted(async () => {
 
     <el-card v-loading="taskStore.loading">
       <template v-if="!taskStore.queue || taskStore.queue.list.length === 0">
-        <EmptyState description="队列里没有任务" />
+        <EmptyState
+          description="队列里没有任务"
+          hint="所有任务都已打印完成或等待中。提交一个任务试试？"
+        >
+          <el-button type="primary" @click="router.push('/task/apply')">
+            <el-icon><Plus /></el-icon> 提交打印任务
+          </el-button>
+        </EmptyState>
       </template>
 
       <template v-else>

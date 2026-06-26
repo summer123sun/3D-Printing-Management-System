@@ -64,3 +64,12 @@ hs_err_pid*
 jacoco.exec
 test-output/
 surefire-reports/
+
+# 上传文件目录（运行时产生，不提交）
+uploads/
+
+# Vue 临时缓存
+*.local
+
+# 用户上传的实际文件
+**/uploads/

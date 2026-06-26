@@ -60,7 +60,14 @@ const statusTagType = (s: number) => {
 
     <el-card v-loading="projectStore.loading">
       <template v-if="!projectStore.projectList || projectStore.projectList.list.length === 0">
-        <EmptyState description="还没有项目" />
+        <EmptyState
+          description="还没有项目"
+          hint="立项你的第一个项目，把分散的任务组织起来。"
+        >
+          <el-button type="primary" @click="router.push('/project/create')">
+            <el-icon><Plus /></el-icon> 创建项目
+          </el-button>
+        </EmptyState>
       </template>
 
       <template v-else>
