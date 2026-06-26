@@ -14,9 +14,9 @@ export const logout = () => {
   return post('/auth/logout')
 }
 
-/** 获取当前用户信息 */
+/** 获取当前用户信息（从 /api/auth/info 取，不再依赖 D 的 user 模块） */
 export const getUserInfo = () => {
-  return get<Member>('/user/info')
+  return get<Member>('/auth/info')
 }
 
 /** 修改个人信息 */

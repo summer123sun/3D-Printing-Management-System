@@ -1,0 +1,66 @@
+# =====================================================
+# Spring Boot 后端 .gitignore
+# =====================================================
+
+# Maven 构建产物
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### Maven
+mvnw
+mvnw.cmd
+.mvn/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+build/
+nb-configuration.xml
+
+# 日志
+*.log
+logs/
+spring-boot-backend.log
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 敏感信息（绝对不要提交）
+src/main/resources/application-local.yml
+# 注意：application.yml / application-dev.yml / application-prod.yml 提交到仓库
+# 这三个文件不含真实密码（用 ${DB_PASSWORD:root} 占位符）
+
+# 编译 class
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+# 测试覆盖率报告
+jacoco.exec
+test-output/
+surefire-reports/

@@ -1,42 +1,104 @@
 <script setup lang="ts">
 /**
- * 提交打印申请（B（组长） 负责开发）
- * @see 路径：/task/apply
+ * 提交打印申请（**B** - 社员端）
  */
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import PageHeader from '@/components/common/PageHeader.vue'
+import StlUploader from '@/components/task/apply/StlUploader.vue'
+import ParamForm from '@/components/task/apply/ParamForm.vue'
+import { useTaskStore } from '@/stores/task'
+import { Priority } from '@/types/task'
+import type { TaskApplyDTO } from '@/types/task'
+
+const router = useRouter()
+const taskStore = useTaskStore()
+
+const stlPath = ref<string>('')
+
+const form = reactive<TaskApplyDTO>({
+  title: '',
+  modelName: '',
+  stlFilePath: '',
+  materialType: 'PLA',
+  color: undefined,
+  layerHeight: 0.2,
+  infillRate: 20,
+  needSupport: 0,
+  priority: Priority.NORMAL,
+  estWeight: undefined,
+  estTime: undefined,
+  projectId: undefined,
+})
+
+const submitting = ref(false)
+
+const handleSubmit = async () => {
+  if (!stlPath.value) {
+    ElMessage.warning('请先上传 STL 文件')
+    return
+  }
+  if (!form.title || !form.modelName) {
+    ElMessage.warning('请填写任务标题和模型名称')
+    return
+  }
+
+  submitting.value = true
+  try {
+    form.stlFilePath = stlPath.value
+    const taskId = await taskStore.apply(form)
+    ElMessage.success(`提交成功！任务编号：${taskId}`)
+    router.push(`/task/${taskId}`)
+  } catch (e) {
+    // 错误已由 axios 拦截器提示
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <template>
-  <div class="placeholder-page">
+  <div class="task-apply-page">
+    <PageHeader title="提交打印申请" :show-back="true" @back="router.back()" />
+
     <el-card>
-      <h2>提交打印申请</h2>
-      <p>🚧 本页面由 <strong>B（组长）</strong> 开发，当前为占位页。</p>
-      <p>请到对应 README.md 查看组件清单和接口要求。</p>
-      <p class="path">路径：<code>/task/apply</code></p>
+      <!-- 第一步：上传 STL -->
+      <h3 class="step-title">① 上传 STL 文件</h3>
+      <StlUploader v-model="stlPath" />
+
+      <el-divider />
+
+      <!-- 第二步：填写参数 -->
+      <h3 class="step-title">② 填写打印参数</h3>
+      <ParamForm v-model="form" />
+
+      <el-divider />
+
+      <!-- 提交 -->
+      <div class="action-bar">
+        <el-button @click="router.back()">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          提交申请
+        </el-button>
+      </div>
     </el-card>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.placeholder-page {
-  padding: $spacing-medium;
+.task-apply-page {
+  padding: 0;
 }
-h2 {
-  margin: 0 0 $spacing-small;
-  font-size: $font-size-title;
+.step-title {
+  margin: 0 0 $spacing-medium;
+  font-size: $font-size-large;
+  font-weight: 500;
   color: $brand-color;
 }
-p {
-  margin: $spacing-small 0;
-  color: $text-regular;
-}
-.path {
-  font-size: $font-size-small;
-  color: $text-secondary;
-  code {
-    padding: 2px 6px;
-    background: $bg-base;
-    border-radius: $border-radius-small;
-    color: $brand-color;
-  }
+.action-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-small;
 }
 </style>

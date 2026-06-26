@@ -26,7 +26,7 @@ export const TaskStatusText: Record<TaskStatus, string> = {
 }
 
 /** 任务状态标签类型（用于 el-tag type） */
-export const TaskStatusTagType: Record<TaskStatus, '' | 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
+export const TaskStatusTagType: Record<TaskStatus, 'success' | 'warning' | 'info' | 'danger' | 'primary'> = {
   [TaskStatus.PENDING]: 'info',
   [TaskStatus.APPROVED]: 'success',
   [TaskStatus.REJECTED]: 'danger',
@@ -78,7 +78,8 @@ export interface PrintTask {
   color?: MaterialColor
   layerHeight: number
   infillRate: number
-  needSupport: boolean
+  /** 是否需要支撑：0否 1是（与数据库字段对应） */
+  needSupport: number
   priority: Priority
   estWeight?: number
   estTime?: number
@@ -104,7 +105,8 @@ export interface TaskApplyDTO {
   color?: MaterialColor
   layerHeight: number
   infillRate: number
-  needSupport: boolean
+  /** 是否需要支撑：0否 1是（与数据库字段对应） */
+  needSupport: number
   priority: Priority
   estWeight?: number
   estTime?: number
@@ -136,4 +138,18 @@ export interface FinishPrintDTO {
 /** 取件签到请求 */
 export interface PickupDTO {
   qualityScore?: number
+}
+
+/** 任务查询参数 */
+export interface TaskQuery {
+  page?: number
+  size?: number
+  /** 任务状态（可选，按状态筛选） */
+  status?: TaskStatus | number
+  /** 打印机编号 */
+  printerId?: string
+  /** 申请人学号 */
+  applicantId?: string
+  /** 关键字 */
+  keyword?: string
 }

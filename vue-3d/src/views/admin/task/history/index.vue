@@ -1,42 +1,133 @@
 <script setup lang="ts">
 /**
- * 历史任务（B 负责开发）
- * @see 路径：/admin/task/history
+ * 历史任务（**B** - 管理端）
+ *
+ * 显示状态 ≥ 5（已完成/已取消/已驳回）的任务
+ * 用全部任务 + 状态筛选
  */
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import PageHeader from '@/components/common/PageHeader.vue'
+import StatusTag from '@/components/common/StatusTag.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import { get } from '@/utils/request'
+import { TaskStatus, TaskStatusText } from '@/types/task'
+import { formatDate, formatDuration } from '@/utils/format'
+import type { PageResult } from '@/types/api'
+import type { PrintTask } from '@/types/task'
+
+const router = useRouter()
+
+const list = ref<PageResult<PrintTask> | null>(null)
+const loading = ref(false)
+const filter = ref({
+  status: TaskStatus.DONE,
+  page: 1,
+  size: 20,
+})
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    // 用我的任务接口（管理端没有专门的"全部历史"接口，先简化）
+    // 实际开发时可以加 /api/task/history 后端接口
+    const res = await get<PageResult<PrintTask>>('/task/my', {
+      page: filter.value.page,
+      size: filter.value.size,
+      status: filter.value.status,
+    })
+    list.value = res
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(fetchData)
+
+const statusOptions = Object.entries(TaskStatusText).map(([k, v]) => ({
+  value: Number(k),
+  label: v,
+}))
 </script>
 
 <template>
-  <div class="placeholder-page">
-    <el-card>
-      <h2>历史任务</h2>
-      <p>🚧 本页面由 <strong>B</strong> 开发，当前为占位页。</p>
-      <p>请到对应 README.md 查看组件清单和接口要求。</p>
-      <p class="path">路径：<code>/admin/task/history</code></p>
+  <div class="admin-task-history-page">
+    <PageHeader title="历史任务">
+      <el-select v-model="filter.status" placeholder="筛选状态" style="width: 140px" @change="fetchData">
+        <el-option
+          v-for="o in statusOptions"
+          :key="o.value"
+          :label="o.label"
+          :value="o.value"
+        />
+      </el-select>
+      <el-button @click="fetchData">刷新</el-button>
+    </PageHeader>
+
+    <el-card v-loading="loading">
+      <template v-if="!list || list.list.length === 0">
+        <EmptyState description="没有符合条件的历史任务" />
+      </template>
+
+      <template v-else>
+        <el-alert type="info" :closable="false" show-icon style="margin-bottom: 16px">
+          共 <b>{{ list.total }}</b> 条
+        </el-alert>
+
+        <el-table :data="list.list" stripe>
+          <el-table-column prop="taskId" label="任务编号" width="180" />
+          <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <StatusTag status-type="task" :status="row.status" />
+            </template>
+          </el-table-column>
+          <el-table-column prop="applicantId" label="申请人" width="100" />
+          <el-table-column label="耗材" width="120">
+            <template #default="{ row }">
+              <span v-if="row.actualWeight">{{ row.actualWeight }}g</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="耗时" width="120">
+            <template #default="{ row }">
+              <span v-if="row.actualTime">{{ formatDuration(row.actualTime) }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="qualityScore" label="评分" width="80">
+            <template #default="{ row }">
+              <el-rate v-model="row.qualityScore" disabled show-score :max="5" />
+            </template>
+          </el-table-column>
+          <el-table-column label="完成时间" width="160">
+            <template #default="{ row }">
+              {{ formatDate(row.finishTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="80" fixed="right">
+            <template #default="{ row }">
+              <el-button text type="primary" @click="router.push(`/task/${row.taskId}`)">详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <el-pagination
+          v-model:current-page="filter.page"
+          v-model:page-size="filter.size"
+          :total="list.total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          style="margin-top: 16px; justify-content: flex-end"
+          @current-change="fetchData"
+          @size-change="fetchData"
+        />
+      </template>
     </el-card>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.placeholder-page {
-  padding: $spacing-medium;
-}
-h2 {
-  margin: 0 0 $spacing-small;
-  font-size: $font-size-title;
-  color: $brand-color;
-}
-p {
-  margin: $spacing-small 0;
-  color: $text-regular;
-}
-.path {
-  font-size: $font-size-small;
-  color: $text-secondary;
-  code {
-    padding: 2px 6px;
-    background: $bg-base;
-    border-radius: $border-radius-small;
-    color: $brand-color;
-  }
+.admin-task-history-page {
+  padding: 0;
 }
 </style>

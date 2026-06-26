@@ -1,0 +1,77 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: print-club-backend
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+    charset: UTF-8
+
+  # 文件上传大小限制
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  # 强制 UTF-8 编码（防中文乱码：PowerShell / 老浏览器 POST JSON 时默认 ISO-8859-1）
+  encoding:
+    charset: UTF-8
+    force: true
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true   # 数据库下划线自动转驼峰
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl  # 打印 SQL（开发用）
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID                  # 雪花算法 ID
+      logic-delete-field: deleted         # 逻辑删除字段（暂未启用）
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath*:/mapper/**/*.xml
+
+# JWT 配置
+jwt:
+  # 密钥（生产环境必须改，最少 32 位）
+  secret: print-club-secret-key-please-change-in-production-environment-min-32-chars
+  # 过期时间（毫秒）— 默认 7 天
+  expiration: 604800000
+  # 请求头名称
+  header: Authorization
+  # token 前缀
+  prefix: "Bearer "
+
+# 文件上传路径（开发环境）
+file:
+  upload-dir: ./uploads/
+  access-prefix: /uploads/
+
+# Knife4j 接口文档
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-version: false
+    enable-swagger-models: true
+    swagger-model-name: 实体类列表
+
+# 日志
+logging:
+  level:
+    root: INFO
+    com.printclub: DEBUG
+    com.baomidou.mybatisplus: WARN

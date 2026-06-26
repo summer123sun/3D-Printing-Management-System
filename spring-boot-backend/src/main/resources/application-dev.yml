@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # ⚠️ 本地开发：直接写密码（git 提交前改回 ${DB_PASSWORD:root}）
+    url: jdbc:mysql://localhost:3306/print_club_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: ${DB_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 30000
+
+  # 开发环境日志更详细
+logging:
+  level:
+    com.printclub: DEBUG

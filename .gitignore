@@ -1,0 +1,24 @@
+# =====================================================
+# 根目录 .gitignore（3D 打印科创会管理系统）
+# =====================================================
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+
+# 操作系统临时
+$RECYCLE.BIN/
+
+# 前端 / 后端各自的 .gitignore 会处理更细的规则
+vue-3d/.env.local
+vue-3d/.env.*.local
+spring-boot-backend/src/main/resources/application-local.yml
+
+# 不提交任何含真实密码的配置
+*.secret
+*.private

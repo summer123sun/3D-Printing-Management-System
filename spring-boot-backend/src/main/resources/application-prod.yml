@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 生产环境 URL 走环境变量
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:print_club_db}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:please-change-me}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+
+# 生产环境关闭详细 SQL 日志
+logging:
+  level:
+    root: WARN
+    com.printclub: INFO
+    com.baomidou.mybatisplus: ERROR

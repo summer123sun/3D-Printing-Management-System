@@ -1,39 +1,52 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# =====================================================
+# Vue 3 前端 .gitignore（Vite 默认 + 自定义）
+# =====================================================
 
+# 依赖
 node_modules
-.DS_Store
+.pnp
+.pnp.js
+
+# 构建产物
 dist
 dist-ssr
-coverage
 *.local
+.vite
 
-# Editor directories and files
+# 编辑器
 .vscode/*
 !.vscode/extensions.json
 .idea
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+Thumbs.db
 
-*.tsbuildinfo
+# 调试
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
+# 环境变量（不要提交任何带真实密钥的）
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率
+coverage
+*.lcov
+
+# 日志
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Misc
+.cache
+.parcel-cache
 .eslintcache
-
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
-
-# Vitest
-__screenshots__/
-
-# Vite
-*.timestamp-*-*.mjs
