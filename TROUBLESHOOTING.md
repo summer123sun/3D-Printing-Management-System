@@ -980,3 +980,256 @@ http {
 ---
 
 **写于第 N 次踩坑之后，痛定思痛。**
+
+
+## 14. v2 新增踩坑（2026-06 期间）
+
+### 14.1 审计日志完全断裂 — `system_log` 表一直为 0
+
+**症状**：
+- `system_log` 表无任何记录
+- `/admin/log` 页面一直空
+- 业务操作（申请任务 / 入库 / 改角色）都查不到审计
+
+**原因**：`LogServiceImpl.record()` 虽然有 `@Async` 注解，但**没有任何一个 controller/service 调用过它**——审计链路从代码层就完全断裂。
+
+**解决**：
+1. 在 6 个 service（Task / Project / User / Material / Auth / Artwork）的 25+ 关键方法末尾加 `logService.recordCurrent("xxx.xxx", "type", "id", "desc")`
+2. **`@Async` 必须配 `@EnableAsync`**（放在主类上），否则异步不生效
+3. `recordCurrent` 内部调 `record` 必须用 **self-injection**（`@Lazy @Autowired private LogService self;`），否则 self-invocation 绕过 Spring AOP 代理，`@Async` 还是失效
+4. 详见 `spring-boot-backend/src/main/java/com/printclub/module/log/service/LogService.java` 的 javadoc（含完整 AOP 化 TODO 注释）
+
+---
+
+### 14.2 `@Async` 不生效，方法还是同步执行
+
+**症状**：方法加了 `@Async`，调用方还是阻塞等待；SQL 写入慢，主流程卡住。
+
+**原因**：
+1. **缺 `@EnableAsync`**：Spring Boot 不会自动开启异步
+2. **self-invocation 陷阱**：同类内 `this.asyncMethod()` 不走代理，`@Async` 失效
+
+**解决**：
+```java
+@SpringBootApplication
+@EnableAsync  // 必须加！
+public class PrintClubApplication { }
+
+@Service
+public class LogServiceImpl {
+    @Autowired
+    @Lazy  // 解决循环依赖
+    private LogService self;  // 通过代理调用
+
+    public void recordCurrent(...) {
+        self.record(...);  // 走代理，@Async 才生效
+    }
+
+    @Async
+    public void record(...) { ... }
+}
+```
+
+---
+
+### 14.3 Spring 静态资源 `addResourceHandler` 跨协议 fallback 不靠谱
+
+**症状**：
+- `WebMvcConfig` 配了 `classpath:/static/` 和 `file:/uploads/` 两个 location
+- 但 `classpath:/static/uploads/placeholder.png` 找不到
+- 只 `file:/uploads/xxx` 能访问
+
+**原因**：Spring 6+ 改了行为，跨协议 fallback 不可靠（classpath: 协议优先级被忽略）。
+
+**解决**：**不要依赖多 location fallback**。直接复制资源到 `file:` 协议目录：
+- 静态占位图 → 复制到 `D:/project/.../uploads/placeholder/xxx.png`（磁盘）
+- WebMvcConfig 只需要 `file:磁盘路径` 一个 location
+- 重启不需要重新部署，磁盘文件改了直接生效
+
+---
+
+### 14.4 MyBatis-Plus `Page` 序列化字段不一致
+
+**症状**：前端 `store.list.list` 拿不到数据，调试发现后端返回的 JSON 字段是 `records` 而前端代码写的是 `list`。
+
+**原因**：MyBatis-Plus `Page` 内部字段叫 `records`，但前端希望叫 `list`。
+
+**解决**：写一个 `PageUtils.toResult(Page<T>)` 统一转换（`records → list`，`current → page`），所有分页接口都走这个工具，**不能直接返回 `Page<T>`**。
+
+---
+
+### 14.5 ElMessageBox 关闭按钮跑到左上角
+
+**症状**：Element Plus 弹窗右上角的 × 关闭按钮位置错乱，跑到了**左上角**（紧贴弹窗边）。
+
+**原因**：CSS 拦截时给 `.el-message-box__header` 设了 `height: 0`（为了加自定义 6px 顶部装饰条），但 `.el-message-box__headerbtn` 默认是 `position: absolute; right: 24px; top: 18px;`（**相对 header**）。header height=0 后，× 错位。
+
+**解决**：把关闭按钮**绝对定位到弹窗容器本身**（不靠 header）：
+```scss
+.el-message-box__headerbtn {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 10;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  background: rgba(255, 255, 255, 0.92);
+  &:hover {
+    background: #FF4757; color: white;
+    transform: rotate(90deg) scale(1.1);
+  }
+}
+```
+
+---
+
+### 14.6 AppDialog 整页磨砂玻璃
+
+**症状**：登录后整个页面被磨砂玻璃糊住，所有文字模糊不清。
+
+**原因**：在 AppHeader 的 logout 弹窗用了 `.glass-modal` 类（`backdrop-filter: blur(12px)`）作为 modal-class prop，EP 把这个类应用到 `.el-overlay`（遮罩层），导致遮罩层半透明白色 + 磨砂，整页都被糊。
+
+**解决**：
+1. 删掉 AppHeader.vue 的 `backdrop-filter`（`.glass-modal` / `.logout-dialog` / `.btn-cancel` 全部删除）
+2. 全局加防御 reset（`src/styles/index.scss`）：
+
+```scss
+.el-overlay, .el-message-box, .el-dialog, .glass-modal,
+.logout-dialog, .app-dialog, .app-dialog-icon {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+```
+
+---
+
+### 14.7 Spring Boot `MultipartFile.transferTo` 报 FileNotFoundException
+
+**症状**：文件上传后端 `transferTo(dest)` 抛 `FileNotFoundException: ...\uploads\xxx.stl`。
+
+**原因**：
+1. `file.upload-dir: ./uploads/` 是相对路径 → Spring Boot 实际工作目录是 Tomcat 临时目录
+2. `transferTo` 内部用 `Files.move` 把 multipart temp 文件 move 到目标 — 但 temp 文件可能已被清理
+3. 父目录不存在
+
+**解决**（三件套，缺一不可）：
+```yaml
+# application.yml — 绝对路径
+file:
+  upload-dir: D:/project/spring-boot-backend/uploads/
+```
+
+```java
+// FileUploadUtil.save() — 用 Files.copy 替代 transferTo
+Path target = Paths.get(uploadDir + relativePath);
+FileUtil.mkParentDirs(target.toFile());  // 兜底创建父目录
+try (InputStream in = file.getInputStream()) {
+    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);  // 不用 transferTo
+}
+```
+
+---
+
+### 14.8 MySQL Connector/J 8.x 中文乱码
+
+**症状**：存进数据库的中文是 `Ã©Ã¨Ã Â ??` 之类的乱码。
+
+**原因**：JDBC URL 的 `characterEncoding=utf8` 在新驱动里行为不稳定（用小写 `utf8`）。
+
+**解决**：URL 用**大写 UTF-8 + connectionCollation**（三件套）：
+```yaml
+url: jdbc:mysql://localhost:3306/db?useUnicode=true
+    &characterEncoding=UTF-8
+    &connectionCollation=utf8mb4_unicode_ci
+    &useSSL=false
+    &serverTimezone=Asia/Shanghai
+    &allowPublicKeyRetrieval=true
+```
+
+**同时** application.yml 加：
+```yaml
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+```
+
+**清理历史脏数据**：
+```sql
+DELETE FROM print_task WHERE title REGEXP '(Ã©|Ã¨|Ã |Â|??)';
+-- 验证：SELECT HEX(LEFT(title,20)) -- UTF-8 中文应该是 E6B58BE8AF95... 形态
+```
+
+---
+
+### 14.9 Lombok `@Slf4j` 字段名遮蔽陷阱
+
+**症状**：`@Slf4j` 类里加字段 `private String log;` 后编译报 `variable log might not have been initialized`，或运行时 NullPointerException。
+
+**原因**：`@Slf4j` 自动生成 `private static final Logger log = LoggerFactory.getLogger(...)`，**字段名就是 `log`**。自己再声明 `log` 字段会遮蔽 Lombok 生成的 logger。
+
+**解决**：**永远不要在 `@Slf4j` 类里命名 `log` 字段**，改成 `changeLog` / `operationLog` / `materialLog` 等。
+
+---
+
+### 14.10 Hutool `StrUtil.blankToDefault` 只接 2 参数
+
+**症状**：`StrUtil.blankToDefault(value, defaultValue, "extra")` 编译报 "方法不存在"。
+
+**原因**：Hutool `blankToDefault` 签名是 `(str, defaultStr)` —— 只有 2 个参数。
+
+**解决**：删掉第 3 个参数或用三目运算：`StrUtil.blankToDefault(a, "b") + (c != null ? c : "")`。
+
+---
+
+### 14.11 `RequestContextHolder` 在非 Web 线程拿不到 IP
+
+**症状**：日志写 IP 时用 `RequestContextHolder.getRequestAttributes()` 报 NullPointerException。
+
+**原因**：定时任务 / 启动加载 / @Async 异步线程里没有 HTTP 请求上下文。
+
+**解决**：**用 try-catch 包住**：
+```java
+String ip = "internal";
+try {
+    ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+    if (attrs != null) {
+        // 正常取 IP
+    }
+} catch (Exception ignore) {
+    // 非 Web 线程，定时任务 / 异步 / 启动加载 — 用 "internal" 占位
+}
+```
+
+**永远不要假设** `RequestContextHolder` 一定有值。
+
+---
+
+### 14.12 提交到 GitHub 时 push 失败 `Failed to connect to github.com port 443`
+
+**症状**：
+```
+fatal: unable to access 'https://github.com/...':
+Failed to connect to github.com port 443 after 21044 ms: Could not connect to server
+```
+
+**原因**：网络层问题（VPN/代理未开 / 防火墙 / DNS 污染）。
+
+**解决**：
+```powershell
+# 1. 测试网络
+Test-NetConnection github.com -Port 443
+ping github.com
+
+# 2. 如果 ping 不通 — 换 SSH 协议
+git remote set-url origin git@github.com:用户名/仓库.git
+git push origin main
+# 需要先配 SSH key：ssh-keygen → 把 .pub 加到 GitHub Settings → SSH keys
+
+# 3. 如果 ping 通但 push 失败 — 配 GitHub Personal Access Token
+# GitHub → Settings → Developer settings → Personal access tokens → 选 repo 权限
+# 然后 push 时用 token 当密码
+```
+
