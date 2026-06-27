@@ -2,9 +2,10 @@
 /**
  * 作品详情（M4）
  *
- * 大图预览 + 作者信息 + 心得 + 推荐/编辑按钮（按角色）
+ * 大图预览 + 作者信息 + 心得 + 推荐/编辑/删除按钮（按角色）
+ * "编辑"按钮 → 跳独立编辑页 /artwork/edit/:id
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElNotification } from 'element-plus'
 import { ArrowLeft, Edit, Star, StarFilled, View } from '@element-plus/icons-vue'
@@ -18,12 +19,6 @@ const store = useArtworkStore()
 const authStore = useAuthStore()
 
 const artworkId = computed(() => Number(route.params.id))
-const editing = ref(false)
-const editForm = ref({
-  artworkName: '',
-  finishPhotos: '',
-  experience: '',
-})
 
 const isMine = computed(() => {
   return authStore.user?.studentId === store.current?.authorId
@@ -36,37 +31,12 @@ const canRecommend = computed(() => {
 
 const fetchData = async () => {
   await store.fetchDetail(artworkId.value)
-  editForm.value = {
-    artworkName: store.current?.artworkName || '',
-    finishPhotos: store.current?.finishPhotos || '',
-    experience: store.current?.experience || '',
-  }
 }
 
 onMounted(fetchData)
 
 const handleEdit = () => {
-  editing.value = true
-}
-
-const handleCancelEdit = () => {
-  editing.value = false
-  editForm.value = {
-    artworkName: store.current?.artworkName || '',
-    finishPhotos: store.current?.finishPhotos || '',
-    experience: store.current?.experience || '',
-  }
-}
-
-const handleSave = async () => {
-  if (!editForm.value.artworkName) {
-    ElNotification.warning('作品名不能为空')
-    return
-  }
-  await store.update(artworkId.value, editForm.value)
-  ElNotification.success('已更新')
-  editing.value = false
-  await fetchData()
+  router.push(`/artwork/edit/${artworkId.value}`)
 }
 
 const handleToggleRecommend = async () => {
@@ -129,7 +99,7 @@ const handleDelete = async () => {
             <el-icon><StarFilled v-if="store.current.isRecommended === 1" /><Star v-else /></el-icon>
             {{ store.current.isRecommended === 1 ? '取消推荐' : '设为推荐' }}
           </el-button>
-          <el-button v-if="isMine && !editing" type="primary" @click="handleEdit">
+          <el-button v-if="isMine" type="primary" @click="handleEdit">
             <el-icon><Edit /></el-icon> 编辑
           </el-button>
           <el-button v-if="isMine" type="danger" plain @click="handleDelete">删除</el-button>
@@ -138,66 +108,32 @@ const handleDelete = async () => {
 
       <el-divider />
 
-      <!-- 编辑模式 -->
-      <template v-if="editing">
-        <el-form :model="editForm" label-width="100px">
-          <el-form-item label="作品名">
-            <el-input v-model="editForm.artworkName" maxlength="100" show-word-limit />
-          </el-form-item>
-          <el-form-item label="成品照片">
-            <el-input
-              v-model="editForm.finishPhotos"
-              type="textarea"
-              :rows="3"
-              placeholder="多个 URL 用逗号分隔"
-            />
-          </el-form-item>
-          <el-form-item label="心得总结">
-            <el-input
-              v-model="editForm.experience"
-              type="textarea"
-              :rows="6"
-              maxlength="2000"
-              show-word-limit
-              placeholder="分享你的制作心得、参数选择、踩坑经验..."
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleSave">保存</el-button>
-            <el-button @click="handleCancelEdit">取消</el-button>
-          </el-form-item>
-        </el-form>
-      </template>
-
-      <!-- 浏览模式 -->
-      <template v-else>
-        <div v-if="store.current.previewImage || store.current.finishPhotos" class="photos">
+      <div v-if="store.current.previewImage || store.current.finishPhotos" class="photos">
+        <el-image
+          v-if="store.current.previewImage"
+          :src="store.current.previewImage"
+          fit="contain"
+          class="main-photo"
+        />
+        <div v-if="store.current.finishPhotos" class="sub-photos">
           <el-image
-            v-if="store.current.previewImage"
-            :src="store.current.previewImage"
-            fit="contain"
-            class="main-photo"
+            v-for="(url, i) in store.current.finishPhotos.split(',').filter(Boolean)"
+            :key="i"
+            :src="url"
+            fit="cover"
+            class="sub-photo"
+            :preview-src-list="store.current.finishPhotos.split(',').filter(Boolean)"
           />
-          <div v-if="store.current.finishPhotos" class="sub-photos">
-            <el-image
-              v-for="(url, i) in store.current.finishPhotos.split(',').filter(Boolean)"
-              :key="i"
-              :src="url"
-              fit="cover"
-              class="sub-photo"
-              :preview-src-list="store.current.finishPhotos.split(',').filter(Boolean)"
-            />
-          </div>
         </div>
+      </div>
 
-        <h3 class="section-title">💡 心得总结</h3>
-        <div class="experience">
-          <template v-if="store.current.experience">
-            <p v-for="(line, i) in store.current.experience.split('\n')" :key="i">{{ line }}</p>
-          </template>
-          <el-empty v-else description="作者还没有写心得" :image-size="80" />
-        </div>
-      </template>
+      <h3 class="section-title">💡 心得总结</h3>
+      <div class="experience">
+        <template v-if="store.current.experience">
+          <p v-for="(line, i) in store.current.experience.split('\n')" :key="i">{{ line }}</p>
+        </template>
+        <el-empty v-else description="作者还没有写心得" :image-size="80" />
+      </div>
     </el-card>
   </div>
 </template>

@@ -2,6 +2,7 @@ package com.printclub.module.task.service.impl;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.printclub.common.exception.BusinessException;
@@ -11,6 +12,7 @@ import com.printclub.common.util.PageUtils;
 import com.printclub.common.util.SecurityContext;
 import com.printclub.module.artwork.entity.Artwork;
 import com.printclub.module.artwork.mapper.ArtworkMapper;
+import com.printclub.module.log.service.LogService;
 import com.printclub.module.material.entity.MaterialLog;
 import com.printclub.module.material.mapper.MaterialLogMapper;
 import com.printclub.module.printer.entity.Printer;
@@ -52,6 +54,7 @@ public class TaskServiceImpl implements TaskService {
     private final PrinterMapper printerMapper;
     private final MaterialLogMapper materialLogMapper;
     private final ArtworkMapper artworkMapper;
+    private final LogService logService;
 
     private static final DateTimeFormatter TASK_ID_DATE = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -91,6 +94,8 @@ public class TaskServiceImpl implements TaskService {
         taskMapper.insert(task);
 
         log.info("任务提交成功：taskId={}, applicant={}", taskId, studentId);
+        // 审计：写入 system_log（@Async 异步，不阻塞主流程）
+        logService.recordCurrent("task.apply", "task", taskId, "申请打印：" + dto.getTitle());
         return taskId;
     }
 
@@ -107,7 +112,10 @@ public class TaskServiceImpl implements TaskService {
                 .orderByDesc(PrintTask::getApplyTime);
 
         applyCommonFilters(wrapper, query);
-        return PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        // v2：批量注入申请人/审批人/打印机 名字
+        fillTaskRelationalNames(result.getList());
+        return result;
     }
 
     @Override
@@ -120,7 +128,9 @@ public class TaskServiceImpl implements TaskService {
                 .orderByAsc(PrintTask::getApplyTime);
 
         applyCommonFilters(wrapper, query);
-        return PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        fillTaskRelationalNames(result.getList());
+        return result;
     }
 
     @Override
@@ -134,7 +144,9 @@ public class TaskServiceImpl implements TaskService {
                 .orderByAsc(PrintTask::getApplyTime);
 
         applyCommonFilters(wrapper, query);
-        return PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
+        fillTaskRelationalNames(result.getList());
+        return result;
     }
 
     @Override
@@ -143,7 +155,51 @@ public class TaskServiceImpl implements TaskService {
         if (task == null) {
             throw new BusinessException(ResultCode.TASK_NOT_FOUND);
         }
+        // v2：详情也注入关联名字（前端展示用）
+        fillTaskRelationalNames(java.util.Collections.singletonList(task));
         return task;
+    }
+
+    // ============================================
+    // 关联字段填充（v2：仿 ProjectServiceImpl.fillMemberNames 模式）
+    // ============================================
+
+    /**
+     * 批量把 task.applicantId/approverId/printerId 翻译成对应姓名/型号
+     * 一次查 member 表 + 一次查 printer 表，N+1 → 2 次查询
+     */
+    private void fillTaskRelationalNames(List<PrintTask> tasks) {
+        if (tasks == null || tasks.isEmpty()) return;
+
+        // 1. 收集所有 ID
+        java.util.Set<String> memberIds = new java.util.HashSet<>();
+        java.util.Set<String> printerIds = new java.util.HashSet<>();
+        for (PrintTask t : tasks) {
+            if (t.getApplicantId() != null) memberIds.add(t.getApplicantId());
+            if (t.getApproverId() != null) memberIds.add(t.getApproverId());
+            if (t.getPrinterId() != null) printerIds.add(t.getPrinterId());
+        }
+
+        // 2. 批量查
+        java.util.Map<String, String> id2name = new java.util.HashMap<>();
+        if (!memberIds.isEmpty()) {
+            for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(memberIds)) {
+                id2name.put(m.getStudentId(), m.getName());
+            }
+        }
+        java.util.Map<String, String> id2model = new java.util.HashMap<>();
+        if (!printerIds.isEmpty()) {
+            for (com.printclub.module.printer.entity.Printer p : printerMapper.selectBatchIds(printerIds)) {
+                id2model.put(p.getPrinterId(), p.getModel());
+            }
+        }
+
+        // 3. 注入
+        for (PrintTask t : tasks) {
+            t.setApplicantName(id2name.get(t.getApplicantId()));
+            t.setApproverName(id2name.get(t.getApproverId()));
+            t.setPrinterModel(id2model.get(t.getPrinterId()));
+        }
     }
 
     private void applyCommonFilters(LambdaQueryWrapper<PrintTask> w, TaskQuery q) {
@@ -169,11 +225,15 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException(ResultCode.TASK_STATUS_INVALID, "仅待审批状态可通过");
         }
 
-        task.setStatus(PrintTask.STATUS_QUEUED);  // 通过后直接进入排队
+        // v2 修复：先进入 STATUS_APPROVED(1)，分配打印机时再变 STATUS_QUEUED(3)
+        task.setStatus(PrintTask.STATUS_APPROVED);
         task.setApproverId(SecurityContext.getCurrentUserId());
         task.setApproveTime(LocalDateTime.now());
         task.setApproveComment(dto.getApproveComment());
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.approve", "task", taskId,
+                "审批通过：" + (StrUtil.isBlank(dto.getApproveComment()) ? "无备注" : dto.getApproveComment()));
     }
 
     @Override
@@ -188,6 +248,9 @@ public class TaskServiceImpl implements TaskService {
         task.setApproveTime(LocalDateTime.now());
         task.setApproveComment(dto.getApproveComment());
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.reject", "task", taskId,
+                "驳回：" + (StrUtil.isBlank(dto.getApproveComment()) ? "无原因" : dto.getApproveComment()));
     }
 
     // ============================================
@@ -196,8 +259,9 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void assignPrinter(String taskId, AssignPrinterDTO dto) {
         PrintTask task = mustGetTask(taskId);
-        if (task.getStatus() != PrintTask.STATUS_QUEUED) {
-            throw new BusinessException(ResultCode.TASK_STATUS_INVALID, "仅排队中状态可分配打印机");
+        // v2 修复：已通过(1) 或 排队中(3) 都可以分配（支持换打印机）
+        if (task.getStatus() != PrintTask.STATUS_APPROVED && task.getStatus() != PrintTask.STATUS_QUEUED) {
+            throw new BusinessException(ResultCode.TASK_STATUS_INVALID, "仅已通过/排队中状态可分配打印机");
         }
 
         // 校验打印机
@@ -209,18 +273,21 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException(ResultCode.PRINTER_BROKEN);
         }
 
-        // 校验该打印机是否已被占用
+        // v2 修复：占用检查包括 STATUS_QUEUED(3) 和 STATUS_PRINTING(4) — 已分配未打印也算占用
         Long busy = taskMapper.selectCount(
                 new LambdaQueryWrapper<PrintTask>()
                         .eq(PrintTask::getPrinterId, dto.getPrinterId())
-                        .eq(PrintTask::getStatus, PrintTask.STATUS_PRINTING)
+                        .in(PrintTask::getStatus, PrintTask.STATUS_QUEUED, PrintTask.STATUS_PRINTING)
         );
         if (busy > 0) {
             throw new BusinessException(ResultCode.PRINTER_BUSY);
         }
 
         task.setPrinterId(dto.getPrinterId());
+        task.setStatus(PrintTask.STATUS_QUEUED);  // 已通过 → 排队中
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.assign", "task", taskId, "分配打印机：" + dto.getPrinterId());
     }
 
     @Override
@@ -235,6 +302,8 @@ public class TaskServiceImpl implements TaskService {
 
         task.setStatus(PrintTask.STATUS_PRINTING);
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.start", "task", taskId, "开始打印");
     }
 
     /**
@@ -314,6 +383,8 @@ public class TaskServiceImpl implements TaskService {
 
         log.info("任务完成：taskId={}, applicant={}, 消耗耗材={}g",
                 taskId, task.getApplicantId(), dto.getActualWeight());
+        logService.recordCurrent("task.finish", "task", taskId,
+                "完成打印：实耗 " + dto.getActualWeight() + "g，质量分 " + dto.getQualityScore());
     }
 
     /**
@@ -348,10 +419,14 @@ public class TaskServiceImpl implements TaskService {
         }
 
         task.setPickupTime(LocalDateTime.now());
+        // v2 修复：pickup 后 status 变 STATUS_PICKED_UP(8)（从 5 已完成 → 8 已取件）
+        task.setStatus(PrintTask.STATUS_PICKED_UP);
         if (dto.getQualityScore() != null) {
             task.setQualityScore(dto.getQualityScore());
         }
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.pickup", "task", taskId, "取件完成");
     }
 
     @Override
@@ -368,6 +443,8 @@ public class TaskServiceImpl implements TaskService {
 
         task.setStatus(PrintTask.STATUS_CANCELLED);
         taskMapper.updateById(task);
+
+        logService.recordCurrent("task.cancel", "task", taskId, "用户取消任务");
     }
 
     // ============================================

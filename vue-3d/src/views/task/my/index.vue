@@ -21,20 +21,25 @@ const taskList = computed<PrintTask[]>(() => taskStore.myTasks?.list ?? [])
 const taskGroups = computed(() => {
   const groups: Record<string, PrintTask[]> = {
     '待审批': [],
+    '已通过（待分配）': [],
     '排队/打印中': [],
     '已完成（待取件）': [],
-    '已签收/已完成': [],
+    '已取件/已签收': [],
     '已驳回/已取消': [],
   }
   taskList.value.forEach((t) => {
     switch (t.status) {
       case TaskStatus.PENDING:
         groups['待审批']!.push(t); break
+      case TaskStatus.APPROVED:
+        groups['已通过（待分配）']!.push(t); break
       case TaskStatus.QUEUED:
       case TaskStatus.PRINTING:
         groups['排队/打印中']!.push(t); break
       case TaskStatus.DONE:
         groups['已完成（待取件）']!.push(t); break
+      case TaskStatus.PICKED_UP:
+        groups['已取件/已签收']!.push(t); break
       case TaskStatus.CANCELLED:
       case TaskStatus.REJECTED:
         groups['已驳回/已取消']!.push(t); break
@@ -91,9 +96,17 @@ onMounted(fetchData)
                 {{ formatRelativeTime(row.applyTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column label="操作" width="180" fixed="right">
               <template #default="{ row }">
                 <el-button text type="primary" @click.stop="router.push(`/task/${row.taskId}`)">详情</el-button>
+                <el-button
+                  v-if="row.status === TaskStatus.DONE"
+                  text
+                  type="success"
+                  @click.stop="router.push({ path: '/artwork/create', query: { taskId: row.taskId } })"
+                >
+                  登记作品
+                </el-button>
               </template>
             </el-table-column>
           </el-table>

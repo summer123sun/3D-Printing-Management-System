@@ -101,7 +101,13 @@ const onPageChange = (page: number) => {
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="operatorId" label="操作人" width="100" />
+        <el-table-column label="操作人" width="110">
+          <template #default="{ row }">
+            <el-tooltip :content="`学号：${row.operatorId}`" placement="top">
+              <span>{{ row.operatorName || row.operatorId }}</span>
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
         <el-table-column label="时间" width="160">
           <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>

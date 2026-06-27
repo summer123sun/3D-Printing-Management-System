@@ -49,9 +49,7 @@ const customUpload = async (options: { file: File }) => {
     const formData = new FormData()
     formData.append('file', file)
     const result = await uploadFile(formData)
-    console.log('[StlUploader] 上传响应:', result, 'typeof:', typeof result, 'keys:', result ? Object.keys(result) : 'null')
     const url = result?.url ?? ''
-    console.log('[StlUploader] 提取的 url:', url, '是否为空:', !url)
     fileList.value = [{ name: file.name, url }]
     emit('update:modelValue', url)
     if (url) {

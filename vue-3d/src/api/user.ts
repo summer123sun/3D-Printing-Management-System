@@ -1,30 +1,18 @@
 /**
- * 用户管理 API（C 负责成员管理页面时填写）
+ * 成员/用户 API（v2）
  */
 import { get, put } from '@/utils/request'
-import type { Member } from '@/types/member'
-import type { PageQuery, PageResult } from '@/types/api'
+import type { Member, Role, SkillLevel } from '@/types/member'
+import type { PageResult } from '@/types/api'
 
-/** 成员列表（分页） */
-export const getMemberList = (query: PageQuery = {}) => {
-  return get<PageResult<Member>>('/user/list', query as Record<string, unknown>)
-}
+/** 成员列表（分页 + 搜索） */
+export const memberList = (params: { page?: number; size?: number; keyword?: string }) =>
+  get<PageResult<Member>>('/user/list', params as Record<string, unknown>)
 
-/** 修改角色（仅社长） */
-export const updateRole = (studentId: string, role: number) => {
-  return put(`/user/${studentId}/role`, { role })
-}
+/** 修改成员角色（仅社长） */
+export const updateMemberRole = (studentId: string, role: Role) =>
+  put<void>(`/user/${studentId}/role`, { role })
 
-/** 修改技能等级 */
-export const updateSkill = (studentId: string, skillLevel: number) => {
-  return put(`/user/${studentId}/skill`, { skillLevel })
-}
-
-/** 个人统计 */
-export const getUserStats = (studentId: string) => {
-  return get<{
-    totalPrints: number
-    totalProjects: number
-    totalArtworks: number
-  }>(`/user/${studentId}/stats`)
-}
+/** 修改成员技能等级（社长+技术骨干） */
+export const updateMemberSkill = (studentId: string, skillLevel: SkillLevel) =>
+  put<void>(`/user/${studentId}/skill`, { skillLevel })

@@ -7,7 +7,7 @@
 import { onMounted, ref } from 'vue'
 import { Document, Goods, Operation, Printer, Star, Timer, TrendCharts, User } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import { get } from '@/utils/request'
+import * as statsApi from '@/api/stats'
 import type { DashboardData, TaskStats, MaterialStats, MemberRank, PrinterStats } from '@/types/stats'
 import { formatDuration } from '@/utils/format'
 
@@ -22,11 +22,11 @@ const fetchData = async () => {
   loading.value = true
   try {
     const [d, t, m, p, r] = await Promise.all([
-      get<DashboardData>('/stats/dashboard'),
-      get<TaskStats>('/stats/task'),
-      get<MaterialStats>('/stats/material'),
-      get<PrinterStats>('/stats/printer'),
-      get<MemberRank[]>('/stats/member', { limit: 8 } as any),
+      statsApi.dashboard(),
+      statsApi.taskStats(),
+      statsApi.materialStats(),
+      statsApi.printerStats(),
+      statsApi.memberRanking(8),
     ])
     dashboard.value = d
     taskStats.value = t
@@ -132,11 +132,11 @@ watch(dashboard, updateTrend, { immediate: true })
               <path :d="trend.area" fill="url(#trend-gradient)" />
               <path :d="trend.path" fill="none" stroke="#409eff" stroke-width="2" />
               <g v-for="(p, i) in trend.points" :key="i">
-                <circle :cx="p.x" :cy="p.y" r="4" fill="white" stroke="#409eff" stroke-width="2" />
-                <text :x="p.x" y="155" text-anchor="middle" font-size="10" fill="#909399">
+                <circle :cx="p.x" :cy="p.y" r="4" fill="var(--bg-card)" stroke="#409eff" stroke-width="2" />
+                <text :x="p.x" y="155" text-anchor="middle" font-size="10" fill="var(--text-secondary)">
                   {{ p.date.slice(5) }}
                 </text>
-                <text :x="p.x" :y="p.y - 8" text-anchor="middle" font-size="11" fill="#303133" font-weight="600">
+                <text :x="p.x" :y="p.y - 8" text-anchor="middle" font-size="11" fill="var(--text-primary)" font-weight="600">
                   {{ p.count }}
                 </text>
               </g>
@@ -180,12 +180,11 @@ watch(dashboard, updateTrend, { immediate: true })
           </template>
           <div class="month-chart">
             <div v-for="item in taskStats?.monthly" :key="item.month" class="month-bar">
+              <span class="month-value">{{ item.count }}</span>
               <div
                 class="month-fill"
                 :style="{ height: (item.count / Math.max(...(taskStats?.monthly || []).map(m => m.count), 1) * 100) + '%' }"
-              >
-                <span class="month-value">{{ item.count }}</span>
-              </div>
+              />
               <div class="month-label">{{ item.month }}</div>
             </div>
           </div>
@@ -248,7 +247,9 @@ watch(dashboard, updateTrend, { immediate: true })
           <div class="ranking-list">
             <div v-for="(item, i) in memberRanking" :key="item.applicant_id" class="ranking-item">
               <div class="ranking-num" :class="i < 3 ? `top-${i + 1}` : ''">{{ i + 1 }}</div>
-              <div class="ranking-id">{{ item.applicant_id }}</div>
+              <el-tooltip :content="`学号：${item.applicant_id}`" placement="top">
+                <div class="ranking-name">{{ item.applicant_name || item.applicant_id }}</div>
+              </el-tooltip>
               <div class="ranking-meta">
                 完成 <b>{{ item.done_count }}</b> 次 · {{ Math.round(item.total_hours || 0) }}h
               </div>
@@ -268,7 +269,8 @@ watch(dashboard, updateTrend, { immediate: true })
   align-items: center;
   gap: $spacing-base;
   border: none;
-  background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+  // v2 暗色修复：去掉硬编码白色渐变，用 var(--bg-card) 让 dark mode 接管
+  background: var(--bg-card) !important;
   .stat-icon {
     width: 56px;
     height: 56px;
@@ -282,18 +284,18 @@ watch(dashboard, updateTrend, { immediate: true })
   }
   .stat-value {
     font-size: 26px;
-    font-weight: 600;
-    color: $text-primary;
+    font-weight: 700;  // 加粗（暗色下更清楚）
+    color: var(--text-primary);  // v2 暗色修复
     line-height: 1.2;
   }
   .stat-label {
     font-size: 13px;
-    color: $text-secondary;
+    color: var(--text-secondary);  // v2 暗色修复
     margin-top: 2px;
   }
   .stat-sub {
     font-size: 12px;
-    color: $text-placeholder;
+    color: var(--text-placeholder);  // v2 暗色修复
     margin-top: 2px;
   }
   &.stat-1 .stat-icon { background: rgba(64, 158, 255, 0.1); color: #409eff; }
@@ -320,13 +322,14 @@ watch(dashboard, updateTrend, { immediate: true })
   .status-info {
     display: flex; align-items: center; gap: 6px;
     font-size: 13px;
+    color: var(--text-regular);  // v2 暗色修复
   }
   .status-dot {
     width: 8px; height: 8px; border-radius: 50%;
   }
   .status-bar {
     height: 8px;
-    background: $bg-base;
+    background: var(--bg-base);  // v2 暗色修复
     border-radius: 4px;
     overflow: hidden;
   }
@@ -337,7 +340,7 @@ watch(dashboard, updateTrend, { immediate: true })
   }
   .status-count {
     font-weight: 600;
-    color: $text-primary;
+    color: var(--text-primary);  // v2 暗色修复
     text-align: right;
   }
   .status-dot.status-0, .status-fill.status-0 { background: #909399; }
@@ -362,29 +365,34 @@ watch(dashboard, updateTrend, { immediate: true })
   align-items: center;
   margin: 0 4px;
   height: 100%;
+  position: relative;  // v2 暗色修复：让 .month-value 绝对定位
 }
 .month-fill {
   width: 80%;
   max-width: 50px;
   background: linear-gradient(180deg, #409eff 0%, #79bbff 100%);
   border-radius: 4px 4px 0 0;
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 4px;
-  min-height: 2px;
   transition: height 0.3s;
-  .month-value {
-    color: white;
-    font-size: 11px;
-    font-weight: 600;
-  }
+  margin-top: auto;  // 柱子贴底（让数字能放在柱子上方固定位置）
+  min-height: 2px;
+}
+.month-value {
+  // v2 暗色修复：数字移到柱子上方，CSS 变量控制颜色
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-primary);   // 自动适配暗色
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-card);
+  padding: 0 4px;
+  border-radius: 3px;
 }
 .month-label {
   margin-top: 6px;
   font-size: 12px;
-  color: $text-secondary;
+  color: var(--text-secondary);  // v2 暗色修复
 }
 .material-list { display: flex; flex-direction: column; gap: $spacing-small; }
 .material-item {
@@ -394,16 +402,16 @@ watch(dashboard, updateTrend, { immediate: true })
   gap: $spacing-small;
   font-size: 13px;
   .material-rank {
-    color: $text-placeholder;
+    color: var(--text-placeholder);  // v2 暗色修复
     font-weight: 600;
   }
   .material-name {
-    color: $text-regular;
+    color: var(--text-regular);  // v2 暗色修复
     font-weight: 500;
   }
   .material-bar {
     height: 6px;
-    background: $bg-base;
+    background: var(--bg-base);  // v2 暗色修复
     border-radius: 3px;
     overflow: hidden;
   }
@@ -414,8 +422,8 @@ watch(dashboard, updateTrend, { immediate: true })
   }
   .material-value {
     text-align: right;
-    color: $text-primary;
-    font-weight: 500;
+    color: var(--text-primary);  // v2 暗色修复
+    font-weight: 600;            // 加粗（暗色下更清楚）
   }
 }
 .printer-summary {
@@ -448,8 +456,8 @@ watch(dashboard, updateTrend, { immediate: true })
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: $bg-base;
-    color: $text-secondary;
+    background: var(--bg-base);  // v2 暗色修复
+    color: var(--text-secondary);  // v2 暗色修复
     display: flex; align-items: center; justify-content: center;
     font-weight: 600;
     font-size: 13px;
@@ -457,15 +465,15 @@ watch(dashboard, updateTrend, { immediate: true })
     &.top-2 { background: linear-gradient(135deg, #c0c0c0, #909399); color: white; }
     &.top-3 { background: linear-gradient(135deg, #cd7f32, #8b4513); color: white; }
   }
-  .ranking-id {
-    font-family: monospace;
-    color: $text-primary;
-    font-weight: 500;
+  .ranking-name {
+    color: var(--text-primary);  // v2 暗色修复
+    font-weight: 600;             // 加粗
+    cursor: help;
   }
   .ranking-meta {
     flex: 1;
     font-size: 12px;
-    color: $text-secondary;
+    color: var(--text-secondary);  // v2 暗色修复
     text-align: right;
   }
 }

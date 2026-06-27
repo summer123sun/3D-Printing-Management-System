@@ -8,6 +8,7 @@ import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { formatRelativeTime } from '@/utils/format'
 
@@ -95,17 +96,14 @@ const handleReject = async () => {
     </el-card>
 
     <!-- 驳回弹窗 -->
-    <el-dialog v-model="rejectDialogVisible" title="驳回任务" width="400px">
+    <AppDialog v-model="rejectDialogVisible" title="驳回任务" icon="Warning" type="danger" width="480px"
+               confirm-text="确认驳回" @confirm="handleReject">
       <el-form :model="rejectForm" label-width="80px">
         <el-form-item label="驳回原因" required>
           <el-input v-model="rejectForm.approveComment" type="textarea" :rows="3" placeholder="必填，告知申请人修改方向" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="rejectDialogVisible = false">取消</el-button>
-        <el-button type="danger" @click="handleReject">确认驳回</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 

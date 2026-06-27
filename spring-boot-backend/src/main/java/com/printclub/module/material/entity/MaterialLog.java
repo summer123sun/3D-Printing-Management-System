@@ -48,4 +48,10 @@ public class MaterialLog implements Serializable {
 
     @TableField("create_time")
     private LocalDateTime createTime;
+
+    // ============== 关联字段（不映射到数据库） ==============
+
+    /** 操作人姓名（v2：list 时从 member 表查） */
+    @TableField(exist = false)
+    private String operatorName;
 }

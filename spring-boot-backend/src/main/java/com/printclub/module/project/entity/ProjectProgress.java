@@ -49,4 +49,8 @@ public class ProjectProgress implements Serializable {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    /** 阶段负责人姓名（来自 member 表，非数据库字段） */
+    @TableField(exist = false)
+    private String responsibleName;
 }

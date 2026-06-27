@@ -9,6 +9,7 @@ import { ElMessageBox, ElNotification } from 'element-plus'
 import { Plus, Edit, Delete, Tools } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { usePrinterStore } from '@/stores/printer'
 import { useAuthStore } from '@/stores/auth'
 import { PrinterStatus, PrinterStatusText, PrinterStatusTagType } from '@/types/printer'
@@ -18,6 +19,8 @@ const store = usePrinterStore()
 const authStore = useAuthStore()
 
 const isAdmin = computed(() => authStore.user?.role === 1)
+
+const submitting = ref(false)
 
 const filter = ref({
   page: 1,
@@ -99,6 +102,7 @@ const handleSubmit = async () => {
     ElNotification.warning('请填写打印机编号和型号')
     return
   }
+  submitting.value = true
   try {
     if (editingId.value) {
       await store.update(editingId.value, form.value)
@@ -111,6 +115,8 @@ const handleSubmit = async () => {
     fetchData()
   } catch (e: any) {
     ElNotification.error(e.message || '操作失败')
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -244,11 +250,15 @@ const handleSetStatus = async (row: any, newStatus: number) => {
     </el-card>
 
     <!-- 新增/编辑对话框 -->
-    <el-dialog
+    <AppDialog
       v-model="dialogVisible"
       :title="editingId ? '编辑打印机' : '新增打印机'"
+      :icon="editingId ? 'Edit' : 'Plus'"
+      :type="editingId ? 'warning' : 'primary'"
       width="540px"
-      :close-on-click-modal="false"
+      confirm-text="保存"
+      :loading="submitting"
+      @confirm="handleSubmit"
     >
       <el-form :model="form" label-width="100px">
         <el-form-item label="编号" required>
@@ -277,11 +287,7 @@ const handleSetStatus = async (row: any, newStatus: number) => {
           <el-input v-model="form.remark" type="textarea" :rows="2" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">保存</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 

@@ -7,7 +7,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElNotification } from 'element-plus'
-import { Picture, View } from '@element-plus/icons-vue'
+import { Picture, View, Edit } from '@element-plus/icons-vue'
 import { useArtworkStore } from '@/stores/artwork'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { formatDate } from '@/utils/format'
@@ -39,6 +39,10 @@ const onSortChange = () => {
 
 const viewDetail = (id: number) => {
   router.push(`/artwork/${id}`)
+}
+
+const handleEdit = (id: number) => {
+  router.push(`/artwork/edit/${id}`)
 }
 
 const handleDelete = async (id: number) => {
@@ -109,6 +113,9 @@ const handleDelete = async (id: number) => {
             </p>
             <div class="artwork-actions" @click.stop>
               <el-button size="small" @click="viewDetail(item.artworkId)">查看</el-button>
+              <el-button size="small" type="primary" @click="handleEdit(item.artworkId)">
+                <el-icon><Edit /></el-icon> 编辑
+              </el-button>
               <el-button size="small" type="danger" @click="handleDelete(item.artworkId)">
                 删除
               </el-button>

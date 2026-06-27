@@ -91,7 +91,13 @@ const onTabChange = () => {
               <el-tag size="small" :type="statusTagType(row.status)">{{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="leaderId" label="负责人" width="120" />
+          <el-table-column label="负责人" width="120">
+            <template #default="{ row }">
+              <el-tooltip :content="`学号：${row.leaderId}`" placement="top">
+                <span>{{ row.leaderName || row.leaderId }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column label="开始日期" width="120">
             <template #default="{ row }">{{ formatDate(row.startDate, 'YYYY-MM-DD') }}</template>
           </el-table-column>

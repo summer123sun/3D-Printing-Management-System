@@ -46,4 +46,8 @@ public class ProjectMember implements Serializable {
 
     @TableField("update_time")
     private LocalDateTime updateTime;
+
+    /** 真实姓名（来自 member 表，@TableField(exist=false) 表示非数据库字段） */
+    @TableField(exist = false)
+    private String memberName;
 }

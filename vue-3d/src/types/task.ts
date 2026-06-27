@@ -6,12 +6,13 @@
 /** 任务状态枚举 */
 export enum TaskStatus {
   PENDING = 0,    // 待审批
-  APPROVED = 1,   // 已通过
+  APPROVED = 1,   // 已通过（v2：approve 后先进入此状态，分配打印机再变 QUEUED）
   REJECTED = 2,   // 已驳回
   QUEUED = 3,     // 排队中
   PRINTING = 4,   // 打印中
-  DONE = 5,       // 已完成
+  DONE = 5,       // 已完成（待取件）
   CANCELLED = 6,  // 已取消
+  PICKED_UP = 8,  // 已取件（v2：pickup() 改 status）
 }
 
 /** 任务状态文本 */
@@ -23,6 +24,7 @@ export const TaskStatusText: Record<TaskStatus, string> = {
   [TaskStatus.PRINTING]: '打印中',
   [TaskStatus.DONE]: '已完成',
   [TaskStatus.CANCELLED]: '已取消',
+  [TaskStatus.PICKED_UP]: '已取件',
 }
 
 /** 任务状态标签类型（用于 el-tag type） */
@@ -34,6 +36,7 @@ export const TaskStatusTagType: Record<TaskStatus, 'success' | 'warning' | 'info
   [TaskStatus.PRINTING]: 'primary',
   [TaskStatus.DONE]: 'success',
   [TaskStatus.CANCELLED]: 'info',
+  [TaskStatus.PICKED_UP]: 'success',
 }
 
 /** 任务优先级 */

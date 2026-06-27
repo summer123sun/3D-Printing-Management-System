@@ -34,6 +34,20 @@ public class PrintTask implements Serializable {
     @TableField("printer_id")
     private String printerId;
 
+    // ============== 关联字段（不映射到数据库） ==============
+
+    /** 申请人姓名（v2：list 时从 member 表查） */
+    @TableField(exist = false)
+    private String applicantName;
+
+    /** 审批人姓名（v2：list 时从 member 表查） */
+    @TableField(exist = false)
+    private String approverName;
+
+    /** 打印机型号（v2：list 时从 printer 表查） */
+    @TableField(exist = false)
+    private String printerModel;
+
     @TableField("project_id")
     private Integer projectId;
 
@@ -114,6 +128,7 @@ public class PrintTask implements Serializable {
     public static final int STATUS_PRINTING   = 4;
     public static final int STATUS_DONE       = 5;
     public static final int STATUS_CANCELLED  = 6;
+    public static final int STATUS_PICKED_UP  = 8;  // 已取件（v2：pickup() 改 status）
 
     public static final int PRIORITY_URGENT = 1;
     public static final int PRIORITY_NORMAL = 2;

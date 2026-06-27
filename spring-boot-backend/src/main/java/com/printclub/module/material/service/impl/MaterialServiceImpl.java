@@ -8,11 +8,13 @@ import com.printclub.common.exception.BusinessException;
 import com.printclub.common.result.PageResult;
 import com.printclub.common.util.PageUtils;
 import com.printclub.common.result.ResultCode;
+import com.printclub.module.log.service.LogService;
 import com.printclub.module.material.dto.MaterialInboundDTO;
 import com.printclub.module.material.dto.MaterialStockVO;
 import com.printclub.module.material.entity.MaterialLog;
 import com.printclub.module.material.mapper.MaterialLogMapper;
 import com.printclub.module.material.service.MaterialService;
+import com.printclub.module.user.mapper.MemberMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,8 @@ import java.util.Map;
 public class MaterialServiceImpl implements MaterialService {
 
     private final MaterialLogMapper materialLogMapper;
+    private final LogService logService;
+    private final MemberMapper memberMapper;
 
     /** 默认预警线 500g */
     private static final BigDecimal DEFAULT_WARNING_THRESHOLD = new BigDecimal("500");
@@ -86,7 +90,29 @@ public class MaterialServiceImpl implements MaterialService {
         if (operationType != null) wrapper.eq(MaterialLog::getOperationType, operationType);
         if (StrUtil.isNotBlank(operatorId)) wrapper.eq(MaterialLog::getOperatorId, operatorId);
         wrapper.orderByDesc(MaterialLog::getLogId);
-        return PageUtils.toResult(materialLogMapper.selectPage(p, wrapper));
+        PageResult<MaterialLog> result = PageUtils.toResult(materialLogMapper.selectPage(p, wrapper));
+        // v2：批量注入操作人姓名
+        fillOperatorNames(result.getList());
+        return result;
+    }
+
+    /**
+     * v2：批量把 MaterialLog.operatorId 翻译成 operatorName（前端展示用）
+     */
+    private void fillOperatorNames(List<MaterialLog> logs) {
+        if (logs == null || logs.isEmpty()) return;
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (MaterialLog l : logs) {
+            if (l.getOperatorId() != null) ids.add(l.getOperatorId());
+        }
+        if (ids.isEmpty()) return;
+        java.util.Map<String, String> id2name = new java.util.HashMap<>();
+        for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(ids)) {
+            id2name.put(m.getStudentId(), m.getName());
+        }
+        for (MaterialLog l : logs) {
+            l.setOperatorName(id2name.get(l.getOperatorId()));
+        }
     }
 
     @Override
@@ -113,6 +139,10 @@ public class MaterialServiceImpl implements MaterialService {
         logEntry.setRemark(dto.getRemark());
         materialLogMapper.insert(logEntry);
         log.info("耗材入库：{} {} +{}g, 余额={}g", dto.getMaterialType(), dto.getColor(), dto.getWeightChange(), newBalance);
+        // 审计日志（v2 修复：之前 LogService 完全没接入）
+        logService.recordCurrent("material.inbound", "material",
+                dto.getMaterialType() + "/" + dto.getColor(),
+                "耗材入库 +" + dto.getWeightChange() + "g，余额 " + newBalance + "g");
     }
 
     @Override

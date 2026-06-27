@@ -34,6 +34,7 @@ public class StatsServiceImpl implements StatsService {
     private final ArtworkMapper artworkMapper;
     private final MaterialLogMapper materialLogMapper;
     private final PrinterMapper printerMapper;
+    private final com.printclub.module.user.mapper.MemberMapper memberMapper;
 
     @Override
     public Object dashboard() {
@@ -176,6 +177,26 @@ public class StatsServiceImpl implements StatsService {
                 .groupBy("applicant_id")
                 .orderByDesc("done_count")
                 .last("LIMIT " + limit);
-        return taskMapper.selectMaps(wrapper);
+        List<Map<String, Object>> rows = taskMapper.selectMaps(wrapper);
+
+        // v2：批量注入社员姓名（前端 Top 8 展示用，跟 AppHeader 显示姓名一致）
+        if (rows != null && !rows.isEmpty()) {
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            for (Map<String, Object> row : rows) {
+                Object id = row.get("applicant_id");
+                if (id != null) ids.add(id.toString());
+            }
+            java.util.Map<String, String> id2name = new java.util.HashMap<>();
+            if (!ids.isEmpty()) {
+                for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(ids)) {
+                    id2name.put(m.getStudentId(), m.getName());
+                }
+            }
+            for (Map<String, Object> row : rows) {
+                Object id = row.get("applicant_id");
+                row.put("applicant_name", id == null ? null : id2name.get(id.toString()));
+            }
+        }
+        return rows;
     }
 }

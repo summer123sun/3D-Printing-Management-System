@@ -12,6 +12,8 @@ import com.printclub.module.printer.entity.Maintenance;
 import com.printclub.module.printer.entity.Printer;
 import com.printclub.module.printer.mapper.MaintenanceMapper;
 import com.printclub.module.printer.mapper.PrinterMapper;
+import com.printclub.module.task.entity.PrintTask;
+import com.printclub.module.task.mapper.TaskMapper;
 import com.printclub.module.printer.service.PrinterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class PrinterServiceImpl implements PrinterService {
 
     private final PrinterMapper printerMapper;
     private final MaintenanceMapper maintenanceMapper;
+    private final TaskMapper taskMapper;
 
     // ============== 状态常量 ==============
     public static final int STATUS_NORMAL = 1;
@@ -122,10 +125,25 @@ public class PrinterServiceImpl implements PrinterService {
 
     @Override
     public List<Printer> availablePrinters() {
+        // 1. 先查所有"正常"状态的打印机
         LambdaQueryWrapper<Printer> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Printer::getStatus, STATUS_NORMAL)
                 .orderByAsc(Printer::getPrinterId);
-        return printerMapper.selectList(wrapper);
+        List<Printer> all = printerMapper.selectList(wrapper);
+
+        // 2. 过滤掉"正在打印"的（被任务占用）
+        if (all.isEmpty()) return all;
+        // 用 selectObjs 拿 printerId 列表（泛型推断更友好）
+        List<String> busyIds = taskMapper.selectObjs(
+                new LambdaQueryWrapper<PrintTask>()
+                        .eq(PrintTask::getStatus, PrintTask.STATUS_PRINTING)
+                        .isNotNull(PrintTask::getPrinterId)
+                        .select(PrintTask::getPrinterId)
+        );
+
+        return all.stream()
+                .filter(p -> !busyIds.contains(p.getPrinterId()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     // ============== 维护记录 ==============

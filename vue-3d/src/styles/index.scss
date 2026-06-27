@@ -6,6 +6,146 @@
 @import './variables.scss';
 @import './reset.scss';
 
+// ============================================
+// CSS 变量层（亮色默认 + 暗色覆盖）
+// 用于 dark mode 切换（html.dark 选择器重定义）
+// 组件里直接用 var(--text-primary) 等，自动适配明暗
+// ============================================
+:root {
+  --text-primary: #{$text-primary};
+  --text-regular: #{$text-regular};
+  --text-secondary: #{$text-secondary};
+  --text-placeholder: #{$text-placeholder};
+  --text-on-dark: #{$text-on-dark};
+
+  --border-base: #{$border-base};
+  --border-light: #{$border-light};
+  --border-lighter: #{$border-lighter};
+  --border-extra-light: #{$border-extra-light};
+
+  --bg-base: #{$bg-base};
+  --bg-page: #{$bg-page};
+  --bg-card: #{$bg-card};
+  --bg-dark: #{$bg-dark};
+
+  --primary-color: #{$primary-color};
+  --primary-light: #{$primary-color-light};
+  --primary-lighter: #{$primary-color-lighter};
+  --primary-dark: #{$primary-color-dark};
+
+  --accent-color: #{$accent-color};
+  --accent-light: #{$accent-color-light};
+  --accent-lighter: #{$accent-color-lighter};
+  --accent-dark: #{$accent-color-dark};
+
+  --gold-color: #{$gold-color};
+  --gold-light: #{$gold-color-light};
+  --gold-lighter: #{$gold-color-lighter};
+  --gold-dark: #{$gold-color-dark};
+
+  --success-color: #{$success-color};
+  --warning-color: #{$warning-color};
+  --danger-color: #{$danger-color};
+  --info-color: #{$info-color};
+
+  --brand-color: #{$brand-color};
+  --brand-light: #{$brand-color-light};
+  --brand-lighter: #{$brand-color-lighter};
+
+  // 主题切换过渡
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// 暗色模式：切换主题按钮的 html.dark 触发
+html.dark {
+  --text-primary: #E5EAF2;
+  --text-regular: #C7D0DC;
+  --text-secondary: #8693A6;
+  --text-placeholder: #5C6B82;
+
+  --border-base: #1E2A3D;
+  --border-light: #243149;
+  --border-lighter: #2A3850;
+  --border-extra-light: #1A2335;
+
+  --bg-base: #0F1A2D;
+  --bg-page: #0B1424;
+  --bg-card: #15233D;
+  --bg-dark: #0A1525;
+
+  --primary-lighter: #1A2840;
+  --primary-light: #2A3F5F;
+  --brand-lighter: #1A2840;
+  --brand-light: #2A3F5F;
+
+  // 暗色下的卡片/弹窗
+  .el-card {
+    background: var(--bg-card) !important;
+    color: var(--text-regular) !important;
+    border: 1px solid var(--border-lighter) !important;
+  }
+  .el-table {
+    background: var(--bg-card) !important;
+    color: var(--text-regular) !important;
+    th {
+      background: var(--bg-base) !important;
+      color: var(--text-primary) !important;
+    }
+    td { background: var(--bg-card) !important; color: var(--text-regular) !important; }
+    tr:hover > td { background: color-mix(in srgb, var(--accent-color) 10%, var(--bg-card)) !important; }
+  }
+  .el-menu {
+    background: var(--bg-card) !important;
+    color: var(--text-regular) !important;
+  }
+  .el-menu-item, .el-sub-menu__title {
+    color: var(--text-regular) !important;
+  }
+  .el-menu-item.is-active {
+    background: var(--primary-lighter) !important;
+    color: var(--text-primary) !important;
+  }
+  .el-form-item__label { color: var(--text-regular) !important; }
+  .el-input__inner,
+  .el-textarea__inner {
+    background: var(--bg-base) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-base) !important;
+  }
+  .el-input__wrapper {
+    background: var(--bg-base) !important;
+    box-shadow: 0 0 0 1px var(--border-base) inset !important;
+  }
+  .el-card__header {
+    border-bottom-color: var(--border-lighter) !important;
+    color: var(--text-primary) !important;
+  }
+  .app-dialog-body { background: var(--bg-card) !important; }
+  .el-dialog__body { background: var(--bg-card) !important; color: var(--text-regular) !important; }
+  .el-dialog__footer { background: var(--bg-base) !important; border-top-color: var(--border-lighter) !important; }
+  .el-message-box { background: var(--bg-card) !important; color: var(--text-regular) !important; }
+  .el-message-box__content { background: var(--bg-card) !important; }
+  .el-message-box__btns { background: var(--bg-base) !important; border-top-color: var(--border-lighter) !important; }
+
+  // Header/Sidebar 在暗色下
+  .app-aside {
+    background: var(--bg-card) !important;
+    border-right-color: var(--border-lighter) !important;
+  }
+  .app-header {
+    background: var(--bg-card) !important;
+    border-bottom-color: var(--border-lighter) !important;
+  }
+}
+
+// 主题切换按钮 hover 提示
+.theme-toggle-btn {
+  transition: transform 0.3s $ease-out-back;
+  &:hover {
+    transform: rotate(20deg) scale(1.1);
+  }
+}
+
 // ----- 通用容器 -----
 .page-container {
   padding: $spacing-medium;
@@ -18,9 +158,499 @@
 // ----- el-table 美化 -----
 .el-table {
   border-radius: $border-radius-base;
+  th {
+    background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%) !important;
+    color: $text-primary !important;
+    font-weight: 600 !important;
+  }
+  tr {
+    transition: background-color 0.2s ease;
+    &:hover > td {
+      background-color: color-mix(in srgb, $accent-color 6%, transparent) !important;
+    }
+  }
 }
 
 // ----- el-card 默认 padding 调整 -----
 .el-card {
   border-radius: $border-radius-large;
+  border: none;
+  box-shadow: $shadow-light;
+  transition: box-shadow 0.3s $ease-out-soft, transform 0.3s $ease-out-soft;
+  &:hover {
+    box-shadow: 0 6px 24px rgba(10, 37, 64, 0.08);
+  }
+}
+
+// ============================================
+// 全局按钮 hover 动效（v2 深海蓝金）
+// ============================================
+.el-button {
+  transition: transform 0.2s $ease-out-soft,
+              box-shadow 0.2s $ease-out-soft,
+              background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease !important;
+
+  &:not(.is-disabled):not(.is-loading):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px color-mix(in srgb, currentColor 18%, transparent);
+  }
+  &:not(.is-disabled):not(.is-loading):active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px color-mix(in srgb, currentColor 12%, transparent);
+    transition-duration: 0.08s;
+  }
+}
+
+// 主按钮 hover 深海蓝阴影
+.el-button--primary,
+.el-button.el-button--primary {
+  &:not(.is-disabled):hover {
+    background: color-mix(in srgb, $primary-color 90%, white 0%) !important;
+    border-color: color-mix(in srgb, $primary-color 90%, white 0%) !important;
+    box-shadow: 0 6px 16px color-mix(in srgb, $primary-color 35%, transparent) !important;
+  }
+}
+
+// success 按钮 hover 薄荷青阴影
+.el-button--success {
+  &:not(.is-disabled):hover {
+    box-shadow: 0 6px 16px color-mix(in srgb, $accent-color 35%, transparent) !important;
+  }
+}
+
+// warning 按钮 hover 金色阴影
+.el-button--warning {
+  &:not(.is-disabled):hover {
+    box-shadow: 0 6px 16px color-mix(in srgb, $gold-color 35%, transparent) !important;
+  }
+}
+
+// 文字按钮 hover 加颜色变化
+.el-button.is-text,
+.el-button--text {
+  &:not(.is-disabled):hover {
+    background: color-mix(in srgb, currentColor 10%, transparent) !important;
+  }
+}
+
+// ============================================
+// 全局菜单 / 表格 / 卡片 / 列表项 hover 动效
+// ============================================
+.el-menu-item,
+.el-sub-menu__title {
+  transition: background-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease !important;
+  &:hover {
+    padding-left: 22px !important;
+  }
+}
+
+// ============================================
+// 全局输入框聚焦动效
+// ============================================
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  transition: box-shadow 0.25s $ease-out-soft, border-color 0.25s ease !important;
+}
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, $accent-color 25%, transparent) !important;
+}
+
+// ============================================
+// 全局链接 hover 动效
+// ============================================
+.el-link {
+  transition: color 0.2s ease, transform 0.2s ease !important;
+  &:not(.is-disabled):hover {
+    transform: translateX(2px);
+  }
+}
+
+// ============================================
+// 全局 Tag hover 微动效
+// ============================================
+.el-tag {
+  transition: transform 0.2s $ease-out-soft, box-shadow 0.2s ease !important;
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+// ============================================
+// 全局滚动条美化（深海蓝配色）
+// ============================================
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, $primary-color 25%, #d1d5db);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+  &:hover {
+    background: color-mix(in srgb, $primary-color 45%, #d1d5db);
+  }
+}
+
+// ============================================
+// 全局选中文字配色（薄荷青）
+// ============================================
+::selection {
+  background: color-mix(in srgb, $accent-color 30%, transparent);
+  color: $text-primary;
+}
+
+// ============================================
+// 全局路由切换进度条
+// ============================================
+.app-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  z-index: 9999;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    $accent-color 30%,
+    $accent-color-light 70%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-stripe 1.2s linear infinite, loading-bar-move 0.4s ease;
+}
+@keyframes loading-bar-move {
+  from { width: 0; opacity: 0; }
+  to { width: 100%; opacity: 1; }
+}
+
+// ============================================
+// 全局路由 transition 动画
+// ============================================
+.page-enter-active {
+  animation: fade-in-up 0.4s $ease-out-soft both;
+}
+.page-leave-active {
+  animation: fade-out-scale 0.2s $ease-out-soft both;
+}
+.page-fade-enter-active {
+  animation: fade-in 0.5s ease both;
+}
+.page-fade-leave-active {
+  animation: fade-out-scale 0.2s ease both;
+}
+.page-slide-up-enter-active {
+  animation: fade-in-up 0.45s $ease-out-soft both;
+}
+.page-slide-up-leave-active {
+  animation: fade-out-scale 0.2s $ease-out-soft both;
+}
+.page-zoom-enter-active {
+  animation: fade-in-scale 0.4s $ease-out-soft both;
+}
+.page-zoom-leave-active {
+  animation: fade-out-scale 0.2s $ease-out-soft both;
+}
+.page-slide-left-enter-active {
+  animation: slide-in-right 0.4s $ease-out-soft both;
+}
+.page-slide-left-leave-active {
+  animation: fade-out-scale 0.2s $ease-out-soft both;
+}
+.page-flip-enter-active {
+  animation: flip-in 0.5s $ease-out-soft both;
+  transform-origin: center center;
+}
+.page-flip-leave-active {
+  animation: fade-out-scale 0.2s ease both;
+}
+.page-slide-down-enter-active {
+  animation: fade-in-down 0.4s $ease-out-soft both;
+}
+.page-slide-down-leave-active {
+  animation: fade-out-scale 0.2s $ease-out-soft both;
+}
+
+// ============================================
+// 全局 ElMessageBox 样式覆盖（深海蓝金风格）
+// 不改 39 处 ElMessageBox 调用，只用 CSS 拦截
+// ============================================
+
+// 强制居中（EP 2.14 用 .el-overlay 包裹，之前的 __wrapper 已废弃）
+// 关键：.el-overlay 必须保持 fixed 全屏（不然遮罩只罩弹窗周围，弹窗错位）
+// 弹窗本身用 fixed + transform 居中
+.el-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 2000 !important;
+  background: rgba(10, 37, 64, 0.55) !important;
+  overflow: hidden !important;
+}
+.el-message-box {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  background: $bg-card !important;
+  box-shadow: 0 20px 60px rgba(10, 37, 64, 0.25), 0 4px 12px rgba(10, 37, 64, 0.12) !important;
+  padding: 0 !important;
+  border: none !important;
+  min-width: 380px !important;
+  max-width: 520px !important;
+  animation: msgbox-pop-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+// 隐藏默认 header（高度 0），改用自定义彩色渐变条 + 关闭按钮绝对定位到弹窗右上角
+.el-message-box__header {
+  padding: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+}
+.el-message-box__title {
+  display: none !important;
+}
+
+// 关闭按钮：绝对定位弹窗真正的右上角（不靠 header 定位，避免 height:0 导致错位）
+// 同时美化：圆形 + hover 红色 + 旋转 90°
+.el-message-box__headerbtn,
+.el-message-box__close {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 10 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;       // 圆形
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(10, 37, 64, 0.12) !important;
+  box-shadow: 0 2px 8px rgba(10, 37, 64, 0.12) !important;
+  color: $primary-color !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 18px !important;
+  transition: all 0.25s $ease-out-back !important;
+  cursor: pointer !important;
+  outline: none !important;
+  &:hover {
+    background: $danger-color !important;
+    border-color: $danger-color !important;
+    color: #fff !important;
+    transform: rotate(90deg) scale(1.1) !important;
+    box-shadow: 0 4px 12px rgba(255, 71, 87, 0.4) !important;
+  }
+}
+// close 图标本身的颜色和大小
+.el-message-box__close {
+  &::before {
+    font-size: 18px !important;
+    color: inherit !important;
+  }
+}
+
+// 自定义 header 装饰条（默认深海蓝渐变）
+.el-message-box::before {
+  content: '';
+  display: block;
+  height: 6px;
+  background: linear-gradient(90deg, $primary-color 0%, $accent-color 50%, $gold-color 100%);
+}
+
+// 内容区
+.el-message-box__content {
+  padding: 28px 32px 16px !important;
+  background: $bg-card;
+}
+.el-message-box__container {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 16px !important;
+}
+.el-message-box__status {
+  font-size: 32px !important;
+  margin-top: -2px !important;
+  // 按状态着色
+  &.el-message-box-icon--info,
+  &.el-message-box-icon--question {
+    color: $accent-color !important;
+  }
+  &.el-message-box-icon--warning {
+    color: $gold-color !important;
+  }
+  &.el-message-box-icon--error {
+    color: $danger-color !important;
+  }
+  &.el-message-box-icon--success {
+    color: $accent-color !important;
+  }
+}
+.el-message-box__message {
+  font-size: 15px !important;
+  color: $text-primary !important;
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  p { margin: 0 !important; }
+}
+
+// footer（按钮区）
+.el-message-box__btns {
+  padding: 14px 32px 22px !important;
+  background: $bg-base !important;
+  border-top: 1px solid $border-light;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  .el-button {
+    padding: 10px 22px !important;
+    border-radius: 10px !important;
+    font-weight: 500 !important;
+    min-width: 88px;
+  }
+  .el-button--primary {
+    background: linear-gradient(135deg, $primary-color 0%, $primary-color-light 100%) !important;
+    border-color: $primary-color !important;
+    color: white !important;
+    &:hover {
+      box-shadow: 0 6px 16px color-mix(in srgb, $primary-color 35%, transparent) !important;
+    }
+  }
+}
+
+// 错误类型特殊背景
+.el-message-box--error {
+  .el-message-box__status {
+    background: rgba(255, 71, 87, 0.1) !important;
+    color: $danger-color !important;
+    border-radius: 50% !important;
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// 警告类型特殊背景
+.el-message-box--warning {
+  .el-message-box__status {
+    background: rgba(255, 215, 0, 0.15) !important;
+    color: $gold-color-dark !important;
+    border-radius: 50% !important;
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// 成功类型特殊背景
+.el-message-box--success {
+  .el-message-box__status {
+    background: rgba(0, 212, 170, 0.12) !important;
+    color: $accent-color !important;
+    border-radius: 50% !important;
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// info 类型
+.el-message-box--info {
+  .el-message-box__status {
+    background: rgba(10, 37, 64, 0.1) !important;
+    color: $primary-color !important;
+    border-radius: 50% !important;
+    width: 48px !important;
+    height: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+// 遮罩颜色（不磨砂，干净半透明黑）
+.v-modal {
+  background: rgba(10, 37, 64, 0.55) !important;
+}
+
+// ============================================
+// 全局清理：禁止任何 backdrop-filter（用户报修：整页被磨砂）
+// 这是防御性 reset，确保没有任何遗留 class 加磨砂
+// ============================================
+.el-overlay,
+.el-message-box,
+.el-dialog,
+.glass-modal,
+.dark-modal,
+.logout-dialog,
+.logout-content,
+.btn-cancel,
+.app-dialog,
+.app-dialog-header,
+.app-dialog-icon {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@keyframes msgbox-pop-in {
+  0% { opacity: 0; transform: scale(0.85) translateY(-10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+// ============================================
+// 全局 ElMessage 顶部提示（深海蓝风）
+// ============================================
+.el-message {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  padding: 12px 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 8px 24px rgba(10, 37, 64, 0.15) !important;
+
+  &.el-message--success { background: linear-gradient(135deg, $accent-color 0%, $accent-color-dark 100%) !important; color: white !important; }
+  &.el-message--warning { background: linear-gradient(135deg, $gold-color 0%, $gold-color-dark 100%) !important; color: $text-primary !important; }
+  &.el-message--error   { background: linear-gradient(135deg, $danger-color 0%, darken($danger-color, 10%) 100%) !important; color: white !important; }
+  &.el-message--info    { background: linear-gradient(135deg, $primary-color 0%, $primary-color-light 100%) !important; color: white !important; }
+}
+
+// ============================================
+// 全局 ElNotification 通知（深海蓝风）
+// ============================================
+.el-notification {
+  border-radius: 12px !important;
+  border: none !important;
+  box-shadow: 0 10px 30px rgba(10, 37, 64, 0.18) !important;
+  overflow: hidden;
+  .el-notification__title {
+    font-weight: 600 !important;
+    color: $text-primary !important;
+  }
+  .el-notification__content {
+    color: $text-regular !important;
+  }
+  // 左侧色条按类型
+  &.el-notification--success { border-left: 4px solid $accent-color !important; }
+  &.el-notification--warning { border-left: 4px solid $gold-color !important; }
+  &.el-notification--error   { border-left: 4px solid $danger-color !important; }
+  &.el-notification--info    { border-left: 4px solid $primary-color !important; }
 }

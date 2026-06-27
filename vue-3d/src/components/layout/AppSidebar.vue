@@ -106,8 +106,10 @@ const activeMenu = computed(() => route.path)
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;  // 容器不滚动，只让菜单区滚
 }
 .sidebar-logo {
+  flex-shrink: 0;  // logo 不被压缩
   height: $header-height;
   display: flex;
   align-items: center;
@@ -127,9 +129,28 @@ const activeMenu = computed(() => route.path)
 :deep(.el-menu) {
   border-right: none;
   flex: 1;
+  // 菜单区独立滚动（菜单多时滚动显示）
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  // 滚动条美化（继承全局深海蓝配色）
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, $primary-color 20%, transparent);
+    border-radius: 3px;
+    &:hover { background: color-mix(in srgb, $primary-color 40%, transparent); }
+  }
 }
 :deep(.el-menu-item.is-active) {
-  background: $brand-color-light !important;
-  border-right: 3px solid $brand-color;
+  background: $brand-color-lighter !important;
+  border-right: 3px solid $accent-color !important;
+  color: $primary-color !important;
+  font-weight: 600;
+}
+:deep(.el-sub-menu .el-menu-item.is-active) {
+  border-right: none !important;
+  background: color-mix(in srgb, $accent-color 10%, transparent) !important;
+  color: $accent-color-dark !important;
 }
 </style>

@@ -84,7 +84,14 @@ const statusTagType = (s: number) => {
               <el-tag size="small" :type="statusTagType(row.status)">{{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="leaderId" label="负责人" width="100" />
+          <el-table-column label="负责人" width="120">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.leaderName" :content="`学号：${row.leaderId}`" placement="top">
+                <span class="leader-name">{{ row.leaderName }}</span>
+              </el-tooltip>
+              <span v-else class="leader-id">{{ row.leaderId }}</span>
+            </template>
+          </el-table-column>
           <el-table-column label="开始日期" width="120">
             <template #default="{ row }">{{ formatDate(row.startDate, 'YYYY-MM-DD') }}</template>
           </el-table-column>
@@ -114,5 +121,14 @@ export default { name: 'AdminProjectManagePage' }
 <style lang="scss" scoped>
 .admin-project-manage-page {
   padding: 0;
+}
+.leader-name {
+  color: $text-primary;
+  font-weight: 500;
+}
+.leader-id {
+  color: $text-secondary;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
 }
 </style>

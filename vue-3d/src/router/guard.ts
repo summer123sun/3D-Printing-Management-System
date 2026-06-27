@@ -7,9 +7,31 @@
 import type { NavigationGuardWithThis } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import NProgress from 'nprogress'
-import 'nprogress/nprogress.css'
 
-NProgress.configure({ showSpinner: false })
+NProgress.configure({
+  showSpinner: false,    // 不显示右上角转圈
+  trickleSpeed: 200,     // 进度递增速度
+  minimum: 0.08,         // 初始进度
+  easing: 'ease',        // 动画曲线
+  speed: 350,            // 动画时长
+})
+
+// 动态注入 NProgress 紫色样式（替代默认 import 'nprogress/nprogress.css'，避免蓝绿撞色）
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style')
+  style.textContent = `
+    #nprogress { pointer-events: none; }
+    #nprogress .bar {
+      background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%) !important;
+      height: 3px !important;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+    }
+    #nprogress .peg {
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.7), 0 0 6px rgba(124, 58, 237, 0.5) !important;
+    }
+  `
+  document.head.appendChild(style)
+}
 
 export const setupRouterGuard: NavigationGuardWithThis<undefined> = async function (to) {
   NProgress.start()

@@ -8,6 +8,10 @@ import router from './router'
 // 全局样式（注意：要在 router 之前，让首次渲染就有样式）
 import '@/styles/index.scss'
 
+// Element Plus 主题色覆盖（v2 紫系品牌色）
+import { setElementPlusTheme } from '@/styles/element-theme'
+setElementPlusTheme()
+
 // 全局指令
 import { setupDebounceClickDirective } from '@/directives/debounce-click'
 

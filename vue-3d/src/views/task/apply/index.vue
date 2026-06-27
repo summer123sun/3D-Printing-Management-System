@@ -36,11 +36,8 @@ const submitting = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const handleSubmit = async () => {
-  console.log('[提交] handleSubmit 触发', { stlPath: stlPath.value, title: form.title, modelName: form.modelName })
-
   // ✅ 所有校验失败都用 alert 弹窗（最显眼，绝不漏看）
   if (!stlPath.value) {
-    console.warn('[提交] 校验失败：未上传 STL')
     await ElMessageBox.alert(
       '<div style="text-align:center;padding:8px 0">📁 请先上传 STL 文件再提交</div>',
       '提示',
@@ -49,7 +46,6 @@ const handleSubmit = async () => {
     return
   }
   if (!form.title || !form.modelName) {
-    console.warn('[提交] 校验失败：标题/模型名为空')
     await ElMessageBox.alert(
       '<div style="text-align:center;padding:8px 0">📝 请填写任务标题和模型名称</div>',
       '提示',
@@ -61,10 +57,7 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     form.stlFilePath = stlPath.value
-    console.log('[提交] 调用 store.apply, payload=', JSON.stringify(form))
     const taskId = await taskStore.apply(form)
-    console.log('[提交] store.apply 成功, taskId=', taskId)
-
     // ✅ 成功后：先弹醒目的居中弹窗 + 右上角通知（双保险，避免漏看）
     ElNotification.success({
       title: '✅ 提交成功',

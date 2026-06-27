@@ -5,49 +5,134 @@
  * 状态=3 排队中 + 4 打印中
  * 行内操作：分配打印机 / 开始打印 / 完成打印
  */
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useTaskStore } from '@/stores/task'
+import { usePrinterStore } from '@/stores/printer'
 import { TaskStatus } from '@/types/task'
 
 const router = useRouter()
 const taskStore = useTaskStore()
+const printerStore = usePrinterStore()
 
 const fetchData = async () => {
   await taskStore.fetchQueue({ page: 1, size: 50 })
+  // 加载可用打印机（不传参=全部，让后端过滤空闲）
+  await printerStore.fetchAvailable()
 }
 onMounted(fetchData)
 
 const assignDialogVisible = ref(false)
-const assignForm = reactive({ taskId: '', printerId: '' })
+const assignForm = reactive({ taskId: '', printerId: '', printerName: '' })
+const submittingAssign = ref(false)
 
 const finishDialogVisible = ref(false)
 const finishForm = reactive({ taskId: '', actualWeight: 0, actualTime: 0, qualityScore: 5 })
+const submittingFinish = ref(false)
+
+/** 当前选中的打印机详情 */
+const selectedPrinter = computed(() => {
+  return printerStore.availableList.find(p => p.printerId === assignForm.printerId)
+})
 
 const openAssign = (taskId: string) => {
   assignForm.taskId = taskId
   assignForm.printerId = ''
+  assignForm.printerName = ''
   assignDialogVisible.value = true
 }
 
 const handleAssign = async () => {
-  if (!assignForm.printerId.trim()) {
-    ElMessage.warning('请输入打印机编号')
+  if (!assignForm.printerId) {
+    ElNotification.warning('请选择打印机')
     return
   }
-  await taskStore.assignPrinter(assignForm.taskId, { printerId: assignForm.printerId })
-  ElMessage.success('已分配打印机')
-  assignDialogVisible.value = false
-  fetchData()
+  submittingAssign.value = true
+  try {
+    await taskStore.assignPrinter(assignForm.taskId, { printerId: assignForm.printerId })
+    // ✅ 关闭弹窗
+    assignDialogVisible.value = false
+
+    // ✅ 弹醒目的成功弹窗（不依赖 await，用户可以"关闭"先看表格变化）
+    ElNotification.success({
+      title: '✅ 分配成功',
+      message: `任务 ${assignForm.taskId} 已分配到 ${assignForm.printerId}`,
+      duration: 4000,
+    })
+
+    // ✅ 刷新列表（强制重新拉取）
+    await fetchData()
+    // ✅ 最后弹可视化大弹窗（用 setTimeout 延迟 200ms 让列表先刷新）
+    setTimeout(async () => {
+      try {
+        await ElMessageBox.alert(
+          `<div class="assign-success">
+            <div class="success-icon-wrap">
+              <div class="success-icon-circle">
+                <svg viewBox="0 0 52 52" class="success-icon-svg">
+                  <circle class="success-icon-circle-bg" cx="26" cy="26" r="25" fill="none"/>
+                  <path class="success-icon-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+              </div>
+            </div>
+            <h2 class="success-title">分配成功！</h2>
+            <p class="success-subtitle">任务 <b>${assignForm.taskId}</b> 已分配到 <b style="color:#409eff">${assignForm.printerId}</b></p>
+            <p style="color:#909399;font-size:13px;margin:0">📋 你可以现在点"开始"按钮启动打印</p>
+          </div>`,
+          '',
+          {
+            confirmButtonText: '好的',
+            type: 'success',
+            center: true,
+            dangerouslyUseHTMLString: true,
+            showClose: true,
+          }
+        )
+      } catch {}
+    }, 200)
+  } catch (e: any) {
+    console.error('[分配打印机] 失败：', e)
+    // 错误码 1502 = 打印机占用，1501 = 打印机不存在
+    const msg = e?.message || '请检查后端服务'
+    const isBusy = msg.includes('正在打印') || msg.includes('占用')
+    const isNotFound = msg.includes('不存在')
+    ElNotification.error({
+      title: '❌ 分配失败',
+      message: isBusy
+        ? `${msg}（请选其他空闲的打印机）`
+        : isNotFound
+        ? `打印机不存在（请刷新后重试）`
+        : msg,
+      duration: 6000,
+    })
+  } finally {
+    submittingAssign.value = false
+  }
 }
 
 const handleStart = async (taskId: string) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认开始打印任务 <b>${taskId}</b> 吗？<br><br><span style="color:#909399;font-size:13px">打印开始后打印机状态会切换为"打印中"</span>`,
+      '确认开始',
+      {
+        type: 'warning',
+        center: true,
+        confirmButtonText: '✓ 开始打印',
+        cancelButtonText: '再等等',
+        dangerouslyUseHTMLString: true,
+      }
+    )
+  } catch {
+    return
+  }
   await taskStore.startPrint(taskId)
-  ElMessage.success('已开始打印')
+  ElNotification.success('已开始打印')
   fetchData()
 }
 
@@ -61,17 +146,26 @@ const openFinish = (taskId: string) => {
 
 const handleFinish = async () => {
   if (finishForm.actualWeight <= 0 || finishForm.actualTime <= 0) {
-    ElMessage.warning('实际耗材和耗时必须大于 0')
+    ElNotification.warning('实际耗材和耗时必须大于 0')
     return
   }
-  await taskStore.finishPrint(finishForm.taskId, {
-    actualWeight: finishForm.actualWeight,
-    actualTime: finishForm.actualTime,
-    qualityScore: finishForm.qualityScore,
-  })
-  ElMessage.success('已完成（已自动扣库存 + 归档作品库）')
-  finishDialogVisible.value = false
-  fetchData()
+  submittingFinish.value = true
+  try {
+    await taskStore.finishPrint(finishForm.taskId, {
+      actualWeight: finishForm.actualWeight,
+      actualTime: finishForm.actualTime,
+      qualityScore: finishForm.qualityScore,
+    })
+    ElNotification.success({
+      title: '✅ 打印完成',
+      message: '已自动扣减库存 + 归档作品库',
+      duration: 4000,
+    })
+    finishDialogVisible.value = false
+    fetchData()
+  } finally {
+    submittingFinish.value = false
+  }
 }
 </script>
 
@@ -100,11 +194,19 @@ const handleFinish = async () => {
               <StatusTag status-type="task" :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="applicantId" label="申请人" width="100" />
-          <el-table-column prop="materialType" label="材料" width="80" />
-          <el-table-column prop="printerId" label="打印机" width="100">
+          <el-table-column label="申请人" width="110">
             <template #default="{ row }">
-              <el-tag v-if="row.printerId" size="small">{{ row.printerId }}</el-tag>
+              <el-tooltip :content="`学号：${row.applicantId}`" placement="top">
+                <span>{{ row.applicantName || row.applicantId }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column prop="materialType" label="材料" width="80" />
+          <el-table-column label="打印机" width="140">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.printerId" :content="`编号：${row.printerId}`" placement="top">
+                <el-tag size="small">{{ row.printerModel || row.printerId }}</el-tag>
+              </el-tooltip>
               <el-tag v-else type="warning" size="small">未分配</el-tag>
             </template>
           </el-table-column>
@@ -122,22 +224,55 @@ const handleFinish = async () => {
       </template>
     </el-card>
 
-    <!-- 分配打印机弹窗 -->
-    <el-dialog v-model="assignDialogVisible" title="分配打印机" width="400px">
+    <!-- 分配打印机弹窗（下拉选择） -->
+    <AppDialog v-model="assignDialogVisible" title="分配打印机" icon="Printer" width="520px" @confirm="handleAssign">
       <el-form :model="assignForm" label-width="100px">
-        <el-form-item label="打印机编号">
-          <el-input v-model="assignForm.printerId" placeholder="如 P-001 / P-002 / P-003" />
+        <el-form-item label="任务编号">
+          <el-tag size="large" type="info">{{ assignForm.taskId }}</el-tag>
+        </el-form-item>
+        <el-form-item label="选择打印机" required>
+          <el-select
+            v-model="assignForm.printerId"
+            placeholder="请选择一台状态正常的打印机"
+            filterable
+            style="width: 100%"
+            :loading="printerStore.loading"
+          >
+            <el-option
+              v-for="p in printerStore.availableList"
+              :key="p.printerId"
+              :value="p.printerId"
+              :label="`${p.printerId} - ${p.model}（${p.brand || '未知品牌'}）`"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span style="font-weight: 500">{{ p.printerId }} - {{ p.model }}</span>
+                <span style="font-size: 12px; color: #909399">
+                  {{ p.location || '未指定位置' }} · 累计 {{ p.totalPrintHours }}h
+                </span>
+              </div>
+            </el-option>
+          </el-select>
+          <div v-if="printerStore.availableList.length === 0" class="empty-tip">
+            ⚠️ 当前没有【正常】状态的打印机，请先在"打印机管理"里添加/恢复
+          </div>
+        </el-form-item>
+        <el-form-item v-if="selectedPrinter" label="打印机详情">
+          <el-descriptions :column="1" size="small" border>
+            <el-descriptions-item label="品牌">{{ selectedPrinter.brand || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="喷嘴">{{ selectedPrinter.nozzleSize }}mm</el-descriptions-item>
+            <el-descriptions-item label="成型尺寸">{{ selectedPrinter.buildVolume || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="累计">{{ selectedPrinter.totalPrintHours }} 小时 / {{ selectedPrinter.location || '未指定' }}</el-descriptions-item>
+          </el-descriptions>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAssign">确认分配</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 完成打印弹窗 -->
-    <el-dialog v-model="finishDialogVisible" title="完成打印" width="400px">
+    <AppDialog v-model="finishDialogVisible" title="完成打印" icon="Check" width="520px" @confirm="handleFinish">
       <el-form :model="finishForm" label-width="100px">
+        <el-form-item label="任务编号">
+          <el-tag size="large" type="info">{{ finishForm.taskId }}</el-tag>
+        </el-form-item>
         <el-form-item label="实际耗材 (g)" required>
           <el-input-number v-model="finishForm.actualWeight" :min="0.01" :precision="2" style="width: 100%" />
         </el-form-item>
@@ -151,16 +286,66 @@ const handleFinish = async () => {
           完成后会自动：扣减库存 + 累计打印次数 + 归档作品库
         </el-alert>
       </el-form>
-      <template #footer>
-        <el-button @click="finishDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleFinish">确认完成</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .admin-task-active-page {
   padding: 0;
+}
+.empty-tip {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #e6a23c;
+}
+</style>
+
+<!-- 分配成功弹窗全局样式 -->
+<style lang="scss">
+.assign-success {
+  text-align: center;
+  padding: 4px 0;
+  .success-icon-wrap {
+    display: flex; justify-content: center; margin-bottom: 20px;
+  }
+  .success-icon-circle {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #67c23a 0%, #5daf34 100%);
+    border-radius: 50%;
+    box-shadow: 0 8px 24px rgba(103, 194, 58, 0.3);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .success-icon-svg {
+    width: 40px; height: 40px;
+    stroke: white; stroke-width: 4;
+    stroke-linecap: round; stroke-linejoin: round;
+    fill: none;
+  }
+  .success-icon-circle-bg {
+    stroke: rgba(255, 255, 255, 0.4);
+    stroke-width: 2;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: assign-success-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+  }
+  .success-icon-check {
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: assign-success-check 0.4s 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+  }
+  @keyframes assign-success-circle { to { stroke-dashoffset: 0; } }
+  @keyframes assign-success-check { to { stroke-dashoffset: 0; } }
+  .success-title {
+    margin: 0 0 8px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #303133;
+  }
+  .success-subtitle {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #606266;
+  }
 }
 </style>

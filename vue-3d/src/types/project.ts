@@ -86,6 +86,8 @@ export interface Project {
   projectName: string
   projectType: ProjectType
   leaderId: string
+  /** 负责人姓名（v2：后端 list 接口从 member 表 JOIN 注入，优先展示） */
+  leaderName?: string
   startDate: string
   endDate?: string
   actualEndDate?: string

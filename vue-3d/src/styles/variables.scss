@@ -1,33 +1,60 @@
 // ============================================
 // SCSS 变量（通过 vite.config.ts 全局注入）
 // 所有组件的 <style lang="scss"> 都可直接用这些变量，无需 @use
+//
+// 注意：暗色模式用的是 CSS 变量（`--text-primary` 等），不是 SCSS 变量。
+// SCSS 变量在编译时确定，html.dark 重定义不生效。
 // ============================================
 
-// ----- 主题色 -----
-$primary-color: #409eff;          // 主色（Element Plus 默认蓝）
-$success-color: #67c23a;
-$warning-color: #e6a23c;
-$danger-color: #f56c6c;
-$info-color: #909399;
+// ----- 主题色（v2 深海蓝金 — SaaS / 金融科技 / 企业级）-----
+$primary-color: #0A2540;          // 深海蓝（主色）
+$primary-color-light: #1E3A5F;    // 深海蓝浅
+$primary-color-lighter: #E8EEF5;  // 深海蓝更浅（hover 背景）
+$primary-color-dark: #061a2e;     // 深海蓝深
+
+$accent-color: #00D4AA;           // 薄荷青
+$accent-color-light: #4FE5C7;
+$accent-color-lighter: #E0FAF4;
+$accent-color-dark: #00A88A;
+
+$gold-color: #FFD700;             // 金色
+$gold-color-light: #FFE44D;
+$gold-color-lighter: #FFF9D6;
+$gold-color-dark: #CCB000;
+
+$success-color: #00D4AA;
+$warning-color: #FFD700;
+$danger-color: #FF4757;
+$info-color: #6B7C93;
+
+$primary-legacy: #0A2540;
 
 // ----- 业务色 -----
-$brand-color: #1e88e5;            // 社团品牌色（3D 打印的蓝）
-$brand-color-light: #e3f2fd;
+$brand-color: #0A2540;
+$brand-color-light: #1E3A5F;
+$brand-color-lighter: #E8EEF5;
+$brand-accent: #00D4AA;
+$brand-gold: #FFD700;
+$brand-gradient: linear-gradient(135deg, #0A2540 0%, #1E3A5F 100%);
+$brand-gradient-accent: linear-gradient(135deg, #00D4AA 0%, #4FE5C7 100%);
+$brand-gradient-gold: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
 
-// ----- 中性色 -----
-$text-primary: #303133;
-$text-regular: #606266;
-$text-secondary: #909399;
-$text-placeholder: #c0c4cc;
+// ----- 中性色（亮色默认值）-----
+$text-primary: #0A2540;
+$text-regular: #2C3E50;
+$text-secondary: #6B7C93;
+$text-placeholder: #9AA8BC;
+$text-on-dark: #FFFFFF;
 
-$border-base: #dcdfe6;
-$border-light: #e4e7ed;
-$border-lighter: #ebeef5;
-$border-extra-light: #f2f6fc;
+$border-base: #DCE3EC;
+$border-light: #E8EEF5;
+$border-lighter: #F0F4F8;
+$border-extra-light: #F6F9FC;
 
-$bg-base: #f5f7fa;
-$bg-page: #f0f2f5;
-$bg-card: #ffffff;
+$bg-base: #F6F9FC;
+$bg-page: #F0F4F8;
+$bg-card: #FFFFFF;
+$bg-dark: #0A2540;
 
 // ----- 字体 -----
 $font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
@@ -59,44 +86,109 @@ $header-height: 60px;
 $sidebar-width: 220px;
 $sidebar-collapsed-width: 64px;
 
-// ----- 状态色（任务/项目等用）-----
-$status-pending: #909399;       // 待审批
-$status-approved: #67c23a;      // 已通过
-$status-rejected: #f56c6c;      // 已驳回
-$status-queued: #e6a23c;        // 排队中
-$status-printing: #409eff;      // 打印中
-$status-done: #67c23a;          // 已完成
-$status-cancelled: #c0c4cc;     // 已取消
+// ----- 状态色 -----
+$status-pending: #909399;
+$status-approved: #67c23a;
+$status-rejected: #f56c6c;
+$status-queued: #e6a23c;
+$status-printing: #409eff;
+$status-done: #67c23a;
+$status-cancelled: #c0c4cc;
 
 // ============================================
-// 响应式断点（与 Element Plus 默认断点对齐）
+// 响应式断点
 // ============================================
-$breakpoint-xs: 480px;   // 手机
-$breakpoint-sm: 768px;   // 平板
-$breakpoint-md: 992px;   // 小桌面
-$breakpoint-lg: 1200px;  // 桌面
-$breakpoint-xl: 1920px;  // 大屏
+$breakpoint-xs: 480px;
+$breakpoint-sm: 768px;
+$breakpoint-md: 992px;
+$breakpoint-lg: 1200px;
+$breakpoint-xl: 1920px;
 
-// 媒体查询 mixin（用 SCSS @content 在不同断点注入样式）
-@mixin xs {
-  @media (max-width: #{$breakpoint-xs - 1px}) { @content; }
+@mixin xs { @media (max-width: #{$breakpoint-xs - 1px}) { @content; } }
+@mixin sm { @media (max-width: #{$breakpoint-sm - 1px}) { @content; } }
+@mixin md { @media (max-width: #{$breakpoint-md - 1px}) { @content; } }
+@mixin lg { @media (max-width: #{$breakpoint-lg - 1px}) { @content; } }
+@mixin mobile { @include sm { @content; } }
+@mixin desktop { @media (min-width: #{$breakpoint-sm}) { @content; } }
+
+// ============================================
+// 动画 mixin
+// ============================================
+$ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+$ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+$ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+@mixin hover-lift {
+  transition: transform 0.25s $ease-out-soft, box-shadow 0.25s $ease-out-soft, background-color 0.2s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.18);
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.12);
+  }
 }
-@mixin sm {
-  @media (max-width: #{$breakpoint-sm - 1px}) { @content; }
+@mixin hover-lift-sm {
+  transition: transform 0.2s $ease-out-soft, box-shadow 0.2s $ease-out-soft;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: $shadow-light;
+  }
 }
-@mixin md {
-  @media (max-width: #{$breakpoint-md - 1px}) { @content; }
-}
-@mixin lg {
-  @media (max-width: #{$breakpoint-lg - 1px}) { @content; }
+@mixin hover-darken($color, $amount: 8%) {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  &:hover {
+    color: color-mix(in srgb, $color calc(100% - #{$amount}), black);
+  }
 }
 
-// 移动端判断（用 @include sm 即可）
-@mixin mobile {
-  @include sm { @content; }
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-// 桌面端（>= sm）
-@mixin desktop {
-  @media (min-width: #{$breakpoint-sm}) { @content; }
+@keyframes fade-in-scale {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes flip-in {
+  from { opacity: 0; transform: perspective(800px) rotateY(-12deg); }
+  to { opacity: 1; transform: perspective(800px) rotateY(0); }
+}
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.85); }
+  60% { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes fade-out-scale {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes progress-stripe {
+  from { background-position: 0 0; }
+  to { background-position: 40px 0; }
+}
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }

@@ -5,6 +5,7 @@ import com.printclub.common.annotation.RequireRole;
 import com.printclub.common.result.PageResult;
 import com.printclub.common.result.Result;
 import com.printclub.common.util.SecurityContext;
+import com.printclub.module.artwork.dto.ArtworkCreateDTO;
 import com.printclub.module.artwork.dto.ArtworkQuery;
 import com.printclub.module.artwork.dto.ArtworkUpdateDTO;
 import com.printclub.module.artwork.entity.Artwork;
@@ -55,6 +56,13 @@ public class ArtworkController {
     @RequireAuth
     public Result<Artwork> detail(@PathVariable("id") Integer id) {
         return Result.success(artworkService.detail(id));
+    }
+
+    @Operation(summary = "登记作品（从已完结任务创建）")
+    @PostMapping
+    @RequireAuth
+    public Result<Integer> create(@RequestBody @Valid ArtworkCreateDTO dto) {
+        return Result.success(artworkService.create(dto, SecurityContext.getCurrentUserId()));
     }
 
     @Operation(summary = "更新作品（仅作者）")

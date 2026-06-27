@@ -7,6 +7,7 @@ import com.printclub.common.result.PageResult;
 import com.printclub.common.result.ResultCode;
 import com.printclub.common.util.PageUtils;
 import com.printclub.common.util.SecurityContext;
+import com.printclub.module.log.service.LogService;
 import com.printclub.module.project.dto.*;
 import com.printclub.module.project.entity.Project;
 import com.printclub.module.project.entity.ProjectFile;
@@ -49,6 +50,8 @@ public class ProjectServiceImpl implements ProjectService {
     private final ProjectProgressMapper progressMapper;
     private final ProjectFileMapper fileMapper;
     private final TaskMapper taskMapper;
+    private final com.printclub.module.user.mapper.MemberMapper memberInfoMapper;
+    private final LogService logService;
 
     // ============================================
     // CRUD
@@ -63,7 +66,9 @@ public class ProjectServiceImpl implements ProjectService {
         Project project = new Project();
         project.setProjectName(dto.getProjectName());
         project.setProjectType(dto.getProjectType());
-        project.setLeaderId(dto.getLeaderId() != null ? dto.getLeaderId() : studentId);
+        project.setLeaderId(
+            (dto.getLeaderId() != null && !dto.getLeaderId().isBlank())
+                ? dto.getLeaderId() : studentId);
         project.setStartDate(dto.getStartDate());
         project.setEndDate(dto.getEndDate());
         project.setBudget(dto.getBudget());
@@ -110,6 +115,8 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         log.info("项目创建成功：projectId={}, name={}", project.getProjectId(), project.getProjectName());
+        logService.recordCurrent("project.create", "project", String.valueOf(project.getProjectId()),
+                "创建项目：「" + project.getProjectName() + "」");
         return project.getProjectId();
     }
 
@@ -139,7 +146,33 @@ public class ProjectServiceImpl implements ProjectService {
         }
 
         w.orderByDesc(Project::getCreateTime);
-        return PageUtils.toResult(projectMapper.selectPage(page, w));
+        PageResult<Project> result = PageUtils.toResult(projectMapper.selectPage(page, w));
+
+        // v2：批量填充负责人姓名（前端表格"负责人"列展示用，跟 AppHeader 显示姓名一致）
+        fillLeaderNames(result.getList());
+
+        return result;
+    }
+
+    /**
+     * v2 优化：批量把 Project.leaderId 翻译成 leaderName（前端表格展示用）
+     * 类似 fillMemberNames() / fillStageResponsibleNames() 的批量翻译模式
+     */
+    private void fillLeaderNames(List<Project> projects) {
+        if (projects == null || projects.isEmpty()) return;
+        List<String> ids = projects.stream()
+                .map(Project::getLeaderId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) return;
+        List<com.printclub.module.user.entity.Member> infos = memberInfoMapper.selectBatchIds(ids);
+        java.util.Map<String, String> id2name = infos.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.printclub.module.user.entity.Member::getStudentId,
+                        com.printclub.module.user.entity.Member::getName,
+                        (a, b) -> a));
+        projects.forEach(p -> p.setLeaderName(id2name.get(p.getLeaderId())));
     }
 
     @Override
@@ -152,10 +185,16 @@ public class ProjectServiceImpl implements ProjectService {
         List<ProjectMember> members = memberMapper.selectList(
                 new LambdaQueryWrapper<ProjectMember>().eq(ProjectMember::getProjectId, projectId));
 
+        // 关联查询真实姓名（前端成员表需要显示）
+        fillMemberNames(members);
+
         List<ProjectProgress> stages = progressMapper.selectList(
                 new LambdaQueryWrapper<ProjectProgress>()
                         .eq(ProjectProgress::getProjectId, projectId)
                         .orderByAsc(ProjectProgress::getStageOrder));
+
+        // 阶段负责人姓名
+        fillStageResponsibleNames(stages);
 
         List<ProjectFile> files = fileMapper.selectList(
                 new LambdaQueryWrapper<ProjectFile>().eq(ProjectFile::getProjectId, projectId));
@@ -164,6 +203,35 @@ public class ProjectServiceImpl implements ProjectService {
                 new LambdaQueryWrapper<PrintTask>().eq(PrintTask::getProjectId, projectId));
 
         return new ProjectDetailVO(project, members, stages, files, relatedTasks);
+    }
+
+    private void fillMemberNames(List<ProjectMember> members) {
+        if (members == null || members.isEmpty()) return;
+        List<String> ids = members.stream().map(ProjectMember::getMemberId).toList();
+        List<com.printclub.module.user.entity.Member> infos = memberInfoMapper.selectBatchIds(ids);
+        java.util.Map<String, String> id2name = infos.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.printclub.module.user.entity.Member::getStudentId,
+                        com.printclub.module.user.entity.Member::getName,
+                        (a, b) -> a));
+        members.forEach(m -> m.setMemberName(id2name.get(m.getMemberId())));
+    }
+
+    private void fillStageResponsibleNames(List<ProjectProgress> stages) {
+        if (stages == null || stages.isEmpty()) return;
+        List<String> ids = stages.stream()
+                .map(ProjectProgress::getResponsibleId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (ids.isEmpty()) return;
+        List<com.printclub.module.user.entity.Member> infos = memberInfoMapper.selectBatchIds(ids);
+        java.util.Map<String, String> id2name = infos.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.printclub.module.user.entity.Member::getStudentId,
+                        com.printclub.module.user.entity.Member::getName,
+                        (a, b) -> a));
+        stages.forEach(s -> s.setResponsibleName(id2name.get(s.getResponsibleId())));
     }
 
     @Override
@@ -193,6 +261,8 @@ public class ProjectServiceImpl implements ProjectService {
         project.setStatus(Project.STATUS_DONE);
         project.setActualEndDate(java.time.LocalDate.now());
         projectMapper.updateById(project);
+        logService.recordCurrent("project.complete", "project", String.valueOf(projectId),
+                "完成项目：「" + project.getProjectName() + "」");
     }
 
     @Override
@@ -202,6 +272,8 @@ public class ProjectServiceImpl implements ProjectService {
         project.setStatus(Project.STATUS_CANCELLED);
         project.setActualEndDate(java.time.LocalDate.now());
         projectMapper.updateById(project);
+        logService.recordCurrent("project.cancel", "project", String.valueOf(projectId),
+                "取消项目：「" + project.getProjectName() + "」");
     }
 
     // ============================================
@@ -228,6 +300,8 @@ public class ProjectServiceImpl implements ProjectService {
         pm.setContribution(dto.getContribution());
         pm.setStatus(Project.MEMBER_STATUS_ACTIVE);
         memberMapper.insert(pm);
+        logService.recordCurrent("project.addMember", "project", String.valueOf(projectId),
+                "添加成员：" + dto.getMemberId());
     }
 
     @Override
@@ -244,6 +318,8 @@ public class ProjectServiceImpl implements ProjectService {
                 new LambdaQueryWrapper<ProjectMember>()
                         .eq(ProjectMember::getProjectId, projectId)
                         .eq(ProjectMember::getMemberId, memberId));
+        logService.recordCurrent("project.removeMember", "project", String.valueOf(projectId),
+                "移除成员：" + memberId);
     }
 
     @Override
@@ -294,14 +370,16 @@ public class ProjectServiceImpl implements ProjectService {
     public void updateStageStatus(Integer projectId, Integer progressId, Integer status) {
         ProjectProgress stage = mustGetStage(projectId, progressId);
 
-        // 状态流转：0 → 1（写开始时间）；1 → 2（写结束时间）；其他不允许乱跳
-        if (status == Project.STAGE_STATUS_RUNNING && stage.getStatus() == Project.STAGE_STATUS_PENDING) {
+        // 允许任意状态切换：PENDING(0) / RUNNING(1) / DONE(2) 之间可互转
+        // 但首次进入 RUNNING 时写开始时间；首次进入 DONE 时写结束时间
+        if (status == Project.STAGE_STATUS_RUNNING && stage.getStartTime() == null) {
             stage.setStartTime(LocalDateTime.now());
-        } else if (status == Project.STAGE_STATUS_DONE && stage.getStatus() == Project.STAGE_STATUS_RUNNING) {
+        } else if (status == Project.STAGE_STATUS_DONE && stage.getEndTime() == null) {
             stage.setEndTime(LocalDateTime.now());
-        } else if (status != stage.getStatus()) {
-            throw new BusinessException(ResultCode.PROJECT_STATUS_INVALID,
-                    "阶段状态不允许从 " + stage.getStatus() + " 跳到 " + status);
+        } else if (status == Project.STAGE_STATUS_PENDING) {
+            // 重置为未开始时，清掉时间（让用户可以重新开始）
+            stage.setStartTime(null);
+            stage.setEndTime(null);
         }
         stage.setStatus(status);
         progressMapper.updateById(stage);

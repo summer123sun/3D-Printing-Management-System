@@ -44,8 +44,8 @@ const cancelLogout = () => {
     </div>
 
     <div class="header-right">
-      <el-tooltip content="切换主题">
-        <el-button text @click="appStore.toggleDark()">
+      <el-tooltip :content="appStore.isDark ? '切换到亮色' : '切换到暗色'">
+        <el-button text class="theme-toggle-btn" @click="appStore.toggleDark()">
           <el-icon :size="18">
             <component :is="appStore.isDark ? Sunny : Moon" />
           </el-icon>
@@ -58,7 +58,11 @@ const cancelLogout = () => {
             <el-icon><User /></el-icon>
           </el-avatar>
           <span class="user-name">{{ authStore.user?.name }}</span>
-          <span v-if="authStore.user" class="user-role">
+          <span v-if="authStore.user" class="user-role" :class="{
+            'role-staff': authStore.user.role === 2,
+            'role-member': authStore.user.role === 3,
+            'role-newbie': authStore.user.role >= 4,
+          }">
             {{ RoleText[authStore.user.role] }}
           </span>
         </div>
@@ -75,13 +79,13 @@ const cancelLogout = () => {
       </el-dropdown>
     </div>
 
-    <!-- 退出登录确认对话框 毛玻璃 -->
+    <!-- 退出登录确认对话框（不磨砂，干净半透明遮罩） -->
     <el-dialog
       v-model="logoutVisible"
       :close-on-click-modal="false"
       :show-close="false"
       width="400px"
-      modal-class="glass-modal"
+      modal-class="dark-modal"
       custom-class="logout-dialog"
       append-to-body
     >
@@ -139,11 +143,37 @@ const cancelLogout = () => {
 }
 .user-role {
   font-size: $font-size-small;
-  color: $text-secondary;
-  padding: 2px 6px;
-  background: $brand-color-light;
-  color: $brand-color;
-  border-radius: $border-radius-small;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, $gold-color 0%, $gold-color-light 100%);
+  color: $primary-color;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.35);
+  border: 1px solid color-mix(in srgb, $gold-color 60%, transparent);
+  transition: all 0.2s ease;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
+  }
+  // 普通成员用薄荷青
+  &.role-staff {
+    background: linear-gradient(135deg, $accent-color 0%, $accent-color-light 100%);
+    color: $primary-color;
+    box-shadow: 0 2px 6px rgba(0, 212, 170, 0.3);
+  }
+  &.role-member {
+    background: color-mix(in srgb, $primary-color 10%, transparent);
+    color: $primary-color;
+    box-shadow: none;
+    border-color: color-mix(in srgb, $primary-color 20%, transparent);
+  }
+  &.role-newbie {
+    background: $bg-base;
+    color: $text-secondary;
+    box-shadow: none;
+    border-color: $border-light;
+  }
 }
 
 // 响应式：按平台显示不同按钮
@@ -163,31 +193,22 @@ const cancelLogout = () => {
 </style>
 <!-- 全局非 scoped，确保 ElDialog 子组件生效 -->
 <style lang="scss">
-/* 毛玻璃遮罩层 */
-.glass-modal {
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  background: rgba(255, 255, 255, 0.25) !important;
-
-  html.dark & {
-    background: rgba(20, 20, 30, 0.4) !important;
-  }
+/* 退出登录遮罩（干净深色，无磨砂） */
+.dark-modal {
+  background: rgba(10, 37, 64, 0.55) !important;
 }
 
-/* 毛玻璃对话框卡片 */
+/* 退出登录对话框卡片（不磨砂） */
 .logout-dialog {
-  background: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 20px !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 20px 60px rgba(10, 37, 64, 0.25), 0 4px 12px rgba(10, 37, 64, 0.12) !important;
   padding: 0 !important;
 
   html.dark & {
-    background: rgba(40, 40, 55, 0.8) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+    background: #15233D !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.25) !important;
   }
 
   .el-dialog__header {
@@ -243,10 +264,8 @@ const cancelLogout = () => {
   .btn-cancel {
     width: 120px;
     border-radius: 10px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: $bg-base;
+    border: 1px solid $border-light;
 
     html.dark & {
       background: rgba(255, 255, 255, 0.08);

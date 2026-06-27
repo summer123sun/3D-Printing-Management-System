@@ -8,6 +8,7 @@ import com.printclub.common.result.PageResult;
 import com.printclub.common.result.ResultCode;
 import com.printclub.common.util.PageUtils;
 import com.printclub.common.util.SecurityContext;
+import com.printclub.module.log.service.LogService;
 import com.printclub.module.user.dto.*;
 import com.printclub.module.user.entity.Member;
 import com.printclub.module.user.mapper.MemberMapper;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final MemberMapper memberMapper;
+    private final LogService logService;
 
     @Override
     public PageResult<Member> list(Integer page, Integer size, String keyword) {
@@ -56,17 +58,23 @@ public class UserServiceImpl implements UserService {
     @Override
     public void updateRole(String studentId, UpdateRoleDTO dto) {
         Member member = findMemberOrThrow(studentId);
+        Integer oldRole = member.getRole();
         member.setRole(dto.getRole());
         memberMapper.updateById(member);
         log.info("成员 {} 角色变更为 {}", studentId, dto.getRole());
+        logService.recordCurrent("member.updateRole", "member", studentId,
+                "角色变更：role " + oldRole + " → " + dto.getRole());
     }
 
     @Override
     public void updateSkill(String studentId, UpdateSkillDTO dto) {
         Member member = findMemberOrThrow(studentId);
+        Integer oldSkill = member.getSkillLevel();
         member.setSkillLevel(dto.getSkillLevel());
         memberMapper.updateById(member);
         log.info("成员 {} 技能等级变更为 {}", studentId, dto.getSkillLevel());
+        logService.recordCurrent("member.updateSkill", "member", studentId,
+                "技能等级变更：skill " + oldSkill + " → " + dto.getSkillLevel());
     }
 
     @Override
@@ -135,10 +143,16 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.BAD_REQUEST, "旧密码错误");
         }
 
+        // 二次校验：新旧密码不能相同（DTO 校验已做过，这里是兜底）
+        if (dto.getOldPassword().equals(dto.getNewPassword())) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "新密码不能与旧密码相同");
+        }
+
         // 更新为新密码
         member.setPassword(BCrypt.hashpw(dto.getNewPassword()));
         memberMapper.updateById(member);
         log.info("用户 {} 修改密码成功", studentId);
+        logService.recordCurrent("user.changePassword", "user", studentId, "用户修改密码");
     }
 
     // ============== 私有方法 ==============

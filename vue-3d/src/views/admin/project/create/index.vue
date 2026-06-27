@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StageEditor from '@/components/project/manage/StageEditor.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import { ProjectType } from '@/types/project'
 import type { ProjectCreateDTO, StageDTO } from '@/types/project'
@@ -17,7 +18,8 @@ const projectStore = useProjectStore()
 const form = reactive<ProjectCreateDTO>({
   projectName: '',
   projectType: ProjectType.CREATION,
-  leaderId: '',
+  // ⚠️ 留空走后端默认（用当前登录人），传 null 而不是空字符串，后端判空逻辑会兜底
+  leaderId: undefined as unknown as string,
   startDate: '',
   endDate: '',
   budget: 0,
@@ -29,6 +31,24 @@ const form = reactive<ProjectCreateDTO>({
 })
 
 const stages = ref<StageDTO[]>([])
+
+// ============== 成功/失败反馈弹窗 ==============
+const successDialog = reactive({ visible: false, projectId: 0, projectName: '' })
+const failDialog = reactive({ visible: false, reason: '' })
+let redirectTimer: number | null = null
+
+const closeSuccessAndGo = () => {
+  if (redirectTimer) {
+    clearTimeout(redirectTimer)
+    redirectTimer = null
+  }
+  successDialog.visible = false
+  router.push(`/project/${successDialog.projectId}`)
+}
+
+const closeFail = () => {
+  failDialog.visible = false
+}
 
 onMounted(() => {
   // 默认给一个示例阶段
@@ -44,7 +64,7 @@ onMounted(() => {
 })
 
 const handleSubmit = async () => {
-  if (!form.projectName) {
+  if (!form.projectName || !form.projectName.trim()) {
     ElMessage.warning('请填写项目名称')
     return
   }
@@ -52,16 +72,42 @@ const handleSubmit = async () => {
     ElMessage.warning('请选择开始日期')
     return
   }
+  // 阶段名称去重 + 过滤空名
+  const validStages = (stages.value || []).filter(
+    (s) => s.stageName && s.stageName.trim(),
+  )
+  if (validStages.length === 0) {
+    ElMessage.warning('至少保留 1 个有效阶段')
+    return
+  }
+  validStages.forEach((s, i) => (s.stageOrder = i + 1))
 
-  form.stages = stages.value
+  const payload: ProjectCreateDTO = {
+    ...form,
+    // 把空字符串归一为 undefined，让后端走当前用户兜底
+    leaderId: form.leaderId && form.leaderId.trim() ? form.leaderId.trim() : undefined,
+    stages: validStages,
+  }
   try {
-    const id = await projectStore.create(form)
-    ElMessage.success(`创建成功！项目编号：${id}`)
-    router.push(`/project/${id}`)
-  } catch (e) {
-    // 错误已统一拦截
+    const id = await projectStore.create(payload)
+    // 显示大弹窗（AppDialog 风格，跟全站统一）
+    successDialog.projectId = id
+    successDialog.projectName = form.projectName.trim()
+    successDialog.visible = true
+    // 5 秒倒计时自动跳转
+    redirectTimer = window.setTimeout(() => {
+      closeSuccessAndGo()
+    }, 5000)
+  } catch (e: any) {
+    console.error('[创建项目] 失败', e)
+    failDialog.reason = e?.message || '请稍后再试'
+    failDialog.visible = true
   }
 }
+
+onBeforeUnmount(() => {
+  if (redirectTimer) clearTimeout(redirectTimer)
+})
 </script>
 
 <template>
@@ -138,6 +184,57 @@ const handleSubmit = async () => {
         </div>
       </el-form>
     </el-card>
+
+    <!-- 创建成功弹窗（走 AppDialog 风格，跟全站统一） -->
+    <AppDialog
+      v-model="successDialog.visible"
+      title="项目创建成功"
+      icon="Check"
+      type="success"
+      width="460px"
+      confirm-text="立即查看详情"
+      cancel-text="留在本页"
+      :show-footer="true"
+      @confirm="closeSuccessAndGo"
+      @cancel="successDialog.visible = false"
+    >
+      <div class="success-content">
+        <div class="success-icon-big">
+          <el-icon :size="56"><component :is="'Check'" /></el-icon>
+        </div>
+        <h3 class="success-title">「{{ successDialog.projectName }}」已创建</h3>
+        <p class="success-meta">
+          项目编号：<b class="project-id">#{{ successDialog.projectId }}</b>
+        </p>
+        <p class="success-tip">
+          <el-icon><component :is="'InfoFilled'" /></el-icon>
+          5 秒后将自动跳转到项目详情页…
+        </p>
+      </div>
+    </AppDialog>
+
+    <!-- 创建失败弹窗 -->
+    <AppDialog
+      v-model="failDialog.visible"
+      title="项目创建失败"
+      icon="Warning"
+      type="danger"
+      width="460px"
+      confirm-text="我知道了"
+      :show-footer="true"
+      @confirm="closeFail"
+      @cancel="closeFail"
+    >
+      <div class="fail-content">
+        <p class="fail-reason">{{ failDialog.reason }}</p>
+        <p class="fail-hint">
+          可能原因：<br />
+          1) 必填字段缺失<br />
+          2) 网络异常（后端未启动）<br />
+          3) 登录已过期，请重新登录
+        </p>
+      </div>
+    </AppDialog>
   </div>
 </template>
 
@@ -157,5 +254,79 @@ const handleSubmit = async () => {
   justify-content: flex-end;
   gap: $spacing-small;
   margin-top: $spacing-large;
+}
+
+// 成功弹窗样式
+.success-content {
+  text-align: center;
+  padding: 8px 0 4px;
+}
+.success-icon-big {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(103, 194, 58, 0.35);
+  animation: success-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.success-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+.success-meta {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #606266;
+  .project-id {
+    color: #67c23a;
+    font-size: 18px;
+    margin-left: 4px;
+    font-weight: 700;
+  }
+}
+.success-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 14px;
+  background: #f0f9eb;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #67c23a;
+}
+
+// 失败弹窗样式
+.fail-content {
+  padding: 4px 0;
+}
+.fail-reason {
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  background: #fef0f0;
+  border-left: 3px solid #f56c6c;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+.fail-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #909399;
+  line-height: 1.8;
+}
+
+@keyframes success-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 </style>

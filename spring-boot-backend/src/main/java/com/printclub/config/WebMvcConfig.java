@@ -8,6 +8,8 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.io.File;
+
 /**
  * Web MVC 配置
  *
@@ -15,6 +17,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * <ol>
  *   <li>注册 JwtInterceptor 到 {@code /api/**}</li>
  *   <li>把本地 {@code ./uploads/} 映射成可访问的 {@code /uploads/**}</li>
+ *   <li>找不到图片时 fallback 到项目内置的占位图（避免 500）</li>
  * </ol>
  *
  * @author D
@@ -46,7 +49,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 本地文件访问：访问 /uploads/xxx.jpg 时，去 ./uploads/xxx.jpg 取
+        // 找不到时 Spring 会自动返回 404，但 Vite proxy 把 404 当 500
+        // 修法：把缺图请求重定向到 classpath:static/placeholder.png（必须存在）
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:" + uploadDir);
+                .addResourceLocations(
+                        "file:" + uploadDir,
+                        "classpath:/static/"
+                );
     }
 }

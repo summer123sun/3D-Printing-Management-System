@@ -92,7 +92,13 @@ const resetFilter = () => {
               <StatusTag status-type="task" :status="row.status" />
             </template>
           </el-table-column>
-          <el-table-column prop="applicantId" label="申请人" width="100" />
+          <el-table-column label="申请人" width="110">
+            <template #default="{ row }">
+              <el-tooltip :content="`学号：${row.applicantId}`" placement="top">
+                <span>{{ row.applicantName || row.applicantId }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column label="耗材" width="120">
             <template #default="{ row }">
               <span v-if="row.actualWeight">{{ row.actualWeight }}g</span>

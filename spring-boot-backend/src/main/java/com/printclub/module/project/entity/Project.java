@@ -66,6 +66,12 @@ public class Project implements Serializable {
     @TableField("update_time")
     private LocalDateTime updateTime;
 
+    // ============== 关联字段（不映射到数据库） ==============
+
+    /** 负责人姓名（v2：list 时从 member 表查，前端展示用） */
+    @TableField(exist = false)
+    private String leaderName;
+
     // ============== 常量 ==============
 
     public static final int STATUS_PREPARING = 0;

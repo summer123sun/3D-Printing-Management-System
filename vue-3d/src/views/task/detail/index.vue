@@ -6,12 +6,14 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import TaskTimeline from '@/components/task/detail/TaskTimeline.vue'
 import { useTaskStore } from '@/stores/task'
+import { usePrinterStore } from '@/stores/printer'
 import { useAuthStore } from '@/stores/auth'
 import { TaskStatus, TaskStatusText } from '@/types/task'
 import { formatDate, formatWeight, formatDuration, formatFileSize } from '@/utils/format'
@@ -19,6 +21,7 @@ import { formatDate, formatWeight, formatDuration, formatFileSize } from '@/util
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
+const printerStore = usePrinterStore()
 const authStore = useAuthStore()
 
 const taskId = computed(() => route.params.id as string)
@@ -34,14 +37,21 @@ const canCancel = computed(() => isMine.value && (taskStore.currentTask?.status 
 const rejectDialogVisible = ref(false)
 const rejectForm = ref({ approveComment: '' })
 
+const submittingAssign = ref(false)
+const submittingFinish = ref(false)
+
 const finishDialogVisible = ref(false)
-const finishForm = ref({ actualWeight: 0, actualTime: 0, qualityScore: 5 })
+const finishForm = ref({ taskId: '', actualWeight: 0, actualTime: 0, qualityScore: 5 })
 
 const assignDialogVisible = ref(false)
-const assignForm = ref({ printerId: '' })
+const assignForm = ref({ taskId: '', printerId: '' })
 
 const fetchData = async () => {
   await taskStore.fetchTaskDetail(taskId.value)
+  if (isStaff.value) {
+    // 加载可用打印机列表（分配打印机用）
+    await printerStore.fetchAvailable()
+  }
 }
 onMounted(fetchData)
 
@@ -65,14 +75,23 @@ const handleReject = async () => {
 }
 
 const handleAssign = async () => {
-  if (!assignForm.value.printerId.trim()) {
-    ElMessage.warning('请输入打印机编号')
+  if (!assignForm.value.printerId) {
+    ElNotification.warning('请选择打印机')
     return
   }
-  await taskStore.assignPrinter(taskId.value, assignForm.value)
-  ElMessage.success('已分配打印机')
-  assignDialogVisible.value = false
-  fetchData()
+  submittingAssign.value = true
+  try {
+    await taskStore.assignPrinter(taskId.value, { printerId: assignForm.value.printerId })
+    ElNotification.success({
+      title: '✅ 分配成功',
+      message: `已分配到 ${assignForm.value.printerId}`,
+      duration: 3000,
+    })
+    assignDialogVisible.value = false
+    await fetchData()
+  } finally {
+    submittingAssign.value = false
+  }
 }
 
 const handleStart = async () => {
@@ -84,13 +103,22 @@ const handleStart = async () => {
 
 const handleFinish = async () => {
   if (finishForm.value.actualWeight <= 0 || finishForm.value.actualTime <= 0) {
-    ElMessage.warning('实际耗材和耗时必须大于 0')
+    ElNotification.warning('实际耗材和耗时必须大于 0')
     return
   }
-  await taskStore.finishPrint(taskId.value, finishForm.value)
-  ElMessage.success('已完成（已自动扣库存 + 归档作品库）')
-  finishDialogVisible.value = false
-  fetchData()
+  submittingFinish.value = true
+  try {
+    await taskStore.finishPrint(taskId.value, finishForm.value)
+    ElNotification.success({
+      title: '✅ 打印完成',
+      message: '已自动扣减库存 + 归档作品库',
+      duration: 4000,
+    })
+    finishDialogVisible.value = false
+    await fetchData()
+  } finally {
+    submittingFinish.value = false
+  }
 }
 
 const handlePickup = async () => {
@@ -205,34 +233,58 @@ const handleCancel = async () => {
     </template>
 
     <!-- 驳回弹窗 -->
-    <el-dialog v-model="rejectDialogVisible" title="驳回任务" width="400px">
+    <AppDialog v-model="rejectDialogVisible" title="驳回任务" icon="Warning" type="danger" width="480px"
+               confirm-text="确认驳回" @confirm="handleReject">
       <el-form :model="rejectForm" label-width="80px">
         <el-form-item label="驳回原因" required>
           <el-input v-model="rejectForm.approveComment" type="textarea" :rows="3" placeholder="必填，告知申请人修改方向" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="rejectDialogVisible = false">取消</el-button>
-        <el-button type="danger" @click="handleReject">确认驳回</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
-    <!-- 分配打印机弹窗 -->
-    <el-dialog v-model="assignDialogVisible" title="分配打印机" width="400px">
+    <!-- 分配打印机弹窗（下拉选择） -->
+    <AppDialog v-model="assignDialogVisible" title="分配打印机" icon="Printer" type="primary" width="520px"
+               confirm-text="确认分配" :loading="submittingAssign" @confirm="handleAssign">
       <el-form :model="assignForm" label-width="100px">
-        <el-form-item label="打印机编号">
-          <el-input v-model="assignForm.printerId" placeholder="如 P-001 / P-002 / P-003" />
+        <el-form-item label="任务编号">
+          <el-tag size="large" type="info">{{ assignForm.taskId }}</el-tag>
+        </el-form-item>
+        <el-form-item label="选择打印机" required>
+          <el-select
+            v-model="assignForm.printerId"
+            placeholder="请选择一台状态正常的打印机"
+            filterable
+            style="width: 100%"
+            :loading="printerStore.loading"
+          >
+            <el-option
+              v-for="p in printerStore.availableList"
+              :key="p.printerId"
+              :value="p.printerId"
+              :label="`${p.printerId} - ${p.model}（${p.brand || '未知品牌'}）`"
+            >
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span style="font-weight: 500">{{ p.printerId }} - {{ p.model }}</span>
+                <span style="font-size: 12px; color: #909399">
+                  {{ p.location || '未指定位置' }} · 累计 {{ p.totalPrintHours }}h
+                </span>
+              </div>
+            </el-option>
+          </el-select>
+          <div v-if="printerStore.availableList.length === 0" class="empty-tip">
+            ⚠️ 当前没有【正常】状态的打印机，请先在"打印机管理"里添加/恢复
+          </div>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAssign">确认分配</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 完成打印弹窗 -->
-    <el-dialog v-model="finishDialogVisible" title="完成打印" width="400px">
+    <AppDialog v-model="finishDialogVisible" title="完成打印" icon="Check" type="success" width="520px"
+               confirm-text="确认完成" :loading="submittingFinish" @confirm="handleFinish">
       <el-form :model="finishForm" label-width="100px">
+        <el-form-item label="任务编号">
+          <el-tag size="large" type="info">{{ finishForm.taskId }}</el-tag>
+        </el-form-item>
         <el-form-item label="实际耗材 (g)" required>
           <el-input-number v-model="finishForm.actualWeight" :min="0.01" :precision="2" style="width: 100%" />
         </el-form-item>
@@ -246,11 +298,7 @@ const handleCancel = async () => {
           完成后会自动：扣减库存 + 累计打印次数 + 归档作品库
         </el-alert>
       </el-form>
-      <template #footer>
-        <el-button @click="finishDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleFinish">确认完成</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 

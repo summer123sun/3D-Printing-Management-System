@@ -21,6 +21,9 @@ public interface ArtworkService {
     /** 作品详情（访问时 view_count +1） */
     Artwork detail(Integer artworkId);
 
+    /** 从已完结任务创建作品 */
+    Integer create(com.printclub.module.artwork.dto.ArtworkCreateDTO dto, String currentUserId);
+
     /** 更新作品（仅作者本人，限定：作品名/成品照/心得） */
     void update(Integer artworkId, ArtworkUpdateDTO dto, String currentUserId);
 

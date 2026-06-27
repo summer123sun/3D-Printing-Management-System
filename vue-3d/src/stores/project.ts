@@ -8,7 +8,6 @@ import type {
   Project,
   ProjectCreateDTO,
   AddMemberDTO,
-  StageDTO,
   ProjectQuery,
   ProjectDetailVO,
   StageStatus,
@@ -54,10 +53,6 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
-  const update = async (id: number, dto: ProjectCreateDTO) => {
-    await projectApi.updateProject(id, dto)
-  }
-
   const complete = async (id: number) => {
     await projectApi.completeProject(id)
   }
@@ -75,21 +70,8 @@ export const useProjectStore = defineStore('project', () => {
     await projectApi.removeMember(id, mid)
   }
 
-  // 阶段
-  const addStage = async (id: number, dto: StageDTO) => {
-    return projectApi.addStage(id, dto)
-  }
-
-  const updateStage = async (id: number, pid: number, dto: StageDTO) => {
-    await projectApi.updateStage(id, pid, dto)
-  }
-
   const updateStageStatus = async (id: number, pid: number, status: StageStatus) => {
     await projectApi.updateStageStatus(id, pid, status)
-  }
-
-  const deleteStage = async (id: number, pid: number) => {
-    await projectApi.deleteStage(id, pid)
   }
 
   return {
@@ -100,14 +82,10 @@ export const useProjectStore = defineStore('project', () => {
     fetchList,
     fetchDetail,
     create,
-    update,
     complete,
     cancel,
     addMember,
     removeMember,
-    addStage,
-    updateStage,
     updateStageStatus,
-    deleteStage,
   }
 })

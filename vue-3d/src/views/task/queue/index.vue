@@ -58,10 +58,23 @@ onMounted(async () => {
               <el-tag v-else size="small">普通</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="applicantName" label="申请人" width="100" />
+          <el-table-column label="申请人" width="110">
+            <template #default="{ row }">
+              <el-tooltip :content="`学号：${row.applicantId}`" placement="top">
+                <span>{{ row.applicantName || row.applicantId }}</span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column prop="materialType" label="材料" width="80" />
           <el-table-column prop="color" label="颜色" width="80" />
-          <el-table-column prop="printerId" label="打印机" width="100" />
+          <el-table-column label="打印机" width="140">
+            <template #default="{ row }">
+              <el-tooltip v-if="row.printerId" :content="`编号：${row.printerId}`" placement="top">
+                <el-tag size="small">{{ row.printerModel || row.printerId }}</el-tag>
+              </el-tooltip>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
           <el-table-column label="排队时间" width="160">
             <template #default="{ row }">
               {{ formatRelativeTime(row.applyTime) }}

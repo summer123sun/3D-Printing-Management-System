@@ -8,7 +8,6 @@ import com.printclub.common.util.FileUploadUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,8 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +44,6 @@ public class FileController {
 
     @Value("${file.upload-dir:./uploads/}")
     private String uploadDir;
-
-    @Value("${file.access-prefix:/uploads/}")
-    private String accessPrefix;
 
     /**
      * 允许上传的 MIME 类型白名单

@@ -9,6 +9,7 @@ import { ElMessageBox, ElNotification } from 'element-plus'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { usePrinterStore } from '@/stores/printer'
 import { useAuthStore } from '@/stores/auth'
 import { MaintType, MaintTypeText, MaintTypeTagType } from '@/types/printer'
@@ -18,6 +19,8 @@ const store = usePrinterStore()
 const authStore = useAuthStore()
 
 const isAdmin = computed(() => authStore.user?.role === 1)
+
+const submitting = ref(false)
 
 const filter = ref({
   page: 1,
@@ -80,6 +83,7 @@ const handleSubmit = async () => {
     ElNotification.warning('请选择打印机并填写维护内容')
     return
   }
+  submitting.value = true
   try {
     await store.addMaintenance(form.value)
     ElNotification.success('维护记录已添加')
@@ -87,6 +91,8 @@ const handleSubmit = async () => {
     onSearch()
   } catch (e: any) {
     ElNotification.error(e.message || '添加失败')
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -177,7 +183,8 @@ const printerName = (id: string) => {
       </div>
     </el-card>
 
-    <el-dialog v-model="dialogVisible" title="新增维护记录" width="540px" :close-on-click-modal="false">
+    <AppDialog v-model="dialogVisible" title="新增维护记录" icon="Tools" type="primary" width="540px"
+               confirm-text="保存" :loading="submitting" @confirm="handleSubmit">
       <el-form :model="form" label-width="100px">
         <el-form-item label="打印机" required>
           <el-select v-model="form.printerId" filterable style="width: 100%">
@@ -196,11 +203,7 @@ const printerName = (id: string) => {
           <el-date-picker v-model="form.nextMaintDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">保存</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 

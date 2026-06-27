@@ -11,6 +11,7 @@ import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import AppDialog from '@/components/common/AppDialog.vue'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -37,10 +38,12 @@ const isStaff = computed(() => {
 const activeTab = ref<'overview' | 'members' | 'stages' | 'files' | 'tasks'>('overview')
 
 const stageStatusDialogVisible = ref(false)
-const stageStatusForm = ref({ progressId: 0, status: 0 })
+const stageStatusForm = ref({ progressId: 0, status: 0, stageName: '' })
+const submittingStageStatus = ref(false)
 
 const memberDialogVisible = ref(false)
 const memberForm = ref({ memberId: '', roleInProject: ProjectRole.PARTICIPANT, contribution: '' })
+const submittingMember = ref(false)
 
 const fetchData = async () => {
   await projectStore.fetchDetail(projectId.value)
@@ -150,13 +153,18 @@ const openAddMember = () => {
 
 const handleAddMember = async () => {
   if (!memberForm.value.memberId.trim()) {
-    ElMessage.warning('请填写成员学号')
+    ElNotification.warning('请填写成员学号')
     return
   }
-  await projectStore.addMember(projectId.value, memberForm.value)
-  ElMessage.success('已添加成员')
-  memberDialogVisible.value = false
-  fetchData()
+  submittingMember.value = true
+  try {
+    await projectStore.addMember(projectId.value, memberForm.value)
+    ElNotification.success('已添加成员')
+    memberDialogVisible.value = false
+    fetchData()
+  } finally {
+    submittingMember.value = false
+  }
 }
 
 const handleRemoveMember = async (mid: string) => {
@@ -197,15 +205,41 @@ const handleRemoveMember = async (mid: string) => {
 }
 
 const openStageStatus = (pid: number, status: number) => {
-  stageStatusForm.value = { progressId: pid, status }
+  // 找到当前阶段对象，拿到 stageName 展示
+  const cur = projectStore.currentProject?.stages?.find((s) => s.progressId === pid)
+  stageStatusForm.value = {
+    progressId: pid,
+    status,
+    stageName: cur ? `阶段 ${cur.stageOrder} - ${cur.stageName}` : `#${pid}`,
+  }
   stageStatusDialogVisible.value = true
 }
 
 const handleUpdateStageStatus = async () => {
-  await projectStore.updateStageStatus(projectId.value, stageStatusForm.value.progressId, stageStatusForm.value.status)
-  ElMessage.success('阶段状态已更新')
-  stageStatusDialogVisible.value = false
-  fetchData()
+  submittingStageStatus.value = true
+  try {
+    await projectStore.updateStageStatus(
+      projectId.value,
+      stageStatusForm.value.progressId,
+      stageStatusForm.value.status,
+    )
+    ElNotification.success({
+      title: '阶段状态已更新',
+      message: `「${stageStatusForm.value.stageName}」已更新`,
+      duration: 2500,
+    })
+    stageStatusDialogVisible.value = false
+    fetchData()
+  } catch (e: any) {
+    console.error('[更新阶段状态] 失败', e)
+    ElNotification.error({
+      title: '更新失败',
+      message: e?.message || '请稍后再试',
+      duration: 4000,
+    })
+  } finally {
+    submittingStageStatus.value = false
+  }
 }
 
 const memberStatusText = (s: number) => {
@@ -404,7 +438,8 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
     </template>
 
     <!-- 添加成员弹窗 -->
-    <el-dialog v-model="memberDialogVisible" title="添加项目成员" width="400px">
+    <AppDialog v-model="memberDialogVisible" title="添加项目成员" icon="User" type="primary" width="480px"
+               confirm-text="确认添加" :loading="submittingMember" @confirm="handleAddMember">
       <el-form :model="memberForm" label-width="100px">
         <el-form-item label="学号" required>
           <el-input v-model="memberForm.memberId" placeholder="如 2023010005" />
@@ -419,14 +454,11 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <el-input v-model="memberForm.contribution" type="textarea" :rows="2" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="memberDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddMember">确认添加</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
 
     <!-- 阶段状态更新弹窗 -->
-    <el-dialog v-model="stageStatusDialogVisible" title="更新阶段状态" width="400px">
+    <AppDialog v-model="stageStatusDialogVisible" :title="`更新阶段状态 — ${stageStatusForm.stageName}`" icon="Edit" type="primary" width="440px"
+               confirm-text="确认更新" :loading="submittingStageStatus" @confirm="handleUpdateStageStatus">
       <el-form :model="stageStatusForm" label-width="100px">
         <el-form-item label="新状态">
           <el-radio-group v-model="stageStatusForm.status">
@@ -436,11 +468,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           </el-radio-group>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="stageStatusDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleUpdateStageStatus">确认</el-button>
-      </template>
-    </el-dialog>
+    </AppDialog>
   </div>
 </template>
 
