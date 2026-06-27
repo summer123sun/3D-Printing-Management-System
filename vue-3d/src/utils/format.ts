@@ -3,6 +3,10 @@
  */
 
 /** 格式化日期时间（默认 YYYY-MM-DD HH:mm） */
+export const formatDateTime = (date: string | Date | null | undefined): string => {
+  return formatDate(date, 'YYYY-MM-DD HH:mm:ss')
+}
+
 export const formatDate = (date: string | Date | null | undefined, pattern = 'YYYY-MM-DD HH:mm'): string => {
   if (!date) return '-'
   const d = typeof date === 'string' ? new Date(date) : date
