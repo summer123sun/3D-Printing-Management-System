@@ -419,10 +419,16 @@ html.dark {
   margin: 0 !important;
   border-radius: 16px !important;
   overflow: hidden;
-  background: var(--bg-card) !important;
-  box-shadow: 0 20px 60px rgba(10, 37, 64, 0.25), 0 4px 12px rgba(10, 37, 64, 0.12) !important;
+  // 关键修复：强不透明底色（用户报修：弹窗透明看不清）
+  // 不用 var(--bg-card) 因为它在浅色下是 #fff 但若被父级覆盖会失效
+  // 用 rgba(255,255,255,0.98) + 边框双保险，无论什么父背景都能看到
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(10, 37, 64, 0.08) !important;
+  box-shadow:
+    0 20px 60px rgba(10, 37, 64, 0.35),
+    0 4px 12px rgba(10, 37, 64, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
   padding: 0 !important;
-  border: none !important;
   min-width: 380px !important;
   max-width: 520px !important;
   animation: msgbox-pop-in 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
@@ -484,10 +490,10 @@ html.dark {
   background: linear-gradient(90deg, $primary-color 0%, $accent-color 50%, $gold-color 100%);
 }
 
-// 内容区
+// 内容区（同步用强不透明白底）
 .el-message-box__content {
   padding: 28px 32px 16px !important;
-  background: var(--bg-card);
+  background: transparent !important;  // 透出 .el-message-box 的白底
 }
 .el-message-box__container {
   display: flex !important;
@@ -650,20 +656,75 @@ html.dark {
 // 全局 ElNotification 通知（深海蓝风）
 // ============================================
 .el-notification {
+  // 关键：强制 fixed 定位（用户报修：通知跑到页面底部 = 祖先有 transform/filter 破坏了 fixed 容器）
+  // EP 2.x 的 .el-notification 默认就是 fixed，但若被父级 .app-main/.app-layout 内部的
+  // transform/filter/will-change 干扰就会退化成 absolute 跟着内容滚到页面底部
+  position: fixed !important;
+  top: 80px !important;     // 避开 header（header 56px + 余量）
+  right: 24px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 9999 !important;
+  // 父级也不能是 containing block
+  transform: none !important;
+  will-change: auto !important;
+  // 强制宽度（用户报修：通知标题和内容文字重叠 = width 没了，收缩成 126px 内容最小宽度）
+  // EP 2.x 默认 width 330px，但被全局覆盖时可能丢，加 !important 兜底
+  width: 380px !important;
+  max-width: calc(100vw - 48px) !important;
+
   border-radius: 12px !important;
   border: none !important;
   box-shadow: 0 10px 30px rgba(10, 37, 64, 0.18) !important;
   overflow: hidden;
+  background: #ffffff !important;  // 兜底白底（防止透明）
+
+  // 内部布局：标题和内容分两行（修复重叠）
+  display: flex !important;
+  flex-direction: column !important;
+  // 隐藏 EP 自带的左侧 status icon（用户报修：左上角勾勾取消）
+  // 注意：不能隐藏 .el-notification__group，group 是包裹 title + content 的容器
+  .el-notification__icon,
+  .el-notification__statusIcon {
+    display: none !important;
+  }
   .el-notification__title {
     font-weight: 600 !important;
     color: var(--text-primary) !important;
+    padding: 16px 36px 0 16px !important;  // 右侧给关闭键留位
+    line-height: 1.4 !important;
+    font-size: 15px !important;
+    text-align: center !important;  // 标题居中
   }
   .el-notification__content {
     color: var(--text-regular) !important;
+    padding: 8px 16px 16px 16px !important;  // 左右对称
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    text-align: center !important;  // 内容居中
   }
-  // 左侧色条按类型
+  // 关闭按钮：绝对定位右上角（不要被 flex 推走）
+  .el-notification__closeBtn {
+    position: absolute !important;
+    top: 14px !important;
+    right: 12px !important;
+    cursor: pointer !important;
+    font-size: 16px !important;
+    color: #909399 !important;
+    transition: color 0.2s ease !important;
+    &:hover { color: var(--text-primary) !important; }
+  }
+  // 左侧色条按类型（保留作为视觉提示）
   &.el-notification--success { border-left: 4px solid $accent-color !important; }
   &.el-notification--warning { border-left: 4px solid $gold-color !important; }
   &.el-notification--error   { border-left: 4px solid $danger-color !important; }
   &.el-notification--info    { border-left: 4px solid $primary-color !important; }
+}
+
+// 多条通知堆叠（EP 自己处理 top 偏移，但加 transform 容易破坏）保险起见再覆盖
+.el-notification.right {
+  top: 80px !important;
+  right: 24px !important;
+  width: 380px !important;
 }

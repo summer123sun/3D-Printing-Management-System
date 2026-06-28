@@ -64,9 +64,13 @@ const handleDelete = async (id: number) => {
   } catch {
     return
   }
-  await store.remove(id)
-  ElNotification.success('作品已删除')
-  fetchData()
+  try {
+    await store.remove(id)
+    ElNotification.success('作品已删除')
+    fetchData()
+  } catch {
+    // 业务错误通知已由 request.ts 拦截器自动弹 ElNotification，这里不重复弹
+  }
 }
 
 const canDelete = (authorId: string) => {

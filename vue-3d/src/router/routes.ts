@@ -225,6 +225,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '打印机管理', icon: 'Box', roles: [1, 2], transition: 'page-zoom' },
       },
       {
+        path: 'printer/maintenance',
+        name: 'AdminPrinterMaintenance',
+        component: () => import('@/views/admin/printer/maintenance/index.vue'),
+        meta: { title: '维护记录', icon: 'Tools', roles: [1, 2], parent: '/admin/printer', transition: 'page-zoom' },
+      },
+      {
         path: 'material',
         name: 'AdminMaterial',
         component: () => import('@/views/admin/material/list/index.vue'),

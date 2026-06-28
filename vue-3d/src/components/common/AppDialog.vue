@@ -192,6 +192,21 @@ const handleUpdate = (val: boolean) => {
     background: #ffffff !important;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
     position: relative !important;
+    // 兜底最小宽度：EP 2.x 的 el-dialog 默认 min-width 600px，但当内部用
+    // <el-form label-width="100px"> 的 flexbox 布局时，可能把弹窗压成 ~300px
+    // （用户报修：维护记录弹窗塌陷）。这里强制 min-width 防止塌陷
+    min-width: 540px !important;
+    // 显式居中兜底（用户报修：弹窗没在屏幕居中）
+    // EP 2.x 的居中靠 .el-overlay-dialog flexbox 实现，但若 .el-overlay-dialog
+    // 被全局样式污染（display/justify-content 失效），弹窗会贴着顶部/左边
+    // 这里用 position: fixed + transform 兜底居中
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
   }
   .el-dialog__body {
     overflow: visible !important;  // 防止关闭键被裁

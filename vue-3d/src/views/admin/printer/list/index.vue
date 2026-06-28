@@ -6,7 +6,10 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { ElMessageBox, ElNotification } from 'element-plus'
-import { Plus, Edit, Delete, Tools } from '@element-plus/icons-vue'
+import {
+  Plus, Edit, Delete, Tools,
+  Postcard, Box, ShoppingCart, Position, Document,
+} from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
@@ -113,8 +116,8 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     fetchData()
-  } catch (e: any) {
-    ElNotification.error(e.message || '操作失败')
+  } catch {
+    // 业务错误通知已由 request.ts 拦截器自动弹
   } finally {
     submitting.value = false
   }
@@ -136,9 +139,13 @@ const handleDelete = async (row: any) => {
   } catch {
     return
   }
-  await store.remove(row.printerId)
-  ElNotification.success('已删除')
-  fetchData()
+  try {
+    await store.remove(row.printerId)
+    ElNotification.success('已删除')
+    fetchData()
+  } catch {
+    // 业务错误通知已由 request.ts 拦截器自动弹
+  }
 }
 
 const handleSetStatus = async (row: any, newStatus: number) => {
@@ -152,9 +159,13 @@ const handleSetStatus = async (row: any, newStatus: number) => {
   } catch {
     return
   }
-  await store.setStatus(row.printerId, newStatus)
-  ElNotification.success(`已设为【${statusName}】`)
-  fetchData()
+  try {
+    await store.setStatus(row.printerId, newStatus)
+    ElNotification.success(`已设为【${statusName}】`)
+    fetchData()
+  } catch {
+    // 业务错误通知已由 request.ts 拦截器自动弹
+  }
 }
 </script>
 
@@ -255,38 +266,146 @@ const handleSetStatus = async (row: any, newStatus: number) => {
       :title="editingId ? '编辑打印机' : '新增打印机'"
       :icon="editingId ? 'Edit' : 'Plus'"
       :type="editingId ? 'warning' : 'primary'"
-      width="540px"
+      width="640px"
       confirm-text="保存"
       :loading="submitting"
       @confirm="handleSubmit"
     >
-      <el-form :model="form" label-width="100px">
-        <el-form-item label="编号" required>
-          <el-input v-model="form.printerId" :disabled="!!editingId" placeholder="如 P-001" maxlength="10" />
-        </el-form-item>
-        <el-form-item label="型号" required>
-          <el-input v-model="form.model" placeholder="如 创想三维 K1" />
-        </el-form-item>
-        <el-form-item label="品牌">
-          <el-input v-model="form.brand" />
-        </el-form-item>
-        <el-form-item label="成型尺寸">
-          <el-input v-model="form.buildVolume" placeholder="如 220x220x250mm" />
-        </el-form-item>
-        <el-form-item label="喷嘴尺寸">
-          <el-input-number v-model="form.nozzleSize" :min="0.1" :max="2" :step="0.1" :precision="1" />
-          <span style="margin-left: 8px">mm</span>
-        </el-form-item>
-        <el-form-item label="购买日期">
-          <el-date-picker v-model="form.purchaseDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="位置">
-          <el-input v-model="form.location" placeholder="如 打印室A-3号" />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
+      <div class="printer-form">
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <div class="section-header">
+            <el-icon class="section-icon"><Postcard /></el-icon>
+            <span class="section-title">基本信息</span>
+            <span class="section-required">必填项标 *</span>
+          </div>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">
+                  编号 <span class="required">*</span>
+                </label>
+                <el-input
+                  v-model="form.printerId"
+                  :disabled="!!editingId"
+                  placeholder="如 P-001"
+                  maxlength="10"
+                  size="large"
+                >
+                  <template #prefix><el-icon><Postcard /></el-icon></template>
+                </el-input>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">
+                  型号 <span class="required">*</span>
+                </label>
+                <el-input
+                  v-model="form.model"
+                  placeholder="如 创想三维 K1"
+                  size="large"
+                >
+                  <template #prefix><el-icon><Box /></el-icon></template>
+                </el-input>
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">品牌</label>
+                <el-input v-model="form.brand" placeholder="如 Creality" size="large" />
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">位置</label>
+                <el-input
+                  v-model="form.location"
+                  placeholder="如 打印室A-3号"
+                  size="large"
+                >
+                  <template #prefix><el-icon><Position /></el-icon></template>
+                </el-input>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+
+        <el-divider class="section-divider" />
+
+        <!-- 技术参数 -->
+        <div class="form-section">
+          <div class="section-header">
+            <el-icon class="section-icon"><Tools /></el-icon>
+            <span class="section-title">技术参数</span>
+          </div>
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">成型尺寸</label>
+                <el-input
+                  v-model="form.buildVolume"
+                  placeholder="如 220x220x250mm"
+                  size="large"
+                />
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-field">
+                <label class="field-label">喷嘴尺寸</label>
+                <div class="nozzle-input">
+                  <el-input-number
+                    v-model="form.nozzleSize"
+                    :min="0.1"
+                    :max="2"
+                    :step="0.1"
+                    :precision="1"
+                    size="large"
+                    style="width: 100%"
+                  />
+                  <span class="unit">mm</span>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+
+        <el-divider class="section-divider" />
+
+        <!-- 其他信息 -->
+        <div class="form-section">
+          <div class="section-header">
+            <el-icon class="section-icon"><Document /></el-icon>
+            <span class="section-title">其他信息</span>
+          </div>
+          <el-row :gutter="16">
+            <el-col :span="24">
+              <div class="form-field">
+                <label class="field-label">购买日期</label>
+                <el-date-picker
+                  v-model="form.purchaseDate"
+                  type="date"
+                  value-format="YYYY-MM-DD"
+                  placeholder="选择购买日期"
+                  size="large"
+                  style="width: 100%"
+                />
+              </div>
+            </el-col>
+            <el-col :span="24">
+              <div class="form-field">
+                <label class="field-label">备注</label>
+                <el-input
+                  v-model="form.remark"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="其他需要说明的信息（可选）"
+                />
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
     </AppDialog>
   </div>
 </template>
@@ -295,5 +414,73 @@ const handleSetStatus = async (row: any, newStatus: number) => {
 .admin-printer-list-page { padding: 0; }
 .pagination-wrap {
   display: flex; justify-content: center; margin-top: $spacing-large;
+}
+
+// ========== 新增/编辑打印机表单美化 ==========
+.printer-form {
+  padding: 4px 4px 0;
+}
+.form-section {
+  margin-bottom: 4px;
+  &:last-child { margin-bottom: 0; }
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-left: 2px;
+}
+.section-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #0A2540 0%, #1a4d7a 100%);
+  color: #fff;
+  padding: 3px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0A2540;
+  letter-spacing: 0.3px;
+}
+.section-required {
+  margin-left: auto;
+  font-size: 12px;
+  color: #909399;
+}
+.section-divider {
+  margin: 18px 0 !important;
+  border-top: 1px dashed #e4e7ed !important;
+}
+.form-field {
+  margin-bottom: 14px;
+  &:last-child { margin-bottom: 0; }
+}
+.field-label {
+  display: block;
+  font-size: 13px;
+  color: #303133;
+  margin-bottom: 6px;
+  font-weight: 500;
+  .required {
+    color: #FF4757;
+    margin-left: 2px;
+  }
+}
+.nozzle-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  .unit {
+    font-size: 13px;
+    color: #606266;
+    flex-shrink: 0;
+  }
 }
 </style>

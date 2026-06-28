@@ -62,7 +62,7 @@ function showError(title: string, message: string, type: 'error' | 'warning' = '
     title,
     message,
     type,
-    duration: type === 'error' ? 4500 : 3500,
+    duration: 2000,  // 业务错误通知 2 秒自动消失（用户习惯：及时消失，不打扰）
     showClose: true,
   })
 }

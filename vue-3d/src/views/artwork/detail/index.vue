@@ -68,9 +68,13 @@ const handleDelete = async () => {
   } catch {
     return
   }
-  await store.remove(artworkId.value)
-  ElNotification.success('已删除')
-  router.back()
+  try {
+    await store.remove(artworkId.value)
+    ElNotification.success('已删除')
+    router.back()
+  } catch {
+    // 业务错误通知已由 request.ts 拦截器自动弹
+  }
 }
 </script>
 

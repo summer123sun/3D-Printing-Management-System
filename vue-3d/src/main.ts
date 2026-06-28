@@ -29,3 +29,17 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 setupDebounceClickDirective(app)
 
 app.mount('#app')
+
+// ============================================
+// 全局 ElNotification 交互增强
+// 点击通知空白处（非关闭键 X）→ 立即关闭，符合用户习惯
+// ============================================
+document.addEventListener('click', (e: MouseEvent) => {
+  const target = e.target as HTMLElement | null
+  if (!target) return
+  const notif = target.closest('.el-notification') as HTMLElement | null
+  if (!notif) return
+  // 点关闭键 X 时让 EP 自己处理
+  if (target.closest('.el-notification__closeBtn')) return
+  notif.remove()
+})
