@@ -231,7 +231,7 @@ watch(dashboard, updateTrend, { immediate: true })
               <div class="printer-label">维修中</div>
             </div>
             <div class="printer-stat">
-              <div class="printer-num" style="color: #909399">{{ printerStats?.scrappedCount || 0 }}</div>
+              <div class="printer-num" style="color: var(--text-secondary)">{{ printerStats?.scrappedCount || 0 }}</div>
               <div class="printer-label">报废</div>
             </div>
           </div>
@@ -308,7 +308,7 @@ watch(dashboard, updateTrend, { immediate: true })
   display: flex; justify-content: space-between; align-items: center;
   .chart-max {
     font-size: 12px;
-    color: $text-secondary;
+    color: var(--text-secondary);
   }
 }
 .trend-chart { padding: $spacing-small 0; }
@@ -439,7 +439,7 @@ watch(dashboard, updateTrend, { immediate: true })
   }
   .printer-label {
     font-size: 13px;
-    color: $text-secondary;
+    color: var(--text-secondary);
     margin-top: 4px;
   }
 }
@@ -451,7 +451,7 @@ watch(dashboard, updateTrend, { immediate: true })
   padding: 8px 12px;
   border-radius: 6px;
   transition: background 0.2s;
-  &:hover { background: $bg-base; }
+  &:hover { background: var(--bg-base); }
   .ranking-num {
     width: 28px;
     height: 28px;

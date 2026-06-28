@@ -12,21 +12,21 @@
 // 组件里直接用 var(--text-primary) 等，自动适配明暗
 // ============================================
 :root {
-  --text-primary: #{$text-primary};
-  --text-regular: #{$text-regular};
-  --text-secondary: #{$text-secondary};
-  --text-placeholder: #{$text-placeholder};
+  --text-primary: #{var(--text-primary)};
+  --text-regular: #{var(--text-regular)};
+  --text-secondary: #{var(--text-secondary)};
+  --text-placeholder: #{var(--text-placeholder)};
   --text-on-dark: #{$text-on-dark};
 
-  --border-base: #{$border-base};
-  --border-light: #{$border-light};
-  --border-lighter: #{$border-lighter};
-  --border-extra-light: #{$border-extra-light};
+  --border-base: #{var(--border-base)};
+  --border-light: #{var(--border-light)};
+  --border-lighter: #{var(--border-lighter)};
+  --border-extra-light: #{var(--border-extra-light)};
 
-  --bg-base: #{$bg-base};
-  --bg-page: #{$bg-page};
-  --bg-card: #{$bg-card};
-  --bg-dark: #{$bg-dark};
+  --bg-base: #{var(--bg-base)};
+  --bg-page: #{var(--bg-page)};
+  --bg-card: #{var(--bg-card)};
+  --bg-dark: #{var(--bg-dark)};
 
   --primary-color: #{$primary-color};
   --primary-light: #{$primary-color-light};
@@ -149,7 +149,7 @@ html.dark {
 // ----- 通用容器 -----
 .page-container {
   padding: $spacing-medium;
-  background: $bg-card;
+  background: var(--bg-card);
   border-radius: $border-radius-large;
   box-shadow: $shadow-light;
   min-height: calc(100vh - #{$header-height} - #{$spacing-medium} * 2);
@@ -160,7 +160,7 @@ html.dark {
   border-radius: $border-radius-base;
   th {
     background: linear-gradient(180deg, #fafbfc 0%, #f3f4f6 100%) !important;
-    color: $text-primary !important;
+    color: var(--text-primary) !important;
     font-weight: 600 !important;
   }
   tr {
@@ -303,7 +303,7 @@ html.dark {
 // ============================================
 ::selection {
   background: color-mix(in srgb, $accent-color 30%, transparent);
-  color: $text-primary;
+  color: var(--text-primary);
 }
 
 // ============================================
@@ -406,7 +406,7 @@ html.dark {
   margin: 0 !important;
   border-radius: 16px !important;
   overflow: hidden;
-  background: $bg-card !important;
+  background: var(--bg-card) !important;
   box-shadow: 0 20px 60px rgba(10, 37, 64, 0.25), 0 4px 12px rgba(10, 37, 64, 0.12) !important;
   padding: 0 !important;
   border: none !important;
@@ -474,7 +474,7 @@ html.dark {
 // 内容区
 .el-message-box__content {
   padding: 28px 32px 16px !important;
-  background: $bg-card;
+  background: var(--bg-card);
 }
 .el-message-box__container {
   display: flex !important;
@@ -501,7 +501,7 @@ html.dark {
 }
 .el-message-box__message {
   font-size: 15px !important;
-  color: $text-primary !important;
+  color: var(--text-primary) !important;
   font-weight: 500 !important;
   line-height: 1.6 !important;
   p { margin: 0 !important; }
@@ -510,8 +510,8 @@ html.dark {
 // footer（按钮区）
 .el-message-box__btns {
   padding: 14px 32px 22px !important;
-  background: $bg-base !important;
-  border-top: 1px solid $border-light;
+  background: var(--bg-base) !important;
+  border-top: 1px solid var(--border-light);
   display: flex !important;
   justify-content: flex-end !important;
   gap: 10px !important;
@@ -628,7 +628,7 @@ html.dark {
   box-shadow: 0 8px 24px rgba(10, 37, 64, 0.15) !important;
 
   &.el-message--success { background: linear-gradient(135deg, $accent-color 0%, $accent-color-dark 100%) !important; color: white !important; }
-  &.el-message--warning { background: linear-gradient(135deg, $gold-color 0%, $gold-color-dark 100%) !important; color: $text-primary !important; }
+  &.el-message--warning { background: linear-gradient(135deg, $gold-color 0%, $gold-color-dark 100%) !important; color: var(--text-primary) !important; }
   &.el-message--error   { background: linear-gradient(135deg, $danger-color 0%, darken($danger-color, 10%) 100%) !important; color: white !important; }
   &.el-message--info    { background: linear-gradient(135deg, $primary-color 0%, $primary-color-light 100%) !important; color: white !important; }
 }
@@ -643,10 +643,10 @@ html.dark {
   overflow: hidden;
   .el-notification__title {
     font-weight: 600 !important;
-    color: $text-primary !important;
+    color: var(--text-primary) !important;
   }
   .el-notification__content {
-    color: $text-regular !important;
+    color: var(--text-regular) !important;
   }
   // 左侧色条按类型
   &.el-notification--success { border-left: 4px solid $accent-color !important; }

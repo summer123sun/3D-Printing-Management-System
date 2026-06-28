@@ -265,7 +265,7 @@ const handleCancel = async () => {
             >
               <div style="display: flex; justify-content: space-between; align-items: center">
                 <span style="font-weight: 500">{{ p.printerId }} - {{ p.model }}</span>
-                <span style="font-size: 12px; color: #909399">
+                <span style="font-size: 12px; color: var(--text-secondary)">
                   {{ p.location || '未指定位置' }} · 累计 {{ p.totalPrintHours }}h
                 </span>
               </div>

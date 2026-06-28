@@ -169,10 +169,10 @@ const handleDelete = async () => {
   gap: $spacing-base;
   flex-wrap: wrap;
   font-size: 13px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   code {
     padding: 2px 6px;
-    background: $bg-base;
+    background: var(--bg-base);
     border-radius: 4px;
     font-family: monospace;
   }
@@ -188,7 +188,7 @@ const handleDelete = async () => {
   .main-photo {
     width: 100%;
     max-height: 400px;
-    background: $bg-base;
+    background: var(--bg-base);
     border-radius: 8px;
   }
   .sub-photos {
@@ -208,14 +208,14 @@ const handleDelete = async () => {
   margin: $spacing-large 0 $spacing-small;
   font-size: 18px;
   font-weight: 500;
-  color: $text-primary;
+  color: var(--text-primary);
 }
 .experience {
-  background: $bg-base;
+  background: var(--bg-base);
   border-radius: 8px;
   padding: $spacing-medium;
   line-height: 1.8;
-  color: $text-regular;
+  color: var(--text-regular);
   p {
     margin: 0 0 4px;
   }

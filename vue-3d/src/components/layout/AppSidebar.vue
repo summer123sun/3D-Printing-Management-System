@@ -114,7 +114,7 @@ const activeMenu = computed(() => route.path)
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid $border-extra-light;
+  border-bottom: 1px solid var(--border-extra-light);
   color: $brand-color;
   font-weight: 600;
 }

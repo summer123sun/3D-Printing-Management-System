@@ -314,10 +314,10 @@ const skillTagType = (s: number) => {
   align-items: center;
   gap: 4px;
   font-size: 13px;
-  color: $text-regular;
+  color: var(--text-regular);
   .contact-label { font-size: 14px; }
 }
-.text-muted { color: $text-placeholder; font-size: 13px; }
+.text-muted { color: var(--text-placeholder); font-size: 13px; }
 .empty { padding: 40px 0; }
 .pagination-wrap { display: flex; justify-content: center; margin-top: $spacing-large; }
 
@@ -333,7 +333,7 @@ const skillTagType = (s: number) => {
   background: color-mix(in srgb, $accent-color 8%, transparent);
   border-radius: 6px;
   font-size: 13px;
-  color: $text-regular;
+  color: var(--text-regular);
   .el-icon { color: $accent-color; }
   b { color: $primary-color; font-weight: 600; }
 }

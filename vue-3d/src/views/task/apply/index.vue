@@ -331,7 +331,7 @@ const handleSubmit = async () => {
 .success-subtitle {
   margin: 0 0 20px;
   font-size: 13px;
-  color: #909399;
+  color: var(--text-secondary);
   animation: fadeInUp 0.5s 0.8s both;
 }
 @keyframes fadeInUp {
@@ -384,7 +384,7 @@ const handleSubmit = async () => {
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
   font-size: 11px;
   font-weight: normal;
-  color: #909399;
+  color: var(--text-secondary);
   margin-top: 4px;
   letter-spacing: 0;
 }
@@ -402,7 +402,7 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
-  background: #f5f7fa;
+  background: var(--bg-base);
   border-radius: 8px;
   text-align: left;
 }
@@ -431,7 +431,7 @@ const handleSubmit = async () => {
 }
 .success-step-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 /* 倒计时 */
@@ -494,7 +494,7 @@ const handleSubmit = async () => {
 .error-desc {
   margin: 0;
   font-size: 14px;
-  color: #606266;
+  color: var(--text-regular);
   line-height: 1.6;
   word-break: break-all;
 }

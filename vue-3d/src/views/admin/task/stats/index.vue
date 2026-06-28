@@ -90,7 +90,7 @@ const statusCards = [
 .stat-label {
   margin: 0;
   font-size: $font-size-base;
-  color: $text-secondary;
+  color: var(--text-secondary);
 }
 .stat-num {
   margin: $spacing-small 0 0;

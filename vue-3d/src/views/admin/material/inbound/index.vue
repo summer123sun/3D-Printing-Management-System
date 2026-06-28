@@ -128,7 +128,7 @@ const handleSubmit = async () => {
             :precision="2"
             style="width: 200px"
           />
-          <span style="margin-left: 12px; color: #909399">克</span>
+          <span style="margin-left: 12px; color: var(--text-secondary)">克</span>
         </el-form-item>
         <el-form-item label="备注">
           <el-input
@@ -217,12 +217,12 @@ const handleSubmit = async () => {
   margin: 0 0 12px;
   font-size: 18px;
   font-weight: 600;
-  color: $text-primary;
+  color: var(--text-primary);
 }
 .result-tip {
   margin: 0 0 4px;
   font-size: 14px;
-  color: $text-regular;
+  color: var(--text-regular);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -236,10 +236,10 @@ const handleSubmit = async () => {
 .result-hint {
   margin: 0;
   font-size: 13px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   line-height: 1.7;
   text-align: left;
-  background: $bg-base;
+  background: var(--bg-base);
   padding: 12px 16px;
   border-radius: 8px;
   width: 100%;

@@ -196,7 +196,7 @@ const canDelete = (authorId: string) => {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #f5f7fa;
+  background: var(--bg-base);
   overflow: hidden;
 }
 .cover-img {
@@ -244,7 +244,7 @@ const canDelete = (authorId: string) => {
   margin: 0 0 4px;
   font-size: 15px;
   font-weight: 500;
-  color: $text-primary;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -253,13 +253,13 @@ const canDelete = (authorId: string) => {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   margin-bottom: 6px;
 }
 .artwork-experience {
   margin: 6px 0;
   font-size: 13px;
-  color: $text-regular;
+  color: var(--text-regular);
   line-height: 1.5;
   min-height: 40px;
 }

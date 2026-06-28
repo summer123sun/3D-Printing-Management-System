@@ -123,11 +123,11 @@ export default { name: 'AdminProjectManagePage' }
   padding: 0;
 }
 .leader-name {
-  color: $text-primary;
+  color: var(--text-primary);
   font-weight: 500;
 }
 .leader-id {
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 12px;
 }

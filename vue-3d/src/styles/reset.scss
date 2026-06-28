@@ -17,8 +17,8 @@ body,
 body {
   font-family: $font-family-base;
   font-size: $font-size-base;
-  color: $text-primary;
-  background-color: $bg-page;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

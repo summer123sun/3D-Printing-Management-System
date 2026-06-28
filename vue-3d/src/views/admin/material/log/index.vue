@@ -95,7 +95,7 @@ const onPageChange = (page: number) => {
         <el-table-column prop="balance" label="余额（克）" width="120" />
         <el-table-column prop="relatedTaskId" label="关联任务" width="160">
           <template #default="{ row }">
-            <code v-if="row.relatedTaskId" style="padding: 2px 6px; background: #f5f7fa; border-radius: 4px">
+            <code v-if="row.relatedTaskId" style="padding: 2px 6px; background: var(--bg-base); border-radius: 4px">
               {{ row.relatedTaskId }}
             </code>
             <span v-else>-</span>

@@ -183,11 +183,11 @@ const stockByType = computed(() => {
   }
   .summary-label {
     font-size: 13px;
-    color: $text-secondary;
+    color: var(--text-secondary);
     margin-top: 4px;
   }
   &.warning .summary-value { color: #e6a23c; }
-  &.info .summary-value { color: #909399; }
+  &.info .summary-value { color: var(--text-secondary); }
 }
 .warning-card { margin-bottom: $spacing-medium; }
 .warning-header {

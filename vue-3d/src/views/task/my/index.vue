@@ -134,9 +134,9 @@ export default { name: 'TaskMyPage' }
 .group-title {
   margin: 0 0 $spacing-small;
   padding: $spacing-small $spacing-base;
-  background: $bg-base;
+  background: var(--bg-base);
   border-left: 3px solid $brand-color;
   font-size: $font-size-base;
-  color: $text-regular;
+  color: var(--text-regular);
 }
 </style>

@@ -165,7 +165,7 @@ const handleDelete = async (id: number) => {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: #f5f7fa;
+  background: var(--bg-base);
   overflow: hidden;
 }
 .cover-img { width: 100%; height: 100%; }
@@ -189,14 +189,14 @@ const handleDelete = async (id: number) => {
 .artwork-info { padding: $spacing-small $spacing-base; }
 .artwork-name {
   margin: 0 0 4px; font-size: 15px; font-weight: 500;
-  color: $text-primary;
+  color: var(--text-primary);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .artwork-meta {
-  font-size: 12px; color: $text-secondary; margin-bottom: 6px;
+  font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;
 }
 .artwork-experience {
-  margin: 6px 0; font-size: 13px; color: $text-regular;
+  margin: 6px 0; font-size: 13px; color: var(--text-regular);
   line-height: 1.5; min-height: 40px;
 }
 .artwork-actions {

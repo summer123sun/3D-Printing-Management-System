@@ -49,7 +49,7 @@ withDefaults(defineProps<Props>(), {
   align-items: center;
   justify-content: center;
   padding: $spacing-xl $spacing-medium;
-  color: $text-secondary;
+  color: var(--text-secondary);
   text-align: center;
 }
 .empty-icon {
@@ -59,13 +59,13 @@ withDefaults(defineProps<Props>(), {
 .empty-description {
   margin: 0;
   font-size: $font-size-large;
-  color: $text-regular;
+  color: var(--text-regular);
   font-weight: 500;
 }
 .empty-hint {
   margin: $spacing-small 0 0;
   font-size: $font-size-small;
-  color: $text-secondary;
+  color: var(--text-secondary);
   max-width: 360px;
   line-height: 1.6;
 }

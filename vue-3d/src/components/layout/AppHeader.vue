@@ -135,7 +135,7 @@ const cancelLogout = () => {
   padding: 4px 8px;
   border-radius: $border-radius-base;
   &:hover {
-    background: $bg-base;
+    background: var(--bg-base);
   }
 }
 .user-name {
@@ -169,10 +169,10 @@ const cancelLogout = () => {
     border-color: color-mix(in srgb, $primary-color 20%, transparent);
   }
   &.role-newbie {
-    background: $bg-base;
-    color: $text-secondary;
+    background: var(--bg-base);
+    color: var(--text-secondary);
     box-shadow: none;
-    border-color: $border-light;
+    border-color: var(--border-light);
   }
 }
 
@@ -252,7 +252,7 @@ const cancelLogout = () => {
 .logout-desc {
   margin: 0 0 28px;
   font-size: 15px;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .logout-actions {
@@ -264,8 +264,8 @@ const cancelLogout = () => {
   .btn-cancel {
     width: 120px;
     border-radius: 10px;
-    background: $bg-base;
-    border: 1px solid $border-light;
+    background: var(--bg-base);
+    border: 1px solid var(--border-light);
 
     html.dark & {
       background: rgba(255, 255, 255, 0.08);

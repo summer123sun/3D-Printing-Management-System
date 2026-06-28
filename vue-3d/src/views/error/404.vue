@@ -22,14 +22,14 @@ const router = useRouter()
   align-items: center;
   justify-content: center;
   gap: $spacing-base;
-  background: $bg-page;
+  background: var(--bg-page);
   h1 {
     font-size: 72px;
-    color: $text-primary;
+    color: var(--text-primary);
     margin: 0;
   }
   .error-desc {
-    color: $text-secondary;
+    color: var(--text-secondary);
     margin: 0;
   }
 }

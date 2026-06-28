@@ -68,19 +68,19 @@ onBeforeUnmount(() => {
   height: 100vh;
 }
 .app-aside {
-  background: $bg-card;
-  border-right: 1px solid $border-extra-light;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border-extra-light);
   transition: width 0.25s ease;
   overflow: hidden;
 }
 .app-header {
-  background: $bg-card;
-  border-bottom: 1px solid $border-extra-light;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-extra-light);
   height: $header-height;
   padding: 0;
 }
 .app-main {
-  background: $bg-page;
+  background: var(--bg-page);
   padding: $spacing-medium;
   height: calc(100vh - #{$header-height});
   overflow-y: auto;

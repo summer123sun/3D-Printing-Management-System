@@ -69,12 +69,12 @@ const handleComplete = async () => {
         <p style="font-size:14px;margin:0 0 12px">
           确认标记项目 <b style="color:#67c23a">「${proj?.project.projectName ?? '该项目'}」</b> 为已完成？
         </p>
-        <div style="background:#f5f7fa;padding:10px 14px;border-radius:6px;font-size:13px;color:#606266;margin-bottom:8px">
+        <div style="background: var(--bg-base);padding:10px 14px;border-radius:6px;font-size:13px;color:var(--text-regular);margin-bottom:8px">
           <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#67c23a">已完成</b></div>
           <div>👥 关联成员：<b>${memberCount}</b> 人</div>
           <div>📋 关联任务：<b>${taskCount}</b> 个</div>
         </div>
-        <p style="color:#909399;font-size:12px;margin:0">
+        <p style="color:var(--text-secondary);font-size:12px;margin:0">
           ⚠️ 完成后项目不可再修改，但成员仍可查看项目内容
         </p>
       </div>`,
@@ -113,7 +113,7 @@ const handleCancel = async () => {
         <p style="font-size:14px;margin:0 0 12px">
           确认取消项目 <b style="color:#f56c6c">「${proj?.project.projectName ?? '该项目'}」</b>？
         </p>
-        <div style="background:#fef0f0;padding:10px 14px;border-radius:6px;font-size:13px;color:#606266;margin-bottom:8px">
+        <div style="background: color-mix(in srgb, var(--danger-color) 8%, transparent);padding:10px 14px;border-radius:6px;font-size:13px;color:var(--text-regular);margin-bottom:8px">
           <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#f56c6c">已取消</b></div>
           <div>👥 关联成员：<b>${memberCount}</b> 人</div>
           <div>📋 关联任务：<b>${taskCount}</b> 个</div>
@@ -176,7 +176,7 @@ const handleRemoveMember = async (mid: string) => {
     await ElMessageBox.confirm(
       `<div style="line-height:1.8">
         <p style="margin:0 0 8px">确认移除成员 <b style="color:#f56c6c">${memberName}</b>（学号：${mid}）？</p>
-        <p style="color:#909399;font-size:13px;margin:0">
+        <p style="color:var(--text-secondary);font-size:13px;margin:0">
           该成员将无法再访问此项目，但其本人的账号不会被删除。
         </p>
       </div>`,
@@ -495,7 +495,7 @@ export default { name: 'ProjectDetailPage' }
 .cover-placeholder {
   width: 160px;
   height: 100px;
-  background: $bg-base;
+  background: var(--bg-base);
   border-radius: $border-radius-base;
   display: flex;
   align-items: center;
@@ -512,12 +512,12 @@ export default { name: 'ProjectDetailPage' }
   display: flex;
   align-items: center;
   gap: $spacing-medium;
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-size: $font-size-small;
 }
 .description {
   margin-top: $spacing-small;
-  color: $text-regular;
+  color: var(--text-regular);
 }
 .card-header {
   display: flex;
@@ -527,16 +527,16 @@ export default { name: 'ProjectDetailPage' }
 .stage-item {
   .stage-meta {
     margin-left: 12px;
-    color: $text-secondary;
+    color: var(--text-secondary);
     font-size: $font-size-small;
   }
   .stage-desc {
     margin: 4px 0 0;
-    color: $text-regular;
+    color: var(--text-regular);
   }
   .stage-time {
     margin: 4px 0;
-    color: $text-secondary;
+    color: var(--text-secondary);
     font-size: $font-size-small;
   }
   .stage-actions {
@@ -547,6 +547,6 @@ export default { name: 'ProjectDetailPage' }
   margin-bottom: $spacing-medium;
 }
 .text-placeholder {
-  color: $text-placeholder;
+  color: var(--text-placeholder);
 }
 </style>

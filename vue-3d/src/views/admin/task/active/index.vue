@@ -82,7 +82,7 @@ const handleAssign = async () => {
             </div>
             <h2 class="success-title">分配成功！</h2>
             <p class="success-subtitle">任务 <b>${assignForm.taskId}</b> 已分配到 <b style="color:#409eff">${assignForm.printerId}</b></p>
-            <p style="color:#909399;font-size:13px;margin:0">📋 你可以现在点"开始"按钮启动打印</p>
+            <p style="color:var(--text-secondary);font-size:13px;margin:0">📋 你可以现在点"开始"按钮启动打印</p>
           </div>`,
           '',
           {
@@ -118,7 +118,7 @@ const handleAssign = async () => {
 const handleStart = async (taskId: string) => {
   try {
     await ElMessageBox.confirm(
-      `确认开始打印任务 <b>${taskId}</b> 吗？<br><br><span style="color:#909399;font-size:13px">打印开始后打印机状态会切换为"打印中"</span>`,
+      `确认开始打印任务 <b>${taskId}</b> 吗？<br><br><span style="color:var(--text-secondary);font-size:13px">打印开始后打印机状态会切换为"打印中"</span>`,
       '确认开始',
       {
         type: 'warning',
@@ -246,7 +246,7 @@ const handleFinish = async () => {
             >
               <div style="display: flex; justify-content: space-between; align-items: center">
                 <span style="font-weight: 500">{{ p.printerId }} - {{ p.model }}</span>
-                <span style="font-size: 12px; color: #909399">
+                <span style="font-size: 12px; color: var(--text-secondary)">
                   {{ p.location || '未指定位置' }} · 累计 {{ p.totalPrintHours }}h
                 </span>
               </div>
@@ -345,7 +345,7 @@ const handleFinish = async () => {
   .success-subtitle {
     margin: 0 0 12px;
     font-size: 14px;
-    color: #606266;
+    color: var(--text-regular);
   }
 }
 </style>

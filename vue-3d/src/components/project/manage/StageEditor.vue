@@ -103,7 +103,7 @@ const moveDown = (idx: number) => {
   .stage-row {
     padding: $spacing-medium;
     margin-bottom: $spacing-small;
-    background: $bg-base;
+    background: var(--bg-base);
     border-radius: $border-radius-base;
     border-left: 3px solid $brand-color;
   }

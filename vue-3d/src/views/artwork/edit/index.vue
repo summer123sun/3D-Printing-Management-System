@@ -353,7 +353,7 @@ const closeFail = () => {
     color-mix(in srgb, $gold-color 8%, transparent) 100%);
   border-left: 3px solid $accent-color;
   border-radius: 8px;
-  color: $text-regular;
+  color: var(--text-regular);
   font-size: 14px;
   .el-icon {
     color: $accent-color;
@@ -368,7 +368,7 @@ const closeFail = () => {
   gap: 8px 24px;
   padding: 14px 18px;
   margin-bottom: 24px;
-  background: $bg-base;
+  background: var(--bg-base);
   border-radius: 8px;
   border-left: 3px solid $primary-color;
 }
@@ -377,9 +377,9 @@ const closeFail = () => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  .meta-label { color: $text-secondary; }
+  .meta-label { color: var(--text-secondary); }
   .meta-value {
-    color: $text-primary;
+    color: var(--text-primary);
     font-weight: 500;
   }
   .meta-value.code {
@@ -394,7 +394,7 @@ const closeFail = () => {
 
 .cover-uploader {
   :deep(.el-upload) {
-    border: 2px dashed $border-light;
+    border: 2px dashed var(--border-light);
     border-radius: 12px;
     cursor: pointer;
     position: relative;
@@ -414,10 +414,10 @@ const closeFail = () => {
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: $text-placeholder;
-  .el-icon { color: $text-placeholder; margin-bottom: 8px; }
+  color: var(--text-placeholder);
+  .el-icon { color: var(--text-placeholder); margin-bottom: 8px; }
   p { margin: 0; font-size: 13px; }
-  .hint { font-size: 12px; margin-top: 4px; color: $text-placeholder; }
+  .hint { font-size: 12px; margin-top: 4px; color: var(--text-placeholder); }
 }
 .cover-preview {
   position: relative;
@@ -440,7 +440,7 @@ const closeFail = () => {
 }
 .photos-count {
   margin-top: 8px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-size: 13px;
   b {
     color: $accent-color-dark;
@@ -454,7 +454,7 @@ const closeFail = () => {
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid $border-lighter;
+  border-top: 1px solid var(--border-lighter);
 }
 
 // 成功/失败弹窗样式
@@ -464,11 +464,11 @@ const closeFail = () => {
   h3 {
     margin: 12px 0 8px;
     font-size: 16px;
-    color: $text-primary;
+    color: var(--text-primary);
   }
   p {
     margin: 0;
-    color: $text-secondary;
+    color: var(--text-secondary);
     font-size: 14px;
   }
   .project-id {
@@ -497,7 +497,7 @@ const closeFail = () => {
     background: rgba(255, 71, 87, 0.08);
     border-left: 3px solid $danger-color;
     border-radius: 4px;
-    color: $text-primary;
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
     word-break: break-all;
@@ -508,10 +508,10 @@ const closeFail = () => {
     gap: 10px;
     padding: 6px 10px;
     margin-bottom: 10px;
-    background: $bg-base;
+    background: var(--bg-base);
     border-radius: 4px;
     font-size: 12px;
-    color: $text-secondary;
+    color: var(--text-secondary);
     span {
       padding: 2px 6px;
       background: $danger-color;
@@ -521,14 +521,14 @@ const closeFail = () => {
     }
     code {
       font-family: monospace;
-      color: $text-primary;
+      color: var(--text-primary);
       word-break: break-all;
     }
   }
   .fail-hint {
     margin: 0;
     font-size: 12px;
-    color: $text-placeholder;
+    color: var(--text-placeholder);
     text-align: center;
   }
 }

@@ -123,29 +123,39 @@ export default { name: 'HomePage' }
   gap: $spacing-medium;
 }
 .welcome-card {
-  background: linear-gradient(135deg, $brand-color 0%, #42a5f5 100%);
+  // v2 暗色修复：!important 强制保留蓝色渐变，不被 html.dark .el-card 覆盖
+  background: linear-gradient(135deg, $brand-color 0%, #42a5f5 100%) !important;
   color: #fff;
   :deep(.el-card__body) {
     padding: $spacing-large;
+  }
+  // 暗色下文字强制白色
+  :deep(.el-card__header),
+  :deep(.el-card__body) {
+    color: #fff !important;
   }
 }
 .welcome-title {
   margin: 0 0 $spacing-small;
   font-size: 24px;
   font-weight: 600;
+  color: #fff;
 }
 .welcome-subtitle {
   margin: 0;
   font-size: $font-size-base;
   opacity: 0.9;
+  color: #fff;
 }
 .admin-tag {
   display: inline-block;
   margin-left: $spacing-small;
   padding: 2px 8px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   border-radius: $border-radius-base;
   font-size: $font-size-small;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 .quick-actions {
   margin: 0 !important;
@@ -165,7 +175,9 @@ export default { name: 'HomePage' }
 .action-text {
   margin: $spacing-small 0 0;
   font-size: $font-size-base;
-  color: $text-primary;
+  // v2 暗色修复：用 CSS 变量（暗色下自动变浅色）
+  color: var(--text-primary);
+  font-weight: 500;
 }
 .todo-list {
   list-style: none;
@@ -177,6 +189,11 @@ export default { name: 'HomePage' }
   align-items: center;
   gap: $spacing-small;
   padding: $spacing-small 0;
-  color: $text-regular;
+  // v2 暗色修复
+  color: var(--text-regular);
+  // icon 在暗色下也亮一点
+  :deep(.el-icon) {
+    color: var(--primary-color);
+  }
 }
 </style>

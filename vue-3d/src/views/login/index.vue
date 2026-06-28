@@ -198,7 +198,7 @@ const handleLogin = async () => {
 .login-page {
   min-height: 100vh;
   display: flex;
-  background: $bg-base;
+  background: var(--bg-base);
   overflow: hidden;
 }
 
@@ -319,7 +319,7 @@ const handleLogin = async () => {
 // 右侧登录表单区
 .login-form-panel {
   flex: 0 0 480px;
-  background: $bg-card;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -346,11 +346,11 @@ const handleLogin = async () => {
 .login-title {
   font-size: 28px;
   font-weight: 700;
-  color: $text-primary;
+  color: var(--text-primary);
   margin: 0 0 8px;
 }
 .login-subtitle {
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-size: 14px;
   margin: 0;
 }
@@ -388,7 +388,7 @@ const handleLogin = async () => {
 }
 .login-tip {
   text-align: center;
-  color: $text-placeholder;
+  color: var(--text-placeholder);
   font-size: 13px;
   margin-top: 24px;
   b { color: $accent-color; font-weight: 600; }

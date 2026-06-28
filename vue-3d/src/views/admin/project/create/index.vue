@@ -283,7 +283,7 @@ onBeforeUnmount(() => {
 .success-meta {
   margin: 0 0 16px;
   font-size: 14px;
-  color: #606266;
+  color: var(--text-regular);
   .project-id {
     color: #67c23a;
     font-size: 18px;
@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
 .fail-reason {
   margin: 0 0 14px;
   padding: 12px 16px;
-  background: #fef0f0;
+  background: color-mix(in srgb, var(--danger-color) 8%, transparent);
   border-left: 3px solid #f56c6c;
   border-radius: 4px;
   font-size: 14px;
@@ -320,7 +320,7 @@ onBeforeUnmount(() => {
 .fail-hint {
   margin: 0;
   font-size: 13px;
-  color: #909399;
+  color: var(--text-secondary);
   line-height: 1.8;
 }
 

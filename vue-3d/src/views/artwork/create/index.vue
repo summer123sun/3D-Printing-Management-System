@@ -380,7 +380,7 @@ const photosUrls = computed(() =>
     color-mix(in srgb, $gold-color 8%, transparent) 100%);
   border-left: 3px solid $accent-color;
   border-radius: 8px;
-  color: $text-regular;
+  color: var(--text-regular);
   font-size: 14px;
   .el-icon {
     color: $accent-color;
@@ -393,29 +393,29 @@ const photosUrls = computed(() =>
   align-items: center;
   gap: 10px;
   .task-option-id {
-    color: $text-placeholder;
+    color: var(--text-placeholder);
     font-size: 12px;
     font-family: monospace;
   }
   .task-option-title {
     flex: 1;
-    color: $text-primary;
+    color: var(--text-primary);
   }
   .task-option-date {
-    color: $text-secondary;
+    color: var(--text-secondary);
     font-size: 12px;
   }
 }
 .empty-tip {
   margin-top: 8px;
-  color: $text-secondary;
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
 .task-preview {
   width: 100%;
   padding: 12px 16px;
-  background: $bg-base;
+  background: var(--bg-base);
   border-radius: 8px;
   border-left: 3px solid $primary-color;
   .task-preview-row {
@@ -424,8 +424,8 @@ const photosUrls = computed(() =>
     gap: 8px;
     padding: 3px 0;
     font-size: 13px;
-    .label { color: $text-secondary; min-width: 80px; }
-    .value { color: $text-primary; }
+    .label { color: var(--text-secondary); min-width: 80px; }
+    .value { color: var(--text-primary); }
     .value.code {
       font-family: monospace;
       color: $accent-color-dark;
@@ -435,7 +435,7 @@ const photosUrls = computed(() =>
 
 .cover-uploader {
   :deep(.el-upload) {
-    border: 2px dashed $border-light;
+    border: 2px dashed var(--border-light);
     border-radius: 12px;
     cursor: pointer;
     position: relative;
@@ -455,10 +455,10 @@ const photosUrls = computed(() =>
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: $text-placeholder;
-  .el-icon { color: $text-placeholder; margin-bottom: 8px; }
+  color: var(--text-placeholder);
+  .el-icon { color: var(--text-placeholder); margin-bottom: 8px; }
   p { margin: 0; font-size: 13px; }
-  .hint { font-size: 12px; margin-top: 4px; color: $text-placeholder; }
+  .hint { font-size: 12px; margin-top: 4px; color: var(--text-placeholder); }
 }
 .cover-preview {
   position: relative;
@@ -488,7 +488,7 @@ const photosUrls = computed(() =>
   gap: 12px;
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid $border-lighter;
+  border-top: 1px solid var(--border-lighter);
 }
 
 // 成功/失败弹窗样式
@@ -498,11 +498,11 @@ const photosUrls = computed(() =>
   h3 {
     margin: 12px 0 8px;
     font-size: 16px;
-    color: $text-primary;
+    color: var(--text-primary);
   }
   p {
     margin: 0;
-    color: $text-secondary;
+    color: var(--text-secondary);
     font-size: 14px;
   }
   .project-id {
@@ -531,7 +531,7 @@ const photosUrls = computed(() =>
     background: rgba(255, 71, 87, 0.08);
     border-left: 3px solid $danger-color;
     border-radius: 4px;
-    color: $text-primary;
+    color: var(--text-primary);
     font-size: 14px;
   }
 }

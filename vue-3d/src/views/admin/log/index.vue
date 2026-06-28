@@ -116,7 +116,7 @@ const getOperationTagType = (op: string) => {
         <el-table-column label="操作人" width="140">
           <template #default="{ row }">
             <div>{{ row.username || row.userId || '-' }}</div>
-            <div style="font-size: 11px; color: #909399; font-family: monospace">{{ row.userId }}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); font-family: monospace">{{ row.userId }}</div>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160">
@@ -124,13 +124,13 @@ const getOperationTagType = (op: string) => {
             <el-tag :type="getOperationTagType(row.operation)">
               {{ getOperationName(row.operation) }}
             </el-tag>
-            <div style="font-size: 11px; color: #909399; font-family: monospace; margin-top: 2px">{{ row.operation }}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); font-family: monospace; margin-top: 2px">{{ row.operation }}</div>
           </template>
         </el-table-column>
         <el-table-column label="对象" width="120">
           <template #default="{ row }">
             <span>{{ getTargetTypeName(row.targetType) }}</span>
-            <div v-if="row.targetId" style="font-size: 11px; color: #909399; font-family: monospace">{{ row.targetId }}</div>
+            <div v-if="row.targetId" style="font-size: 11px; color: var(--text-secondary); font-family: monospace">{{ row.targetId }}</div>
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />

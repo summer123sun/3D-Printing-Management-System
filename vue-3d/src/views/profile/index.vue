@@ -65,7 +65,7 @@ const handleChangePassword = async () => {
       await ElMessageBox.alert(
         `<div style="text-align:center;padding:8px 0">
           <p style="font-size:14px;margin:0 0 8px">⚠️ 新密码不能与旧密码相同</p>
-          <p style="color:#909399;font-size:13px;margin:0">请换一个不一样的密码</p>
+          <p style="color:var(--text-secondary);font-size:13px;margin:0">请换一个不一样的密码</p>
         </div>`,
         '提示',
         { confirmButtonText: '我知道了', type: 'warning', center: true, dangerouslyUseHTMLString: true }
@@ -106,7 +106,7 @@ const handleChangePassword = async () => {
           </div>
           <h2 class="success-title">密码修改成功！</h2>
           <p class="success-subtitle">下次登录请使用新密码</p>
-          <p style="color:#909399;font-size:13px;margin:0">
+          <p style="color:var(--text-secondary);font-size:13px;margin:0">
             💡 建议：在密码管理器中保存新密码
           </p>
         </div>`,
@@ -269,7 +269,7 @@ const skillPercent = computed(() => {
 .skill-tip {
   margin: $spacing-small 0 0;
   font-size: $font-size-small;
-  color: $text-secondary;
+  color: var(--text-secondary);
   text-align: center;
 }
 .stat-card {
@@ -284,7 +284,7 @@ const skillPercent = computed(() => {
 }
 .stat-label {
   font-size: $font-size-small;
-  color: $text-secondary;
+  color: var(--text-secondary);
   margin-top: $spacing-mini 0 0;
 }
 .pwd-strength {
@@ -295,7 +295,7 @@ const skillPercent = computed(() => {
   font-size: 12px;
 }
 .pwd-strength-label {
-  color: $text-secondary;
+  color: var(--text-secondary);
 }
 .pwd-strength-bar {
   display: flex;
@@ -365,7 +365,7 @@ const skillPercent = computed(() => {
   .success-subtitle {
     margin: 0 0 16px;
     font-size: 14px;
-    color: #606266;
+    color: var(--text-regular);
   }
 }
 </style>
