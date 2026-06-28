@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled, Menu as MenuIcon } from '@element-plus/icons-vue'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
-import { RoleText } from '@/types/member'
+import { RoleText, Role } from '@/types/member'
 
 const appStore = useAppStore()
 const authStore = useAuthStore()
@@ -59,9 +59,9 @@ const cancelLogout = () => {
           </el-avatar>
           <span class="user-name">{{ authStore.user?.name }}</span>
           <span v-if="authStore.user" class="user-role" :class="{
-            'role-staff': authStore.user.role === 2,
-            'role-member': authStore.user.role === 3,
-            'role-newbie': authStore.user.role >= 4,
+            'role-staff': authStore.user.role === Role.TECH_LEAD,
+            'role-member': authStore.user.role === Role.MEMBER,
+            'role-newbie': authStore.user.role >= Role.NEWBIE,
           }">
             {{ RoleText[authStore.user.role] }}
           </span>

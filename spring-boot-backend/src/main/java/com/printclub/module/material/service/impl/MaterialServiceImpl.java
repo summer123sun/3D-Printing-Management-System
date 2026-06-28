@@ -105,11 +105,8 @@ public class MaterialServiceImpl implements MaterialService {
         for (MaterialLog l : logs) {
             if (l.getOperatorId() != null) ids.add(l.getOperatorId());
         }
-        if (ids.isEmpty()) return;
-        java.util.Map<String, String> id2name = new java.util.HashMap<>();
-        for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(ids)) {
-            id2name.put(m.getStudentId(), m.getName());
-        }
+        // v2 重构：用 memberMapper.selectIdNameMap 公共方法
+        java.util.Map<String, String> id2name = memberMapper.selectIdNameMap(ids);
         for (MaterialLog l : logs) {
             l.setOperatorName(id2name.get(l.getOperatorId()));
         }

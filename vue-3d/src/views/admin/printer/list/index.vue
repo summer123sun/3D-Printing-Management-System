@@ -16,12 +16,13 @@ import AppDialog from '@/components/common/AppDialog.vue'
 import { usePrinterStore } from '@/stores/printer'
 import { useAuthStore } from '@/stores/auth'
 import { PrinterStatus, PrinterStatusText, PrinterStatusTagType } from '@/types/printer'
+import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
 
 const store = usePrinterStore()
 const authStore = useAuthStore()
 
-const isAdmin = computed(() => authStore.user?.role === 1)
+const isAdmin = computed(() => authStore.user?.role === Role.PRESIDENT)
 
 const submitting = ref(false)
 

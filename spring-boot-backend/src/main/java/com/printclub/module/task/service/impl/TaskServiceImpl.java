@@ -10,7 +10,6 @@ import com.printclub.common.result.PageResult;
 import com.printclub.common.result.ResultCode;
 import com.printclub.common.util.PageUtils;
 import com.printclub.common.util.SecurityContext;
-import com.printclub.module.artwork.entity.Artwork;
 import com.printclub.module.artwork.mapper.ArtworkMapper;
 import com.printclub.module.log.service.LogService;
 import com.printclub.module.material.entity.MaterialLog;
@@ -111,6 +110,12 @@ public class TaskServiceImpl implements TaskService {
         wrapper.eq(PrintTask::getApplicantId, studentId)
                 .orderByDesc(PrintTask::getApplyTime);
 
+        // v2 修复：/task/my 默认排除"已登记过作品"的任务（task_id 不在 artwork 表里）
+        // 业务语义：/task/my = "可登记任务列表"，已登记的去 /artwork/my 看
+        // 避免用户重复选同一个任务登记（后端虽然有 UNIQUE 约束会报错，但前端体验更差）
+        wrapper.notInSql(PrintTask::getTaskId,
+                "SELECT task_id FROM artwork WHERE task_id IS NOT NULL");
+
         applyCommonFilters(wrapper, query);
         PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
         // v2：批量注入申请人/审批人/打印机 名字
@@ -137,9 +142,12 @@ public class TaskServiceImpl implements TaskService {
     public PageResult<PrintTask> queue(TaskQuery query) {
         Page<PrintTask> page = new Page<>(query.getPage(), query.getSize());
 
-        // 队列：状态=3(排队中) 或 4(打印中)，按 priority → apply_time 排序
+        // 队列：状态=1(已通过未分配) + 3(排队中) + 4(打印中)，按 priority → apply_time 排序
+        // v2 修复：必须包含 STATUS_APPROVED，否则审批通过后任务从"待审批"消失
+        // 但又没出现在"进行中"里，看起来像凭空消失。
+        // 任务完整流转：PENDING(0) → APPROVED(1) → QUEUED(3) → PRINTING(4) → DONE(5) → PICKED_UP(8)
         LambdaQueryWrapper<PrintTask> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(PrintTask::getStatus, PrintTask.STATUS_QUEUED, PrintTask.STATUS_PRINTING)
+        wrapper.in(PrintTask::getStatus, PrintTask.STATUS_APPROVED, PrintTask.STATUS_QUEUED, PrintTask.STATUS_PRINTING)
                 .orderByAsc(PrintTask::getPriority)
                 .orderByAsc(PrintTask::getApplyTime);
 
@@ -180,13 +188,8 @@ public class TaskServiceImpl implements TaskService {
             if (t.getPrinterId() != null) printerIds.add(t.getPrinterId());
         }
 
-        // 2. 批量查
-        java.util.Map<String, String> id2name = new java.util.HashMap<>();
-        if (!memberIds.isEmpty()) {
-            for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(memberIds)) {
-                id2name.put(m.getStudentId(), m.getName());
-            }
-        }
+        // 2. 批量查（用 memberMapper.selectIdNameMap 公共方法，替代原本复制粘贴的 selectBatchIds 循环）
+        java.util.Map<String, String> id2name = memberMapper.selectIdNameMap(memberIds);
         java.util.Map<String, String> id2model = new java.util.HashMap<>();
         if (!printerIds.isEmpty()) {
             for (com.printclub.module.printer.entity.Printer p : printerMapper.selectBatchIds(printerIds)) {
@@ -208,6 +211,19 @@ public class TaskServiceImpl implements TaskService {
         }
         if (q.getApplicantId() != null) {
             w.eq(PrintTask::getApplicantId, q.getApplicantId());
+        }
+        // v2 修复：status 字段已定义为"逗号分隔多选字符串"，但一直没人解析
+        // 后果：前端传 status=5 被忽略，后端返回所有状态的任务
+        // 现在补上：解析 "5,8" → in (5, 8)
+        if (q.getStatus() != null && !q.getStatus().isBlank()) {
+            String[] parts = q.getStatus().split(",");
+            java.util.List<Integer> statusList = new java.util.ArrayList<>();
+            for (String p : parts) {
+                try { statusList.add(Integer.parseInt(p.trim())); } catch (NumberFormatException ignored) {}
+            }
+            if (!statusList.isEmpty()) {
+                w.in(PrintTask::getStatus, statusList);
+            }
         }
         if (q.getKeyword() != null && !q.getKeyword().isBlank()) {
             w.and(x -> x.like(PrintTask::getTitle, q.getKeyword())
@@ -273,13 +289,9 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException(ResultCode.PRINTER_BROKEN);
         }
 
-        // v2 修复：占用检查包括 STATUS_QUEUED(3) 和 STATUS_PRINTING(4) — 已分配未打印也算占用
-        Long busy = taskMapper.selectCount(
-                new LambdaQueryWrapper<PrintTask>()
-                        .eq(PrintTask::getPrinterId, dto.getPrinterId())
-                        .in(PrintTask::getStatus, PrintTask.STATUS_QUEUED, PrintTask.STATUS_PRINTING)
-        );
-        if (busy > 0) {
+        // v2 重构：用 taskMapper.selectBusyPrinterIds() 公共方法判断该打印机是否被占
+        // （包含 STATUS_QUEUED(3) + STATUS_PRINTING(4) — 已分配未打印也算占用）
+        if (taskMapper.selectBusyPrinterIds().contains(dto.getPrinterId())) {
             throw new BusinessException(ResultCode.PRINTER_BUSY);
         }
 
@@ -315,7 +327,7 @@ public class TaskServiceImpl implements TaskService {
      *   <li>扣减耗材库存（material_log 写一条消耗记录）</li>
      *   <li>累计申请人的打印次数</li>
      *   <li>累计打印机使用时长</li>
-     *   <li>自动归档作品库</li>
+     *   <li>v2 修复：不再自动归档作品库（与手动登记冲突，由用户主动登记）</li>
      * </ol>
      */
     @Override
@@ -372,14 +384,10 @@ public class TaskServiceImpl implements TaskService {
             printerMapper.updateById(printer);
         }
 
-        // 5. 自动归档作品库（v2：去掉了 likes 和 print_params）
-        Artwork artwork = new Artwork();
-        artwork.setTaskId(taskId);
-        artwork.setAuthorId(task.getApplicantId());
-        artwork.setArtworkName(task.getTitle());
-        artwork.setIsRecommended(0);
-        artwork.setViewCount(0);
-        artworkMapper.insert(artwork);
+        // 4. v2 修复：去掉"完成打印自动归档作品库"逻辑
+        //    原因：完成打印和登记作品是两个独立动作，强制自动上传会和用户手动登记流程
+        //    冲突（重复创建、用户没机会填心得/选照片）。
+        //    现在 task.finish 不创建 artwork，作品完全由用户通过"登记作品"入口手动上传。
 
         log.info("任务完成：taskId={}, applicant={}, 消耗耗材={}g",
                 taskId, task.getApplicantId(), dto.getActualWeight());

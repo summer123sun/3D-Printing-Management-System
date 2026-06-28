@@ -16,6 +16,7 @@ import { useTaskStore } from '@/stores/task'
 import { usePrinterStore } from '@/stores/printer'
 import { useAuthStore } from '@/stores/auth'
 import { TaskStatus, TaskStatusText } from '@/types/task'
+import { Role } from '@/utils/enum'
 import { formatDate, formatWeight, formatDuration, formatFileSize } from '@/utils/format'
 
 const route = useRoute()
@@ -29,7 +30,7 @@ const taskId = computed(() => route.params.id as string)
 const isMine = computed(() => taskStore.currentTask?.applicantId === authStore.user?.studentId)
 const isStaff = computed(() => {
   const role = authStore.user?.role ?? 0
-  return role === 1 || role === 2
+  return role === Role.PRESIDENT || role === Role.TECH_LEAD
 })
 const canPickup = computed(() => isMine.value && taskStore.currentTask?.status === TaskStatus.DONE && !taskStore.currentTask?.pickupTime)
 const canCancel = computed(() => isMine.value && (taskStore.currentTask?.status === TaskStatus.PENDING || taskStore.currentTask?.status === TaskStatus.QUEUED))
@@ -111,7 +112,7 @@ const handleFinish = async () => {
     await taskStore.finishPrint(taskId.value, finishForm.value)
     ElNotification.success({
       title: '✅ 打印完成',
-      message: '已自动扣减库存 + 归档作品库',
+      message: '已自动扣减库存 + 累计打印次数。请到【我的作品】手动登记作品（带照片 + 心得）',
       duration: 4000,
     })
     finishDialogVisible.value = false
@@ -295,7 +296,8 @@ const handleCancel = async () => {
           <el-rate v-model="finishForm.qualityScore" :max="5" />
         </el-form-item>
         <el-alert type="warning" :closable="false" show-icon>
-          完成后会自动：扣减库存 + 累计打印次数 + 归档作品库
+          完成后会自动：扣减库存 + 累计打印次数。<br />
+          <b>作品需要用户手动登记</b>（到【我的作品】→ 登记作品上传照片 + 心得）
         </el-alert>
       </el-form>
     </AppDialog>

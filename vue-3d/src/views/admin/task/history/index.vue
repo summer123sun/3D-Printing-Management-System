@@ -20,8 +20,11 @@ const router = useRouter()
 
 const list = ref<PageResult<PrintTask> | null>(null)
 const loading = ref(false)
+// v2 修复：默认查所有"已结束"任务（DONE + PICKED_UP + CANCELLED），
+// 而不是只查 DONE。否则已取件的任务（DONE 之后还会走到 PICKED_UP）在历史页看不到
+const ALL_FINISHED = '5,6,8'
 const filter = ref({
-  status: TaskStatus.DONE,
+  status: ALL_FINISHED as number | string,
   page: 1,
   size: 20,
 })
@@ -43,13 +46,18 @@ const fetchData = async () => {
 }
 onMounted(fetchData)
 
-const statusOptions = Object.entries(TaskStatusText).map(([k, v]) => ({
-  value: Number(k),
-  label: v,
-}))
+// v2 修复：状态选项支持"全部已结束"（多状态逗号分隔字符串）
+// 之前的 Object.entries 生成的是 number 单选，但 TaskServiceImpl.applyCommonFilters
+// 现在支持"5,6,8" 这种字符串，所以下拉要混用
+const statusOptions = [
+  { value: ALL_FINISHED, label: '全部（已结束）' },
+  ...Object.entries(TaskStatusText)
+    .filter(([k]) => ['5', '6', '8'].includes(k))  // 只显示已结束的 3 个
+    .map(([k, v]) => ({ value: Number(k), label: v })),
+]
 
 const resetFilter = () => {
-  filter.value.status = TaskStatus.DONE
+  filter.value.status = ALL_FINISHED
   filter.value.page = 1
   fetchData()
 }

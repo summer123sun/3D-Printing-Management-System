@@ -12,6 +12,7 @@ import { ArrowLeft, Edit, Star, StarFilled, View } from '@element-plus/icons-vue
 import { useArtworkStore } from '@/stores/artwork'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
+import { RecommendedFlag, Role } from '@/utils/enum'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,7 +27,7 @@ const isMine = computed(() => {
 
 const canRecommend = computed(() => {
   const role = authStore.user?.role
-  return role === 1 || role === 2
+  return role === Role.PRESIDENT || role === Role.TECH_LEAD
 })
 
 const fetchData = async () => {
@@ -41,10 +42,10 @@ const handleEdit = () => {
 
 const handleToggleRecommend = async () => {
   if (!store.current) return
-  const newVal = store.current.isRecommended === 1 ? 0 : 1
+  const newVal = store.current.isRecommended === RecommendedFlag.YES ? RecommendedFlag.NO : RecommendedFlag.YES
   try {
     await ElMessageBox.confirm(
-      newVal === 1 ? '确定设为推荐作品吗？' : '确定取消推荐吗？',
+      newVal === RecommendedFlag.YES ? '确定设为推荐作品吗？' : '确定取消推荐吗？',
       '提示',
       { type: 'warning', center: true, confirmButtonText: '确定', cancelButtonText: '取消' }
     )
@@ -52,7 +53,7 @@ const handleToggleRecommend = async () => {
     return
   }
   await store.setRecommend(artworkId.value, newVal)
-  ElNotification.success(newVal === 1 ? '已设为推荐' : '已取消推荐')
+  ElNotification.success(newVal === RecommendedFlag.YES ? '已设为推荐' : '已取消推荐')
   await fetchData()
 }
 
@@ -88,7 +89,7 @@ const handleDelete = async () => {
       <div class="header">
         <div class="header-left">
           <h1 class="artwork-name">
-            <el-tag v-if="store.current.isRecommended === 1" type="danger" effect="dark" round>⭐ 推荐</el-tag>
+            <el-tag v-if="store.current.isRecommended === RecommendedFlag.YES" type="danger" effect="dark" round>⭐ 推荐</el-tag>
             {{ store.current.artworkName }}
           </h1>
           <div class="meta">
@@ -100,8 +101,8 @@ const handleDelete = async () => {
         </div>
         <div class="header-right">
           <el-button v-if="canRecommend" @click="handleToggleRecommend">
-            <el-icon><StarFilled v-if="store.current.isRecommended === 1" /><Star v-else /></el-icon>
-            {{ store.current.isRecommended === 1 ? '取消推荐' : '设为推荐' }}
+            <el-icon><StarFilled v-if="store.current.isRecommended === RecommendedFlag.YES" /><Star v-else /></el-icon>
+            {{ store.current.isRecommended === RecommendedFlag.YES ? '取消推荐' : '设为推荐' }}
           </el-button>
           <el-button v-if="isMine" type="primary" @click="handleEdit">
             <el-icon><Edit /></el-icon> 编辑

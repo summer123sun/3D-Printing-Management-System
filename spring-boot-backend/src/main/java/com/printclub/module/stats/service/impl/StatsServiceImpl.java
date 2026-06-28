@@ -186,12 +186,8 @@ public class StatsServiceImpl implements StatsService {
                 Object id = row.get("applicant_id");
                 if (id != null) ids.add(id.toString());
             }
-            java.util.Map<String, String> id2name = new java.util.HashMap<>();
-            if (!ids.isEmpty()) {
-                for (com.printclub.module.user.entity.Member m : memberMapper.selectBatchIds(ids)) {
-                    id2name.put(m.getStudentId(), m.getName());
-                }
-            }
+            // v2 重构：用 memberMapper.selectIdNameMap 公共方法
+            java.util.Map<String, String> id2name = memberMapper.selectIdNameMap(ids);
             for (Map<String, Object> row : rows) {
                 Object id = row.get("applicant_id");
                 row.put("applicant_name", id == null ? null : id2name.get(id.toString()));

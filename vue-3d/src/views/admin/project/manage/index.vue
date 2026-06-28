@@ -10,7 +10,7 @@ import { ElMessage } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useProjectStore } from '@/stores/project'
-import { ProjectStatusText, ProjectTypeText } from '@/types/project'
+import { ProjectStatusText, ProjectTypeText, ProjectStatus } from '@/types/project'
 import { formatDate } from '@/utils/format'
 
 const router = useRouter()
@@ -44,7 +44,7 @@ const handleCancel = async (id: number) => {
 }
 
 const statusTagType = (s: number) => {
-  return s === 0 ? 'info' : s === 1 ? 'primary' : s === 2 ? 'success' : 'danger'
+  return s === ProjectStatus.PREPARING ? 'info' : s === ProjectStatus.RUNNING ? 'primary' : s === ProjectStatus.DONE ? 'success' : 'danger'
 }
 </script>
 
@@ -103,8 +103,8 @@ const statusTagType = (s: number) => {
           <el-table-column label="操作" width="200" fixed="right">
             <template #default="{ row }">
               <el-button text type="primary" size="small" @click="router.push(`/project/${row.projectId}`)">查看</el-button>
-              <el-button v-if="row.status === 1" text type="success" size="small" @click="handleComplete(row.projectId)">完成</el-button>
-              <el-button v-if="row.status !== 2" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
+              <el-button v-if="row.status === ProjectStatus.RUNNING" text type="success" size="small" @click="handleComplete(row.projectId)">完成</el-button>
+              <el-button v-if="row.status !== ProjectStatus.DONE" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
             </template>
           </el-table-column>
         </el-table>

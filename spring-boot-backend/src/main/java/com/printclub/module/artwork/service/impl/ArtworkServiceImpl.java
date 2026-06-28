@@ -16,11 +16,17 @@ import com.printclub.module.artwork.service.ArtworkService;
 import com.printclub.module.log.service.LogService;
 import com.printclub.module.task.entity.PrintTask;
 import com.printclub.module.task.mapper.TaskMapper;
+import com.printclub.module.user.entity.Member;
+import com.printclub.module.user.mapper.MemberMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 作品库 Service 实现
@@ -35,6 +41,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     private final ArtworkMapper artworkMapper;
     private final TaskMapper taskMapper;
     private final LogService logService;
+    private final MemberMapper memberMapper;
 
     @Override
     public PageResult<Artwork> list(ArtworkQuery query) {
@@ -53,7 +60,9 @@ public class ArtworkServiceImpl implements ArtworkService {
         // 排序
         applySort(wrapper, query.getSortBy());
         Page<Artwork> result = artworkMapper.selectPage(page, wrapper);
-        return PageUtils.toResult(result);
+        PageResult<Artwork> pr = PageUtils.toResult(result);
+        fillArtworkAuthorNames(pr.getList());
+        return pr;
     }
 
     @Override
@@ -66,7 +75,9 @@ public class ArtworkServiceImpl implements ArtworkService {
         }
         applySort(wrapper, query.getSortBy());
         Page<Artwork> result = artworkMapper.selectPage(page, wrapper);
-        return PageUtils.toResult(result);
+        PageResult<Artwork> pr = PageUtils.toResult(result);
+        fillArtworkAuthorNames(pr.getList());
+        return pr;
     }
 
     @Override
@@ -78,6 +89,7 @@ public class ArtworkServiceImpl implements ArtworkService {
         // 访问 +1
         artwork.setViewCount(artwork.getViewCount() == null ? 1 : artwork.getViewCount() + 1);
         artworkMapper.updateById(artwork);
+        fillArtworkAuthorNames(java.util.Collections.singletonList(artwork));
         return artwork;
     }
 
@@ -190,10 +202,29 @@ public class ArtworkServiceImpl implements ArtworkService {
                 .orderByDesc(Artwork::getViewCount)
                 .orderByDesc(Artwork::getCreateTime);
         Page<Artwork> result = artworkMapper.selectPage(page, wrapper);
-        return PageUtils.toResult(result);
+        PageResult<Artwork> pr = PageUtils.toResult(result);
+        fillArtworkAuthorNames(pr.getList());
+        return pr;
     }
 
     // ============== 私有方法 ==============
+
+    /**
+     * 批量把 authorId 翻译成 authorName（一次查 member，N+1 → 1 次）
+     * v2 重构：直接用 memberMapper.selectIdNameMap 公共方法
+     */
+    private void fillArtworkAuthorNames(List<Artwork> artworks) {
+        if (artworks == null || artworks.isEmpty()) return;
+        Set<String> authorIds = new HashSet<>();
+        for (Artwork a : artworks) {
+            if (a.getAuthorId() != null) authorIds.add(a.getAuthorId());
+        }
+        // 用 memberMapper.selectIdNameMap 公共方法（替代原本复制 task 的 selectBatchIds 循环）
+        Map<String, String> id2name = memberMapper.selectIdNameMap(authorIds);
+        for (Artwork a : artworks) {
+            a.setAuthorName(id2name.get(a.getAuthorId()));
+        }
+    }
 
     private void applySort(LambdaQueryWrapper<Artwork> wrapper, String sortBy) {
         if (sortBy == null) sortBy = "latest";

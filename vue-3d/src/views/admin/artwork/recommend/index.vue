@@ -11,6 +11,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useArtworkStore } from '@/stores/artwork'
 import { formatDate } from '@/utils/format'
+import { RecommendedFlag } from '@/utils/enum'
 
 const store = useArtworkStore()
 
@@ -40,10 +41,10 @@ const onPageChange = (page: number) => {
 }
 
 const handleToggle = async (item: any) => {
-  const newVal = item.isRecommended === 1 ? 0 : 1
+  const newVal = item.isRecommended === RecommendedFlag.YES ? RecommendedFlag.NO : RecommendedFlag.YES
   try {
     await ElMessageBox.confirm(
-      newVal === 1
+      newVal === RecommendedFlag.YES
         ? `确定将「${item.artworkName}」设为推荐吗？`
         : `确定取消「${item.artworkName}」的推荐吗？`,
       '提示',
@@ -53,7 +54,7 @@ const handleToggle = async (item: any) => {
     return
   }
   await store.setRecommend(item.artworkId, newVal)
-  ElNotification.success(newVal === 1 ? '已设为推荐' : '已取消推荐')
+  ElNotification.success(newVal === RecommendedFlag.YES ? '已设为推荐' : '已取消推荐')
   await fetchData()
 }
 </script>
@@ -99,7 +100,7 @@ const handleToggle = async (item: any) => {
         <el-table-column prop="viewCount" label="浏览" width="80" sortable />
         <el-table-column label="推荐状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.isRecommended === 1" type="danger" effect="dark">⭐ 推荐</el-tag>
+            <el-tag v-if="row.isRecommended === RecommendedFlag.YES" type="danger" effect="dark">⭐ 推荐</el-tag>
             <el-tag v-else type="info">普通</el-tag>
           </template>
         </el-table-column>
@@ -110,11 +111,11 @@ const handleToggle = async (item: any) => {
           <template #default="{ row }">
             <el-button
               size="small"
-              :type="row.isRecommended === 1 ? 'warning' : 'primary'"
+              :type="row.isRecommended === RecommendedFlag.YES ? 'warning' : 'primary'"
               @click="handleToggle(row)"
             >
-              <el-icon><StarFilled v-if="row.isRecommended === 1" /><Star v-else /></el-icon>
-              {{ row.isRecommended === 1 ? '取消推荐' : '设为推荐' }}
+              <el-icon><StarFilled v-if="row.isRecommended === RecommendedFlag.YES" /><Star v-else /></el-icon>
+              {{ row.isRecommended === RecommendedFlag.YES ? '取消推荐' : '设为推荐' }}
             </el-button>
           </template>
         </el-table-column>

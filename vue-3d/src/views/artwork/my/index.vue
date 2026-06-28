@@ -11,6 +11,7 @@ import { Picture, View, Edit } from '@element-plus/icons-vue'
 import { useArtworkStore } from '@/stores/artwork'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { formatDate } from '@/utils/format'
+import { RecommendedFlag } from '@/utils/enum'
 
 const router = useRouter()
 const store = useArtworkStore()
@@ -77,7 +78,7 @@ const handleDelete = async (id: number) => {
       <EmptyState
         v-if="!store.myArtworks || store.myArtworks.list.length === 0"
         description="你还没有作品"
-        hint="完成打印任务后会自动归档到这里~"
+        hint="完成打印任务后，请到这里点击「登记作品」上传照片 + 心得~"
       />
 
       <div v-else class="artwork-grid">
@@ -98,7 +99,7 @@ const handleDelete = async (id: number) => {
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>
             </div>
-            <div v-if="item.isRecommended === 1" class="recommend-badge">⭐ 推荐</div>
+            <div v-if="item.isRecommended === RecommendedFlag.YES" class="recommend-badge">⭐ 推荐</div>
             <div class="view-count">
               <el-icon><View /></el-icon> {{ item.viewCount || 0 }}
             </div>

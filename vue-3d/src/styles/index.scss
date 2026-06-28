@@ -123,7 +123,39 @@ html.dark {
   }
   // el-tag 暗色下文字（dark 类型等深色背景上需要白字）
   .el-tag--dark { color: #fff !important; }
-  .el-tag { color: var(--text-primary) !important; }
+
+  // v2 修复：耗材库存总览卡片暗色适配（业务页 scoped 样式用 $brand-color 深海蓝，
+  // 暗色背景下深蓝字看不清。!important 覆盖）
+  .summary-value { color: #4FE5C7 !important; }  // 默认 → 亮薄荷青
+  .summary-card.warning .summary-value { color: #FFE44D !important; }  // warning → 亮金
+  .summary-card.info .summary-value { color: #B0BCC9 !important; }  // info → 亮蓝灰
+  // v2 修复：暗色下 el-tag light effect 用半透明深色底 + 主题亮色字
+  // 解决：浅色背景在暗色页面里突兀、对比度差看不清状态
+  .el-tag {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--text-primary) !important;
+    border-color: transparent !important;
+    &.el-tag--success {
+      background-color: rgba(0, 212, 170, 0.18) !important;
+      color: #4FE5C7 !important;
+    }
+    &.el-tag--primary {
+      background-color: rgba(10, 37, 64, 0.45) !important;
+      color: #7BA7D9 !important;
+    }
+    &.el-tag--warning {
+      background-color: rgba(255, 215, 0, 0.18) !important;
+      color: #FFE44D !important;
+    }
+    &.el-tag--info {
+      background-color: rgba(107, 124, 147, 0.25) !important;
+      color: #B0BCC9 !important;
+    }
+    &.el-tag--danger {
+      background-color: rgba(255, 71, 87, 0.18) !important;
+      color: #FF7A85 !important;
+    }
+  }
   // el-alert 暗色下文字
   .el-alert__title { color: var(--text-primary) !important; }
   .el-alert__description { color: var(--text-regular) !important; }

@@ -27,6 +27,10 @@ public class Artwork implements Serializable {
     @TableField("author_id")
     private String authorId;
 
+    /** 作者姓名（运行时从 member 表批量注入，DB 不存） */
+    @TableField(exist = false)
+    private String authorName;
+
     @TableField("artwork_name")
     private String artworkName;
 

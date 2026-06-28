@@ -131,15 +131,11 @@ public class PrinterServiceImpl implements PrinterService {
                 .orderByAsc(Printer::getPrinterId);
         List<Printer> all = printerMapper.selectList(wrapper);
 
-        // 2. 过滤掉"正在打印"的（被任务占用）
+        // 2. 过滤掉"正在使用"的（被任务占用）
+        //    v2 重构：用 taskMapper.selectBusyPrinterIds() 公共方法
+        //    包含 STATUS_QUEUED(3) + STATUS_PRINTING(4)，已分配未打印的也算占用
         if (all.isEmpty()) return all;
-        // 用 selectObjs 拿 printerId 列表（泛型推断更友好）
-        List<String> busyIds = taskMapper.selectObjs(
-                new LambdaQueryWrapper<PrintTask>()
-                        .eq(PrintTask::getStatus, PrintTask.STATUS_PRINTING)
-                        .isNotNull(PrintTask::getPrinterId)
-                        .select(PrintTask::getPrinterId)
-        );
+        List<String> busyIds = taskMapper.selectBusyPrinterIds();
 
         return all.stream()
                 .filter(p -> !busyIds.contains(p.getPrinterId()))

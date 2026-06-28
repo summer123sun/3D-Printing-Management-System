@@ -158,7 +158,7 @@ const handleFinish = async () => {
     })
     ElNotification.success({
       title: '✅ 打印完成',
-      message: '已自动扣减库存 + 归档作品库',
+      message: '已自动扣减库存 + 累计打印次数。请到【我的作品】手动登记作品（带照片 + 心得）',
       duration: 4000,
     })
     finishDialogVisible.value = false
@@ -213,7 +213,7 @@ const handleFinish = async () => {
           <el-table-column label="操作" width="240" fixed="right">
             <template #default="{ row }">
               <el-button text type="primary" @click="router.push(`/task/${row.taskId}`)">详情</el-button>
-              <template v-if="row.status === TaskStatus.QUEUED">
+              <template v-if="row.status === TaskStatus.QUEUED || row.status === TaskStatus.APPROVED">
                 <el-button v-if="!row.printerId" text type="primary" @click="openAssign(row.taskId)">分配</el-button>
                 <el-button v-else text type="success" @click="handleStart(row.taskId)">开始</el-button>
               </template>
@@ -283,7 +283,8 @@ const handleFinish = async () => {
           <el-rate v-model="finishForm.qualityScore" :max="5" />
         </el-form-item>
         <el-alert type="warning" :closable="false" show-icon>
-          完成后会自动：扣减库存 + 累计打印次数 + 归档作品库
+          完成后会自动：扣减库存 + 累计打印次数。<br />
+          <b>作品需要用户手动登记</b>（到【我的作品】→ 登记作品上传照片 + 心得）
         </el-alert>
       </el-form>
     </AppDialog>

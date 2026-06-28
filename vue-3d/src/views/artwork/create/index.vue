@@ -17,6 +17,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { createArtwork } from '@/api/artwork'
 import { myTasks } from '@/api/task'
+import { ErrorCode } from '@/utils/enum'
 import type { PrintTask } from '@/types/task'
 import { formatDate } from '@/utils/format'
 import { getToken } from '@/utils/auth'
@@ -57,8 +58,8 @@ const photosFileList = ref<any[]>([])
 const loadAvailableTasks = async () => {
   loadingTasks.value = true
   try {
-    const res = await myTasks({ status: 5, size: 100 })  // status=5 已完结
-    availableTasks.value = res.records || []
+    const res = await myTasks({ status: '5,8', size: 100 })  // DONE(5) + PICKED_UP(8)：取件后也能登记
+    availableTasks.value = res.list || []  // PageResult 字段是 list 不是 records
   } finally {
     loadingTasks.value = false
   }
@@ -85,7 +86,7 @@ watch(() => form.value.taskId, (newId) => {
 
 // 封面图上传成功
 const handlePreviewSuccess = (res: any) => {
-  if (res?.code === 200 && res?.data?.url) {
+  if (res?.code === ErrorCode.SUCCESS && res?.data?.url) {
     form.value.previewImage = res.data.url
     ElMessage.success('封面上传成功')
   } else {
@@ -98,7 +99,7 @@ const handlePreviewRemove = () => {
 
 // 成品照上传成功
 const handlePhotosSuccess = (res: any, file: any) => {
-  if (res?.code === 200 && res?.data?.url) {
+  if (res?.code === ErrorCode.SUCCESS && res?.data?.url) {
     // 多图：追加到 finishPhotos 字符串
     const list = form.value.finishPhotos ? form.value.finishPhotos.split(',') : []
     list.push(res.data.url)

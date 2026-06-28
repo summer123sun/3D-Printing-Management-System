@@ -19,6 +19,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { artworkDetail, updateArtwork } from '@/api/artwork'
 import type { Artwork } from '@/types/artwork'
+import { ErrorCode } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
 import { getToken } from '@/utils/auth'
 
@@ -83,7 +84,7 @@ onMounted(loadData)
 
 // 封面图上传成功
 const handlePreviewSuccess = (res: any) => {
-  if (res?.code === 200 && res?.data?.url) {
+  if (res?.code === ErrorCode.SUCCESS && res?.data?.url) {
     form.value.previewImage = res.data.url
     ElMessage.success('封面上传成功')
   } else {
@@ -96,7 +97,7 @@ const handlePreviewRemove = () => {
 
 // 成品照上传成功（多图，追加到 finishPhotos）
 const handlePhotosSuccess = (res: any) => {
-  if (res?.code === 200 && res?.data?.url) {
+  if (res?.code === ErrorCode.SUCCESS && res?.data?.url) {
     const list = form.value.finishPhotos ? form.value.finishPhotos.split(',') : []
     list.push(res.data.url)
     form.value.finishPhotos = list.join(',')

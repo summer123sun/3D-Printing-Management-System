@@ -18,8 +18,9 @@ import {
   ProjectStatus, ProjectStatusText,
   ProjectRole, ProjectRoleText,
   StageStatus, StageStatusText,
-  ProjectMemberStatus,
+  ProjectMemberStatus, ProjectType,
 } from '@/types/project'
+import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
 
 const route = useRoute()
@@ -32,7 +33,7 @@ const projectId = computed(() => Number(route.params.id))
 const isLeader = computed(() => projectStore.currentProject?.project.leaderId === authStore.user?.studentId)
 const isStaff = computed(() => {
   const role = authStore.user?.role ?? 0
-  return role === 1 || role === 2
+  return role === Role.PRESIDENT || role === Role.TECH_LEAD
 })
 
 const activeTab = ref<'overview' | 'members' | 'stages' | 'files' | 'tasks'>('overview')
@@ -61,7 +62,7 @@ const handleComplete = async () => {
   const proj = projectStore.currentProject
   const memberCount = proj?.members?.length ?? 0
   const taskCount = proj?.relatedTasks?.length ?? 0
-  const currentStatus = proj?.project.status === 1 ? '进行中' : proj?.project.status === 0 ? '筹备中' : '未知'
+  const currentStatus = proj?.project.status === ProjectStatus.RUNNING ? '进行中' : proj?.project.status === ProjectStatus.PREPARING ? '筹备中' : '未知'
 
   try {
     await ElMessageBox.confirm(
@@ -105,7 +106,7 @@ const handleCancel = async () => {
   const proj = projectStore.currentProject
   const memberCount = proj?.members?.length ?? 0
   const taskCount = proj?.relatedTasks?.length ?? 0
-  const currentStatus = proj?.project.status === 1 ? '进行中' : proj?.project.status === 0 ? '筹备中' : '未知'
+  const currentStatus = proj?.project.status === ProjectStatus.RUNNING ? '进行中' : proj?.project.status === ProjectStatus.PREPARING ? '筹备中' : '未知'
 
   try {
     await ElMessageBox.confirm(
@@ -311,7 +312,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       <el-card v-if="activeTab === 'overview'">
         <el-descriptions title="项目信息" :column="2" border>
           <el-descriptions-item label="项目编号">#{{ projectStore.currentProject.project.projectId }}</el-descriptions-item>
-          <el-descriptions-item label="类型">{{ projectStore.currentProject.project.projectType === 1 ? '作品创作' : projectStore.currentProject.project.projectType === 2 ? '竞赛备赛' : projectStore.currentProject.project.projectType === 3 ? '定制订单' : '社团活动' }}</el-descriptions-item>
+          <el-descriptions-item label="类型">{{ projectStore.currentProject.project.projectType === ProjectType.CREATION ? '作品创作' : projectStore.currentProject.project.projectType === ProjectType.COMPETE ? '竞赛备赛' : projectStore.currentProject.project.projectType === ProjectType.ORDER ? '定制订单' : '社团活动' }}</el-descriptions-item>
           <el-descriptions-item label="预算">{{ projectStore.currentProject.project.budget }}元</el-descriptions-item>
           <el-descriptions-item label="实际花费">{{ projectStore.currentProject.project.actualCost }}元</el-descriptions-item>
           <el-descriptions-item label="预计结束">{{ formatDate(projectStore.currentProject.project.endDate, 'YYYY-MM-DD') }}</el-descriptions-item>
@@ -368,7 +369,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
             :key="s.progressId"
             :timestamp="`阶段 ${s.stageOrder}`"
             :type="stageStatusTagType(s.status)"
-            :hollow="s.status === 0"
+            :hollow="s.status === StageStatus.PENDING"
             size="normal"
           >
             <div class="stage-item">
@@ -384,9 +385,9 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
                 {{ formatDate(s.startTime, 'YYYY-MM-DD') }} ~ {{ formatDate(s.endTime, 'YYYY-MM-DD') }}
               </p>
               <div v-if="isLeader || isStaff" class="stage-actions">
-                <el-button v-if="s.status === 0" text type="primary" size="small" @click="openStageStatus(s.progressId, 1)">开始</el-button>
-                <el-button v-if="s.status === 1" text type="success" size="small" @click="openStageStatus(s.progressId, 2)">标记完成</el-button>
-                <el-button v-if="s.status === 2" text size="small" @click="openStageStatus(s.progressId, 0)">重置为未开始</el-button>
+                <el-button v-if="s.status === StageStatus.PENDING" text type="primary" size="small" @click="openStageStatus(s.progressId, StageStatus.RUNNING)">开始</el-button>
+                <el-button v-if="s.status === StageStatus.RUNNING" text type="success" size="small" @click="openStageStatus(s.progressId, StageStatus.DONE)">标记完成</el-button>
+                <el-button v-if="s.status === StageStatus.DONE" text size="small" @click="openStageStatus(s.progressId, StageStatus.PENDING)">重置为未开始</el-button>
               </div>
             </div>
           </el-timeline-item>

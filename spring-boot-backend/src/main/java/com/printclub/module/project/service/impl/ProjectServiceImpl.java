@@ -208,12 +208,8 @@ public class ProjectServiceImpl implements ProjectService {
     private void fillMemberNames(List<ProjectMember> members) {
         if (members == null || members.isEmpty()) return;
         List<String> ids = members.stream().map(ProjectMember::getMemberId).toList();
-        List<com.printclub.module.user.entity.Member> infos = memberInfoMapper.selectBatchIds(ids);
-        java.util.Map<String, String> id2name = infos.stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        com.printclub.module.user.entity.Member::getStudentId,
-                        com.printclub.module.user.entity.Member::getName,
-                        (a, b) -> a));
+        // v2 重构：用 memberInfoMapper.selectIdNameMap 公共方法（替代原本复制粘贴的 stream().collect）
+        java.util.Map<String, String> id2name = memberInfoMapper.selectIdNameMap(ids);
         members.forEach(m -> m.setMemberName(id2name.get(m.getMemberId())));
     }
 
@@ -224,13 +220,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
-        if (ids.isEmpty()) return;
-        List<com.printclub.module.user.entity.Member> infos = memberInfoMapper.selectBatchIds(ids);
-        java.util.Map<String, String> id2name = infos.stream()
-                .collect(java.util.stream.Collectors.toMap(
-                        com.printclub.module.user.entity.Member::getStudentId,
-                        com.printclub.module.user.entity.Member::getName,
-                        (a, b) -> a));
+        // v2 重构：用 memberInfoMapper.selectIdNameMap 公共方法
+        java.util.Map<String, String> id2name = memberInfoMapper.selectIdNameMap(ids);
         stages.forEach(s -> s.setResponsibleName(id2name.get(s.getResponsibleId())));
     }
 

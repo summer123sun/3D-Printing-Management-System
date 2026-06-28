@@ -1,3 +1,9 @@
+/** 是否推荐（v2 重构：原硬编码 === 1 / !== 1 改为 enum，类型安全） */
+export enum RecommendedFlag {
+  NO = 0,
+  YES = 1,
+}
+
 /** 作品类型 */
 export interface Artwork {
   artworkId: number

@@ -11,6 +11,7 @@ import { ElMessageBox, ElNotification } from 'element-plus'
 import { useArtworkStore } from '@/stores/artwork'
 import { useAuthStore } from '@/stores/auth'
 import { RoleText } from '@/types/member'
+import { RecommendedFlag } from '@/utils/enum'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { formatDate } from '@/utils/format'
 import type { ArtworkQuery } from '@/types/artwork'
@@ -126,7 +127,7 @@ const canDelete = (authorId: string) => {
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>
             </div>
-            <div v-if="item.isRecommended === 1" class="recommend-badge">
+            <div v-if="item.isRecommended === RecommendedFlag.YES" class="recommend-badge">
               ⭐ 推荐
             </div>
             <div class="view-count">

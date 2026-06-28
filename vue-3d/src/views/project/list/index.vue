@@ -11,7 +11,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { useProjectStore } from '@/stores/project'
-import { ProjectStatusText, ProjectTypeText } from '@/types/project'
+import { ProjectStatusText, ProjectTypeText, ProjectStatus } from '@/types/project'
 import { formatDate } from '@/utils/format'
 
 const router = useRouter()
@@ -114,7 +114,7 @@ const onTabChange = () => {
 
 <script lang="ts">
 function statusTagType(status: number): 'info' | 'primary' | 'success' | 'danger' {
-  return status === 0 ? 'info' : status === 1 ? 'primary' : status === 2 ? 'success' : 'danger'
+  return status === ProjectStatus.PREPARING ? 'info' : status === ProjectStatus.RUNNING ? 'primary' : status === ProjectStatus.DONE ? 'success' : 'danger'
 }
 export default { name: 'ProjectListPage' }
 </script>
