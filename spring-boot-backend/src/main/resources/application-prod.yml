@@ -1,13 +1,24 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    # 生产环境 URL 走环境变量
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:print_club_db}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:please-change-me}
+    # 字符集三大件（防中文乱码，按 2026-06-27 memory 经验）：
+    #   useUnicode=true                       启用 Unicode
+    #   characterEncoding=UTF-8               JDBC 客户端解码用 UTF-8（**大写**，不要写 utf8）
+    #   connectionCollation=utf8mb4_unicode_ci 排序规则
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:print_club_db}?useUnicode=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${DB_USER:printclub}
+    # 密码**不写进 yml**，启动时用 DB_PASSWORD 环境变量覆盖（systemd Environment= 或 -D 参数）
+    password: ${DB_PASSWORD:please-set-via-env-var}
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
+      # 2GB 内存服务器，从原 20 降到 8（避免 OOM）
+      maximum-pool-size: 8
+      minimum-idle: 2
+      connection-timeout: 30000
+
+# 上传路径用绝对路径（按 2026-06-27 memory 经验，避免 ${user.dir} 在生产环境漂移到 Tomcat temp 目录）
+file:
+  upload-dir: /opt/printclub/data/uploads/
+  access-prefix: /uploads/
 
 # 生产环境关闭详细 SQL 日志
 logging:
