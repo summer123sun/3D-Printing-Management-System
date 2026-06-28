@@ -68,7 +68,7 @@ const onPageChange = (page: number) => {
 // ============== 改角色 ==============
 const roleDialog = ref({ visible: false, member: null as Member | null, newRole: Role.MEMBER, submitting: false })
 
-const openRoleDialog = (m: Member) => {
+const openRoleDialog = (m: any) => {
   roleDialog.value.member = m
   roleDialog.value.newRole = m.role
   roleDialog.value.visible = true
@@ -102,7 +102,7 @@ const handleUpdateRole = async () => {
 // ============== 改技能 ==============
 const skillDialog = ref({ visible: false, member: null as Member | null, newSkill: SkillLevel.NONE, submitting: false })
 
-const openSkillDialog = (m: Member) => {
+const openSkillDialog = (m: any) => {
   skillDialog.value.member = m
   skillDialog.value.newSkill = m.skillLevel
   skillDialog.value.visible = true

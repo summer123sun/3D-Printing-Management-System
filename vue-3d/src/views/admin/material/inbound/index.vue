@@ -56,7 +56,7 @@ const handleSubmit = async () => {
   }
 
   // 二次确认：显示要入库的详情，避免误操作
-  const summary = `${MaterialTypeText[form.materialType]} ${form.color.trim()} +${form.weightChange}g`
+  const summary = `${MaterialTypeText[form.materialType as keyof typeof MaterialTypeText]} ${form.color.trim()} +${form.weightChange}g`
   try {
     await ElMessageBox.confirm(
       `确定要入库 ${summary} 吗？入库后会自动累加到当前库存。`,

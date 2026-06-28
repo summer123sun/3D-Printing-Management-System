@@ -58,7 +58,7 @@ const photosFileList = ref<any[]>([])
 const loadAvailableTasks = async () => {
   loadingTasks.value = true
   try {
-    const res = await myTasks({ status: '5,8', size: 100 })  // DONE(5) + PICKED_UP(8)：取件后也能登记
+    const res = await myTasks({ status: '5,8' as any, size: 100 })  // DONE(5) + PICKED_UP(8)：取件后也能登记
     availableTasks.value = res.list || []  // PageResult 字段是 list 不是 records
   } finally {
     loadingTasks.value = false

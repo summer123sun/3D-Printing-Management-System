@@ -248,7 +248,7 @@ watch(dashboard, updateTrend, { immediate: true })
             <div v-for="(item, i) in memberRanking" :key="item.applicant_id" class="ranking-item">
               <div class="ranking-num" :class="i < 3 ? `top-${i + 1}` : ''">{{ i + 1 }}</div>
               <el-tooltip :content="`学号：${item.applicant_id}`" placement="top">
-                <div class="ranking-name">{{ item.applicant_name || item.applicant_id }}</div>
+                <div class="ranking-name">{{ (item as any).applicant_name || item.applicant_id }}</div>
               </el-tooltip>
               <div class="ranking-meta">
                 完成 <b>{{ item.done_count }}</b> 次 · {{ Math.round(item.total_hours || 0) }}h
