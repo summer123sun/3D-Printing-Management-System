@@ -27,10 +27,16 @@ spring-boot-backend/src/main/resources/application-local.yml
 # 兜底规则（各子项目 .gitignore 之外的）
 # ============================================
 
-# 后端运行时上传/占位图（placeholder.png 是 WebMvcConfig 缺图回退，单独放行）
+# 后端运行时：占位图（commit 到 git，组员拉下来就有）
+# 屏蔽 classpath 占位图目录，但留 placeholder.png 作为缺图回退
 spring-boot-backend/src/main/resources/static/uploads/
 !spring-boot-backend/src/main/resources/static/placeholder.png
-spring-boot-backend/uploads/
+
+# 后端运行时上传目录
+# 重要：不要在根 .gitignore 写 `uploads/` 全屏蔽 + `!uploads/preview/` 否定，
+#      git 优先级让否定规则被忽略。占位图 / 用户上传的精细规则
+#      全部放在 spring-boot-backend/.gitignore 里。
+# （这里留空，避免误屏蔽占位图）
 
 # MySQL 客户端 tee 输出残留
 query

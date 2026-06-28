@@ -65,11 +65,24 @@ jacoco.exec
 test-output/
 surefire-reports/
 
-# 上传文件目录（运行时产生，不提交）
-uploads/
+# 上传文件目录（占位图保留，用户上传的屏蔽）
+# 占位图（commit 到 git，组员拉下来就有，不屏蔽）
+# 注释：不要写 uploads/ 全屏蔽 + !uploads/preview/ 这种否定规则，
+#      git 优先级让否定规则被忽略。直接只屏蔽用户上传的子目录。
+#
+# 用户上传的实际文件（运行时产生，不提交）
+uploads/img/
+uploads/img/**
+uploads/stl/
+uploads/stl/**
+uploads/file/
+uploads/file/**
+uploads/avatar/
+uploads/avatar/**
+
+# classpath 静态资源
+src/main/resources/static/uploads/
+!src/main/resources/static/placeholder.png
 
 # Vue 临时缓存
 *.local
-
-# 用户上传的实际文件
-**/uploads/
