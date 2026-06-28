@@ -48,10 +48,12 @@ jwt:
   # token 前缀
   prefix: "Bearer "
 
-# 文件上传路径（开发环境）
-# ⚠️ 用绝对路径，避免 Spring Boot 工作目录漂移到 Tomcat temp 目录导致上传失败
+# 文件上传路径
+# 路径必须用绝对路径，避免 Spring Boot 工作目录漂移到 Tomcat temp 目录
+# 组员拉代码后需要改成自己的项目绝对路径（或者保持相对路径 ./uploads/，但相对路径在 IDEA Run 时漂移到 .idea 目录可能有问题）
+# 推荐：保持绝对路径，组员 clone 后改成自己的路径
 file:
-  upload-dir: D:/summer/3D-Printing-Management-System/spring-boot-backend/uploads/
+  upload-dir: ${user.dir}/uploads/
   access-prefix: /uploads/
 
 # Knife4j 接口文档

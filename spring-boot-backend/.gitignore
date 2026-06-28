@@ -71,14 +71,16 @@ surefire-reports/
 #      git 优先级让否定规则被忽略。直接只屏蔽用户上传的子目录。
 #
 # 用户上传的实际文件（运行时产生，不提交）
+# 命名约定：占位文件直接放在 uploads/ 子目录（commit 到 git），
+#           用户上传的同名文件会覆盖占位（同名场景极少，且覆盖空占位无害）。
+# img/ 和 avatar/ 都是图片（运行时上传的）
 uploads/img/
 uploads/img/**
-uploads/stl/
-uploads/stl/**
 uploads/file/
 uploads/file/**
 uploads/avatar/
 uploads/avatar/**
+# STL 不屏蔽：占位文件 commit 到 git（让组员拉代码就有 STL 3D 模型）
 
 # classpath 静态资源
 src/main/resources/static/uploads/

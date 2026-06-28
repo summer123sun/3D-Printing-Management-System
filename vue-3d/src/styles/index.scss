@@ -106,6 +106,11 @@ html.dark {
     color: var(--text-primary) !important;
   }
   .el-form-item__label { color: var(--text-regular) !important; }
+  // v2 暗色修复：覆盖 Element Plus 表单组件的暗色文字
+  .el-radio__label,
+  .el-checkbox__label,
+  .el-textarea__inner { color: var(--text-primary) !important; }
+  .el-radio__input.is-checked + .el-radio__label { color: var(--primary-color) !important; }
   .el-input__inner,
   .el-textarea__inner {
     background: var(--bg-base) !important;
@@ -116,6 +121,14 @@ html.dark {
     background: var(--bg-base) !important;
     box-shadow: 0 0 0 1px var(--border-base) inset !important;
   }
+  // el-tag 暗色下文字（dark 类型等深色背景上需要白字）
+  .el-tag--dark { color: #fff !important; }
+  .el-tag { color: var(--text-primary) !important; }
+  // el-alert 暗色下文字
+  .el-alert__title { color: var(--text-primary) !important; }
+  .el-alert__description { color: var(--text-regular) !important; }
+  // el-empty 暗色下文字
+  .el-empty__description p { color: var(--text-regular) !important; }
   .el-card__header {
     border-bottom-color: var(--border-lighter) !important;
     color: var(--text-primary) !important;
