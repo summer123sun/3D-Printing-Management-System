@@ -39,7 +39,8 @@ const tagText = computed(() => {
 </script>
 
 <template>
-  <el-tag :type="tagType" size="small" effect="light" round>
+  <!-- 关键：effect="dark" 让浅色背景上也能清晰看到白字（light 模式对比度差看不清） -->
+  <el-tag :type="tagType" size="small" effect="dark" round>
     {{ tagText }}
   </el-tag>
 </template>

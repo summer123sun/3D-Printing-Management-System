@@ -180,7 +180,8 @@ const skillTagType = (s: number) => {
         </el-table-column>
         <el-table-column label="技能等级" width="120">
           <template #default="{ row }">
-            <el-tag :type="skillTagType(row.skillLevel)" size="small">
+            <!-- 关键：effect="dark" 让浅色背景上也能清晰看到白字（light 模式对比度差看不清） -->
+            <el-tag :type="skillTagType(row.skillLevel)" size="small" effect="dark">
               {{ SkillLevelText[row.skillLevel as keyof typeof SkillLevelText] }}
             </el-tag>
           </template>

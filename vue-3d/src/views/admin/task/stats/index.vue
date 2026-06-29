@@ -57,7 +57,8 @@ const statusCards = [
         }))" stripe>
           <el-table-column label="状态">
             <template #default="{ row }">
-              <el-tag :type="TaskStatusTagType[row.status as keyof typeof TaskStatusTagType]" size="small" effect="light">
+              <!-- 关键：effect="dark" 保证浅色背景上有清晰白字 -->
+              <el-tag :type="TaskStatusTagType[row.status as keyof typeof TaskStatusTagType]" size="small" effect="dark">
                 {{ row.label }}
               </el-tag>
             </template>
