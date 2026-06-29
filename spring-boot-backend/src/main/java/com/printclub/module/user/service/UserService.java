@@ -45,4 +45,10 @@ public interface UserService {
      * 修改密码
      */
     void changePassword(ChangePasswordDTO dto);
+
+    /**
+     * 新增成员（仅社长）
+     * @return 新增成员的学号
+     */
+    String add(AddMemberDTO dto);
 }

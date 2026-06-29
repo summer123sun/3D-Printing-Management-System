@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 /**
  * 用户 Service 实现
  *
@@ -130,6 +132,36 @@ public class UserServiceImpl implements UserService {
         }
         memberMapper.updateById(member);
         log.info("用户 {} 更新个人信息", studentId);
+    }
+
+    @Override
+    @Transactional
+    public String add(AddMemberDTO dto) {
+        // 学号已存在 → 直接拒
+        if (memberMapper.selectById(dto.getStudentId()) != null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "学号 " + dto.getStudentId() + " 已存在");
+        }
+
+        Member member = new Member();
+        member.setStudentId(dto.getStudentId());
+        member.setName(dto.getName().trim());
+        member.setRole(dto.getRole());
+        member.setSkillLevel(dto.getSkillLevel() != null ? dto.getSkillLevel() : 0);
+        // 密码默认 123456（BCrypt hash）
+        String rawPassword = (dto.getPassword() == null || dto.getPassword().isBlank()) ? "123456" : dto.getPassword();
+        member.setPassword(BCrypt.hashpw(rawPassword));
+        member.setPhone(dto.getPhone());
+        member.setEmail(dto.getEmail());
+        member.setJoinDate(dto.getJoinDate() != null ? dto.getJoinDate() : LocalDate.now());
+        member.setTotalPrints(0);
+        member.setStatus(1);  // 1=正常
+
+        memberMapper.insert(member);
+        log.info("新增成员 {} ({}) 角色={}", dto.getStudentId(), dto.getName(), dto.getRole());
+        logService.recordCurrent("member.add", "member", dto.getStudentId(),
+                "新增成员：" + dto.getName() + "（默认密码 " + rawPassword + "）");
+
+        return dto.getStudentId();
     }
 
     @Override

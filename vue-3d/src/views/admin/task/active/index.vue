@@ -68,7 +68,16 @@ const handlePriority = async () => {
     priorityDialogVisible.value = false
     await fetchData()
   } catch (e: any) {
-    console.error('[修改优先级] 失败：', e)
+    // ✅ v2.2 改进：把 500/422/400 都直接弹给用户，方便诊断（之前只 console.error）
+    const msg = e?.response?.data?.message || e?.response?.data?.msg || e?.message || '未知错误'
+    const code = e?.response?.status || '?'
+    ElNotification.error({
+      title: `修改优先级失败（HTTP ${code}）`,
+      message: msg,
+      duration: 0,  // 不自动关，让用户能看清
+      showClose: true,
+    })
+    console.error('[修改优先级] 失败完整堆栈：', e)
   } finally {
     submittingPriority.value = false
   }

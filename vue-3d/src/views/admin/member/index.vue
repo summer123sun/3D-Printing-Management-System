@@ -7,13 +7,13 @@
  * - 改角色（仅社长）
  * - 改技能等级（社长+技术骨干）
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
-import { Search, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
-import { memberList, updateMemberRole, updateMemberSkill } from '@/api/user'
+import { memberList, updateMemberRole, updateMemberSkill, addMember } from '@/api/user'
 import { Role, RoleText, SkillLevel, SkillLevelText, type Member } from '@/types/member'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
@@ -153,11 +153,82 @@ const skillTagType = (s: number) => {
   if (s >= SkillLevel.FUSION360) return 'primary'
   return 'info'
 }
+
+// ============== 新增成员（仅社长） ==============
+const addDialog = ref({ visible: false, submitting: false })
+const addForm = reactive({
+  studentId: '',
+  name: '',
+  role: Role.MEMBER,
+  skillLevel: SkillLevel.NONE,
+  password: '',
+  phone: '',
+  email: '',
+  joinDate: new Date().toISOString().slice(0, 10),  // 默认今天
+})
+
+const openAddDialog = () => {
+  // 重置表单
+  addForm.studentId = ''
+  addForm.name = ''
+  addForm.role = Role.MEMBER
+  addForm.skillLevel = SkillLevel.NONE
+  addForm.password = ''
+  addForm.phone = ''
+  addForm.email = ''
+  addForm.joinDate = new Date().toISOString().slice(0, 10)
+  addDialog.value.visible = true
+}
+
+const handleAdd = async () => {
+  // 前端基础校验（更严格的留给后端 @Valid）
+  if (!/^\d{10}$/.test(addForm.studentId)) {
+    ElMessage.warning('学号必须是 10 位数字')
+    return
+  }
+  if (!addForm.name.trim()) {
+    ElMessage.warning('姓名不能为空')
+    return
+  }
+  if (addForm.password && addForm.password.length < 6) {
+    ElMessage.warning('密码至少 6 位（留空则默认 123456）')
+    return
+  }
+
+  addDialog.value.submitting = true
+  try {
+    await addMember({
+      studentId: addForm.studentId.trim(),
+      name: addForm.name.trim(),
+      role: addForm.role,
+      skillLevel: addForm.skillLevel,
+      password: addForm.password || undefined,
+      phone: addForm.phone || undefined,
+      email: addForm.email || undefined,
+      joinDate: addForm.joinDate || undefined,
+    })
+    ElNotification.success({
+      title: '成员已新增',
+      message: `${addForm.name.trim()}（${addForm.studentId.trim()}）已加入，默认密码 123456`,
+      duration: 3000,
+    })
+    addDialog.value.visible = false
+    fetchData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '新增失败')
+  } finally {
+    addDialog.value.submitting = false
+  }
+}
 </script>
 
 <template>
   <div class="member-page">
-    <PageHeader title="成员管理" />
+    <PageHeader title="成员管理">
+      <el-button v-if="isPresident" type="primary" @click="openAddDialog">
+        <el-icon><Plus /></el-icon> 新增成员
+      </el-button>
+    </PageHeader>
 
     <el-card class="filter-card">
       <div class="filter-row">
@@ -321,6 +392,54 @@ const skillTagType = (s: number) => {
           </el-form-item>
         </el-form>
       </div>
+    </AppDialog>
+
+    <!-- 新增成员弹窗（仅社长） -->
+    <AppDialog
+      v-model="addDialog.visible"
+      title="新增成员"
+      icon="Plus"
+      type="primary"
+      width="560px"
+      confirm-text="新增"
+      :loading="addDialog.submitting"
+      @confirm="handleAdd"
+    >
+      <el-form :model="addForm" label-width="100px">
+        <el-form-item label="学号" required>
+          <el-input v-model="addForm.studentId" placeholder="10 位数字" maxlength="10" />
+        </el-form-item>
+        <el-form-item label="姓名" required>
+          <el-input v-model="addForm.name" placeholder="姓名" maxlength="20" />
+        </el-form-item>
+        <el-form-item label="角色" required>
+          <el-radio-group v-model="addForm.role">
+            <el-radio :value="Role.TECH_LEAD">技术骨干</el-radio>
+            <el-radio :value="Role.MEMBER">普通社员</el-radio>
+            <el-radio :value="Role.NEWBIE">新成员</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="技能等级">
+          <el-select v-model="addForm.skillLevel" style="width: 100%">
+            <el-option v-for="(label, value) in SkillLevelText" :key="value" :label="label" :value="Number(value)" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="初始密码">
+          <el-input v-model="addForm.password" placeholder="留空则默认 123456" type="password" show-password maxlength="30" />
+        </el-form-item>
+        <el-form-item label="入社日期">
+          <el-input v-model="addForm.joinDate" placeholder="YYYY-MM-DD，留空则今天" />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="addForm.phone" placeholder="可选" maxlength="20" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="addForm.email" placeholder="可选" maxlength="100" />
+        </el-form-item>
+        <el-alert type="info" :closable="false" show-icon style="margin-top: 4px">
+          权限：仅社长可新增成员。新账号默认初始密码 123456（可在「个人中心→修改密码」首次登录后修改）
+        </el-alert>
+      </el-form>
     </AppDialog>
   </div>
 </template>

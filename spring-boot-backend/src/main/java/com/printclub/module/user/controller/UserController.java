@@ -87,6 +87,14 @@ public class UserController {
         return Result.success();
     }
 
+    @Operation(summary = "新增成员（仅社长）")
+    @PostMapping("/add")
+    @RequireRole({1})
+    public Result<String> add(@RequestBody @Valid AddMemberDTO dto) {
+        String newStudentId = userService.add(dto);
+        return Result.success(newStudentId);
+    }
+
     @Operation(summary = "修改密码")
     @PostMapping("/password")
     @RequireAuth
