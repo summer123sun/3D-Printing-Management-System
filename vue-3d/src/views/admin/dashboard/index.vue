@@ -4,7 +4,7 @@
  *
  * 4 个核心数字卡片 + 7 天趋势图 + 多维度统计
  */
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { Document, Goods, Operation, Printer, Star, Timer, TrendCharts, User } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import * as statsApi from '@/api/stats'
@@ -59,7 +59,6 @@ const updateTrend = () => {
   trend.value = trendPath(dashboard.value?.trend7d, 580, 160)
 }
 
-import { watch } from 'vue'
 watch(dashboard, updateTrend, { immediate: true })
 </script>
 
@@ -248,7 +247,7 @@ watch(dashboard, updateTrend, { immediate: true })
             <div v-for="(item, i) in memberRanking" :key="item.applicant_id" class="ranking-item">
               <div class="ranking-num" :class="i < 3 ? `top-${i + 1}` : ''">{{ i + 1 }}</div>
               <el-tooltip :content="`学号：${item.applicant_id}`" placement="top">
-                <div class="ranking-name">{{ (item as any).applicant_name || item.applicant_id }}</div>
+                <div class="ranking-name">{{ item.applicant_name || item.applicant_id }}</div>
               </el-tooltip>
               <div class="ranking-meta">
                 完成 <b>{{ item.done_count }}</b> 次 · {{ Math.round(item.total_hours || 0) }}h

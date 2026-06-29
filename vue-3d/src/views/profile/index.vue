@@ -156,7 +156,7 @@ const skillPercent = computed(() => {
               {{ authStore.user?.name }}
             </el-descriptions-item>
             <el-descriptions-item label="角色">
-              <el-tag>{{ authStore.user ? RoleText[authStore.user.role] : '-' }}</el-tag>
+              <el-tag effect="dark">{{ authStore.user ? RoleText[authStore.user.role] : '-' }}</el-tag>
             </el-descriptions-item>
             <el-descriptions-item label="技能等级">
               {{ authStore.user ? SkillLevelText[authStore.user.skillLevel] : '-' }}

@@ -54,9 +54,9 @@ onMounted(async () => {
           </el-table-column>
           <el-table-column label="优先级" width="80">
             <template #default="{ row }">
-              <el-tag v-if="row.priority === Priority.URGENT" type="danger" size="small">紧急</el-tag>
-              <el-tag v-else-if="row.priority === Priority.LOW" size="small">低优</el-tag>
-              <el-tag v-else size="small">普通</el-tag>
+              <el-tag v-if="row.priority === Priority.URGENT" type="danger" size="small" effect="dark">紧急</el-tag>
+              <el-tag v-else-if="row.priority === Priority.LOW" size="small" effect="dark">低优</el-tag>
+              <el-tag v-else size="small" effect="dark">普通</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="申请人" width="110">
@@ -71,7 +71,7 @@ onMounted(async () => {
           <el-table-column label="打印机" width="140">
             <template #default="{ row }">
               <el-tooltip v-if="row.printerId" :content="`编号：${row.printerId}`" placement="top">
-                <el-tag size="small">{{ row.printerModel || row.printerId }}</el-tag>
+                <el-tag size="small" effect="dark">{{ row.printerModel || row.printerId }}</el-tag>
               </el-tooltip>
               <span v-else>-</span>
             </template>

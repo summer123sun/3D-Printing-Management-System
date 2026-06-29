@@ -216,7 +216,7 @@ const handleSetStatus = async (row: any, newStatus: number) => {
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="PrinterStatusTagType[row.status as keyof typeof PrinterStatusTagType]">
+            <el-tag :type="PrinterStatusTagType[row.status as keyof typeof PrinterStatusTagType]" effect="dark">
               {{ PrinterStatusText[row.status as keyof typeof PrinterStatusText] }}
             </el-tag>
           </template>

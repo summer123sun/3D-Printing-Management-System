@@ -80,7 +80,7 @@ const onPageChange = (page: number) => {
         </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
-            <el-tag :type="OperationTypeTagType[row.operationType as keyof typeof OperationTypeTagType]">
+            <el-tag :type="OperationTypeTagType[row.operationType as keyof typeof OperationTypeTagType]" effect="dark">
               {{ OperationTypeText[row.operationType as keyof typeof OperationTypeText] }}
             </el-tag>
           </template>

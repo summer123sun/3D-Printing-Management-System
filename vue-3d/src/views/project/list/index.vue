@@ -88,7 +88,7 @@ const onTabChange = () => {
           </el-table-column>
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
-              <el-tag size="small" :type="statusTagType(row.status)">{{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}</el-tag>
+              <el-tag size="small" :type="statusTagType(row.status)" effect="dark">{{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="负责人" width="120">

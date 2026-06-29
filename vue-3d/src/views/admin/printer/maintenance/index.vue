@@ -37,7 +37,7 @@ const form = ref({
   nextMaintDate: '',
 })
 
-const printers = ref<any[]>([])
+const printers = ref<import('@/types/printer').Printer[]>([])
 
 const fetchData = async () => {
   await store.fetchList({ page: 1, size: 100 })
@@ -142,7 +142,8 @@ const handleDelete = async (row: any) => {
   }
 }
 
-const printerName = (id: string) => {
+// 注意：这个函数叫 printerIdById 更准确（只返回 printerId，不是完整对象）
+const printerIdById = (id: string) => {
   return printers.value.find(p => p.printerId === id)?.printerId || id
 }
 </script>
@@ -174,12 +175,12 @@ const printerName = (id: string) => {
         <el-table-column prop="maintId" label="ID" width="80" />
         <el-table-column label="打印机" width="160">
           <template #default="{ row }">
-            <b>{{ printerName(row.printerId) }}</b>
+            <b>{{ printerIdById(row.printerId) }}</b>
           </template>
         </el-table-column>
         <el-table-column label="维护类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="MaintTypeTagType[row.maintType as keyof typeof MaintTypeTagType]">
+            <el-tag :type="MaintTypeTagType[row.maintType as keyof typeof MaintTypeTagType]" effect="dark">
               {{ MaintTypeText[row.maintType as keyof typeof MaintTypeText] }}
             </el-tag>
           </template>

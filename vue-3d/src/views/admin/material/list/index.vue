@@ -149,9 +149,9 @@ const stockByType = computed(() => {
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.currentStock < threshold" type="danger">需补货</el-tag>
-            <el-tag v-else-if="row.currentStock < threshold * 2" type="warning">偏低</el-tag>
-            <el-tag v-else type="success">充足</el-tag>
+            <el-tag v-if="row.currentStock < threshold" type="danger" effect="dark">需补货</el-tag>
+            <el-tag v-else-if="row.currentStock < threshold * 2" type="warning" effect="dark">偏低</el-tag>
+            <el-tag v-else type="success" effect="dark">充足</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="最近更新" width="180">

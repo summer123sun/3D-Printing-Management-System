@@ -41,6 +41,7 @@ export interface PrinterStats {
 /** 活跃社员 */
 export interface MemberRank {
   applicant_id: string
+  applicant_name?: string  // 可选：部分 API 返回姓名，部分只返回 ID
   done_count: number
   total_hours: number
   total_weight: number

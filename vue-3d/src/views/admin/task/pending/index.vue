@@ -77,8 +77,8 @@ const handleReject = async () => {
           <el-table-column prop="color" label="颜色" width="80" />
           <el-table-column label="优先级" width="80">
             <template #default="{ row }">
-              <el-tag v-if="row.priority === Priority.URGENT" type="danger" size="small">紧急</el-tag>
-              <el-tag v-else-if="row.priority === Priority.LOW" size="small">低优</el-tag>
+              <el-tag v-if="row.priority === Priority.URGENT" type="danger" size="small" effect="dark">紧急</el-tag>
+              <el-tag v-else-if="row.priority === Priority.LOW" size="small" effect="dark">低优</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>

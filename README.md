@@ -3,6 +3,18 @@
 > 大学生 3D 打印兴趣社团的一站式管理平台，期末项目实战。
 > 覆盖**任务流转**、**项目管理**、**设备/耗材**、**作品库**、**统计**、**审计**六大场景。
 
+## 🌐 生产环境（v2.1 已上线）
+
+| 入口 | 地址 |
+|---|---|
+| **前端** | https://3d-printing-management-system.pages.dev |
+| **后端 API** | https://api.3dprint.ccwu.cc/api |
+| **架构** | Cloudflare Pages（前端）+ Cloudflare 反代（域名 → ECS）+ 阿里云 ECS Ubuntu 24.04（Spring Boot + Nginx + MySQL） |
+| **域名** | `3dprint.ccwu.cc`（免费子域名，NS 在 Cloudflare，规避备案） |
+| **测试账号** | `2023010001` 张明 / `2023010002` 李强 / `2023010005` 刘洋 / `2024010001` 马超（密码全部 `123456`） |
+
+> 部署踩坑 + 完整流程见 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) 14.13+ 章节
+
 ## 团队分工
 
 | 角色 | 负责模块 |
@@ -138,6 +150,33 @@ npm run dev
 ```
 
 浏览器打开 `http://localhost:5173`，用上面任意一个账号登录。
+
+## 生产部署（v2.1）
+
+部署到生产环境（阿里云 ECS + Cloudflare Pages + Cloudflare 反代）的完整流程 + 7 个生产专属踩坑（CORS token-level 匹配 / PowerShell HTTPS body 破坏 / el-tag 浅色对比度 / 中国大陆访问不到 *.workers.dev / NS+A 记录 Proxied 方案 / ssh 密码粘贴 ESC sequence / 1.6 GiB 内存压榨）详见：
+
+👉 **[TROUBLESHOOTING.md 14.13+ 章节](./TROUBLESHOOTING.md)**
+
+**30 秒速查**：
+
+```bash
+# 前端：git push → Cloudflare Pages 自动构建部署
+cd vue-3d
+git add . && git commit -m "..." && git push
+
+# 后端：scp jar + systemctl restart
+cd ../spring-boot-backend
+mvn clean package -DskipTests
+scp target/print-club-backend.jar root@8.137.80.194:/opt/printclub/app/
+ssh root@8.137.80.194 "systemctl restart printclub && journalctl -u printclub -n 30 -f"
+```
+
+**部署前检查清单**：
+- ✅ `application-prod.yml` 用 `${DB_PASSWORD:please-set-via-env-var}` 占位符（**绝对不能提交真实密码**）
+- ✅ `vue-3d/.env.production` 的 `VITE_API_BASE_URL=https://api.3dprint.ccwu.cc/api`
+- ✅ 阿里云 ECS 防火墙开 80/TCP（22 默认开）
+- ✅ nginx + Spring Boot 双保险 CORS（详见 [TROUBLESHOOTING.md 14.13](./TROUBLESHOOTING.md)）
+- ✅ 所有 el-tag 加 `effect="dark"`（浅色主题对比度）
 
 ## 已完成模块
 

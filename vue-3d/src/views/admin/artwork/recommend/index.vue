@@ -101,7 +101,7 @@ const handleToggle = async (item: any) => {
         <el-table-column label="推荐状态" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.isRecommended === RecommendedFlag.YES" type="danger" effect="dark">⭐ 推荐</el-tag>
-            <el-tag v-else type="info">普通</el-tag>
+            <el-tag v-else type="info" effect="dark">普通</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" width="160">

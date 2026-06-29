@@ -286,7 +286,7 @@ const skillTagType = (s: number) => {
         </p>
         <el-form label-width="80px">
           <el-form-item label="当前">
-            <el-tag :type="skillTagType(skillDialog.member.skillLevel)">
+            <el-tag :type="skillTagType(skillDialog.member.skillLevel)" effect="dark">
               {{ SkillLevelText[skillDialog.member.skillLevel as keyof typeof SkillLevelText] }}
             </el-tag>
           </el-form-item>

@@ -248,7 +248,7 @@ const handleCancel = async () => {
                confirm-text="确认分配" :loading="submittingAssign" @confirm="handleAssign">
       <el-form :model="assignForm" label-width="100px">
         <el-form-item label="任务编号">
-          <el-tag size="large" type="info">{{ assignForm.taskId }}</el-tag>
+          <el-tag size="large" type="info" effect="dark">{{ assignForm.taskId }}</el-tag>
         </el-form-item>
         <el-form-item label="选择打印机" required>
           <el-select
@@ -284,7 +284,7 @@ const handleCancel = async () => {
                confirm-text="确认完成" :loading="submittingFinish" @confirm="handleFinish">
       <el-form :model="finishForm" label-width="100px">
         <el-form-item label="任务编号">
-          <el-tag size="large" type="info">{{ finishForm.taskId }}</el-tag>
+          <el-tag size="large" type="info" effect="dark">{{ finishForm.taskId }}</el-tag>
         </el-form-item>
         <el-form-item label="实际耗材 (g)" required>
           <el-input-number v-model="finishForm.actualWeight" :min="0.01" :precision="2" style="width: 100%" />

@@ -20,6 +20,8 @@
 11. [数据库连接密码与登录密码搞混](#11-数据库连接密码与登录密码搞混)
 12. [代码被覆盖 / 误删](#12-代码被覆盖--误删)
 13. [生产环境部署问题](#13-生产环境部署问题)
+14. [v2 新增踩坑（审计 / @Async / el-message-box / 编码）](#14-v2-新增踩坑2026-06-期间)
+15. [v2.1 部署/上线踩坑（CORS / PowerShell / Cloudflare / 内存压榨）](#15-v21-部署上线踩坑2026-06-29)
 
 ---
 
@@ -1232,4 +1234,343 @@ git push origin main
 # GitHub → Settings → Developer settings → Personal access tokens → 选 repo 权限
 # 然后 push 时用 token 当密码
 ```
+
+---
+
+## 15. v2.1 部署/上线踩坑（2026-06-29）
+
+> 本节专治"本地跑得好好的，部署到生产就跪"的所有问题。
+> 涵盖阿里云 ECS + Cloudflare Pages + Cloudflare 反代 全链路。
+
+### 15.1 Spring Boot 3.x CORS `allowedOriginPatterns` token-level 通配符陷阱
+
+**症状**：本地 `mvn spring-boot:run` + 浏览器 fetch 调用完全 OK，但部署到 ECS + 经过 Cloudflare 反代后，**所有 POST/PUT 接口返回 403 Forbidden**。
+
+```
+错误响应：
+HTTP/1.1 403 Forbidden
+Vary: Origin
+Access-Control-Allow-Origin: https://3d-printing-management-system.pages.dev
+Access-Control-Allow-Credentials: true
+```
+
+**原因**：
+
+之前的 CorsConfig 用的是 WebMvcConfigurer 风格的写法：
+```java
+@Override
+public void addCorsMappings(CorsRegistry registry) {
+    registry.addMapping("/**")
+        .allowedOriginPatterns("https://*.pages.dev")  // ❌ 这个写法从一开始就是错的
+        .allowedMethods("GET", "POST", ...)
+        .allowCredentials(true);
+}
+```
+
+**Spring 6.x `CorsConfiguration.matchOriginPattern` 是 token-level 匹配**：用 `.` 拆分 origin 后**每个 token 必须完全相等或等于 `*`**。
+
+- `https://*.pages.dev` 拆成 `["https://*", "pages", "dev"]`
+- 实际请求 origin `https://3d-printing-management-system.pages.dev` 拆成 `["https://3d-...", "pages", "dev"]`
+- 第一段 `https://*` vs `https://3d-...` 不相等 → **不匹配 → 403**
+
+**为什么本地没暴露**：本地 curl 不带 Origin 头，绕过 CorsFilter；只有浏览器 fetch 才带。
+
+**解决**：
+
+**方案 A（最简）**：直接接受所有 origin（适合 JWT Authorization 认证，不用 cookie）：
+```java
+@Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOriginPatterns(List.of("*"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setExposedHeaders(List.of("Authorization"));
+    config.setAllowCredentials(false);  // ← 关键：用 JWT Authorization 头，不用 cookie
+    config.setMaxAge(3600L);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+}
+```
+
+**方案 B（精确）**：列出每个具体域名（适合多域名生产）：
+```java
+config.setAllowedOriginPatterns(List.of(
+    "https://3d-printing-management-system.pages.dev",
+    "https://3dprint.ccwu.cc",
+    "http://localhost:5173"  // dev
+));
+```
+
+**nginx 同步处理 OPTIONS 预检**（关键，不进 Spring Boot）：
+```nginx
+location / {
+    if ($request_method = 'OPTIONS') {
+        add_header Access-Control-Allow-Origin "$http_origin" always;
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+        add_header Access-Control-Max-Age 3600;
+        add_header Content-Type 'text/plain; charset=utf-8';
+        add_header Content-Length 0;
+        return 204;  # 预检直接返
+    }
+    # 普通请求反代 + 所有响应加 CORS 头
+    proxy_pass http://127.0.0.1:8080;
+    add_header Access-Control-Allow-Origin "$http_origin" always;  # ← always，覆盖错误响应
+    add_header Access-Control-Allow-Credentials "true" always;
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+}
+```
+
+**`always` 标志的作用**：默认 `add_header` 只在 2xx/3xx 响应加；`always` 让 4xx/5xx 错误响应也带头，否则浏览器看到的错误响应没有 CORS 头 → 报错更迷糊。
+
+---
+
+### 15.2 PowerShell 5.1 HTTPS POST 到 Cloudflare 时 body 字符破坏
+
+**症状**：用 PowerShell 测 Cloudflare 反代 POST 接口，body JSON 字符串 `"studentId":"2023010001"` 传到后端变成 `"studentId":"2023010001\x1B[200~..."` 或 `Unexpected character 's'` 解析错误。
+
+```
+curl.exe -X POST "https://api.3dprint.ccwu.cc/api/auth/login" -d '{"studentId":"2023010001","password":"123456"}'
+# 后端日志：Unexpected character 's' at position 1
+```
+
+**原因**：
+1. PowerShell 5.1 默认 `curl` 是 `Invoke-WebRequest` 别名（不是真正的 curl），它会**自动 wrap body**
+2. Cloudflare 的边缘节点对某些 HTTPS POST body 做了字符集转换（极少但会遇到）
+3. OpenSSH 粘贴密码时插入了 `^[[200~` ESC sequence
+
+**解决**：
+- **PowerShell 用真正的 curl.exe**：`curl.exe -X POST ...`（不是 `curl`）
+- **body 用单引号包裹**（避免 PowerShell 变量展开）：`curl.exe -d '{"key":"value"}'`
+- **HTTPS body 用 `--data-raw` 而不是 `-d`**：`--data-raw '{"key":"value"}'`（防止 curl 改 `@` 符号）
+- **如果怀疑有 ESC sequence，用 `[byte]` 数组发送**：
+  ```powershell
+  $body = [System.Text.Encoding]::UTF8.GetBytes('{"studentId":"2023010001","password":"123456"}')
+  Invoke-RestMethod -Uri $url -Method POST -Body $body -ContentType "application/json; charset=utf-8"
+  ```
+
+**关键经验**：**PowerShell 5.1 测试 Cloudflare HTTPS POST 不可靠**。最稳的是用前端 axios（自动处理 body 编码）或 Postman。
+
+---
+
+### 15.3 Element Plus `<el-tag>` 在浅色主题对比度差（必须 `effect="dark"`）
+
+**症状**：浅色主题下，状态标签 `<el-tag type="success">已发布</el-tag>` **背景是浅绿、文字是浅绿**，对比度只有 ~1.5:1，肉眼几乎看不清（WCAG AA 要求 4.5:1）。
+
+**原因**：Element Plus 2.14 默认 `effect="light"`（浅色背景 + 浅色文字），**只在暗色主题或显式 `effect="dark"` 时才有足够对比度**。项目全局默认 light，所以全站都糊。
+
+**解决**：
+
+**手工修 3 处最高频**：
+```vue
+<!-- ❌ 错 -->
+<el-tag type="success">已发布</el-tag>
+
+<!-- ✅ 对 -->
+<el-tag type="success" effect="dark">已发布</el-tag>
+```
+
+**Python 脚本批量改**（覆盖 13 个文件 30+ 处）：
+```python
+import re
+import glob
+
+# 用 (?:[^>]*?) 让空标签也能匹配
+pattern = re.compile(r'<el-tag (?![^>]*effect=)((?:[^>]*?))(/?)>')
+replacement = r'<el-tag \1 effect="dark"\2>'
+
+for filepath in glob.glob(r"D:\summer\3D-Printing-Management-System\vue-3d\src\views\**\*.vue", recursive=True):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+    matches = pattern.findall(content)
+    if not matches:
+        continue
+    new_content = pattern.sub(replacement, content)
+    if new_content != content:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        print(f"[OK] {filepath}: {len(matches)} 处")
+```
+
+**脚本踩坑**：第一版正则用 `[^>]+?`（`+` = 至少 1 字符），漏掉了无属性的 `<el-tag>`（如 `<el-tag>{{ name }}</el-tag>`），改用 `[^>]*?`（`*` = 0+ 字符）才正确。
+
+**全局默认值**：在 `StatusTag.vue` 组件默认 `effect="dark"`，新写的标签自动有对比度。
+
+---
+
+### 15.4 中国大陆访问不到 `*.workers.dev` 和 `api.trycloudflare.com`
+
+**症状**：在阿里云 ECS 测试 Cloudflare Worker 反代成功（`curl https://xxx.workers.dev/api/auth/login` 返回 token），但用户在浏览器打开 `xxx.workers.dev` **永远转圈**，DevTools 显示 `net::ERR_CONNECTION_TIMED_OUT`。
+
+**原因**：
+- `*.workers.dev` 域名被 GFW（Great Firewall）屏蔽
+- `api.trycloudflare.com`（临时隧道域名）也被屏蔽
+- **所有 `*.workers.dev` 域名在中国大陆都不可达**，无论 Worker 内容是什么
+
+**解决**：
+
+**不用 Worker / Tunnel，用 Cloudflare 反代（NS + A 记录 Proxied）**：
+1. 买一个免费子域名（`ccwu.cc` / `eu.org` / `js.org` 等支持改 NS 的）
+2. 在 Cloudflare Dashboard → Add Site → 填域名 → Cloudflare 分配两个 NS（`sue.ns.cloudflare.com` / `tim.ns.cloudflare.com`）
+3. 在域名注册商改 NS 指向 Cloudflare 的两个 NS（**不是 A 记录**）
+4. 等 NS 生效（5-30 分钟）后，Cloudflare Dashboard 显示"Active"
+5. 加 A 记录 `api.3dprint.ccwu.cc` → ECS IP `8.137.80.194` → **橙色云朵 Proxied**（不是灰色云朵 DNS only）
+6. SSL/TLS 模式选 **Flexible**（Cloudflare → ECS 用 HTTP，不需要在 ECS 配 HTTPS 证书）
+7. 前端 `.env.production` 改成 `VITE_API_BASE_URL=https://api.3dprint.ccwu.cc/api`
+
+**橙色云朵 vs 灰色云朵**：
+- 🟠 Proxied：流量走 Cloudflare 反代，隐藏真实 IP，能用 Cloudflare CDN/安全功能
+- ⚪ DNS only：只做 DNS 解析，直接暴露真实 IP（用户能直接访问 ECS IP，不走 Cloudflare）
+
+---
+
+### 15.5 ssh 密码粘贴插入 ESC sequence `^[[200~`
+
+**症状**：用 PowerShell 复制 ECS root 密码到 OpenSSH 终端粘贴，密码前面多了 `^[[200~`，导致 `Permission denied (publickey,password)`。
+
+**原因**：PowerShell 的剪贴板在粘贴时会插入 `bracketed paste mode` 的开始/结束标记（`\x1B[200~` / `\x1B[201~`），OpenSSH 终端把它当作字面字符处理。
+
+**解决**：
+- **方案 A（推荐）**：手输密码（OpenSSH 密码提示不支持粘贴）
+- **方案 B**：用 PowerShell 命令行 `sshpass`（Windows 没原生 sshpass，要装 MSYS2 / WSL）
+- **方案 C**：配 SSH 公私钥免密登录（最稳）：
+  ```bash
+  # 本地
+  ssh-keygen -t ed25519
+  type $env:USERPROFILE\.ssh\id_ed25519.pub | ssh root@8.137.80.194 "cat >> ~/.ssh/authorized_keys"
+  # 之后 ssh root@8.137.80.194 直接进（不输密码）
+  ```
+
+---
+
+### 15.6 阿里云 ECS 1.6 GiB RAM 内存压榨（MySQL + Spring Boot + Nginx）
+
+**症状**：阿里云 ECS 1.6 GiB RAM，跑 Spring Boot + MySQL + Nginx 时 OOM（Out of Memory Killer）杀掉 MySQL。
+
+**内存预算**：
+- MySQL 8 默认 `innodb_buffer_pool_size` ≈ 800M（占一半 RAM）
+- Spring Boot 默认 JVM heap ≈ 512M（`-Xmx`）
+- OS + 文件系统缓存 ≈ 300M
+- Nginx ≈ 5M
+- **合计 ≈ 1.6 GB** → 没有 swap 时 OOM
+
+**解决**（三件套）：
+```bash
+# 1. 加 4 GiB swap（兜底）
+fallocate -l 4G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+# 持久化
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+free -h  # 验证
+
+# 2. MySQL 限制内存
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+# 加：
+[mysqld]
+innodb_buffer_pool_size = 128M
+innodb_log_file_size = 64M
+max_connections = 50
+sudo systemctl restart mysql
+
+# 3. Spring Boot 限制 JVM heap
+# /etc/systemd/system/printclub.service
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/printclub/app/print-club-backend.jar --spring.profiles.active=prod
+sudo systemctl daemon-reload
+sudo systemctl restart printclub
+```
+
+**验证**：
+```bash
+free -h
+ps aux --sort=-%mem | head -10
+journalctl -u printclub -n 30 | grep -i "heap\|memory"
+```
+
+---
+
+### 15.7 Login DTO 字段是 `studentId` 不是 `username`
+
+**症状**：curl 测试登录接口一直 400 "学号不能为空"，即使 body 有 `"username":"2023010001"`。
+
+**原因**：项目 LoginDTO 字段命名是学号（`studentId`），不是通用 `username`：
+```java
+@Data
+public class LoginDTO {
+    @NotBlank(message = "学号不能为空")
+    @Size(min = 8, max = 20)
+    private String studentId;  // ← 不是 username
+    private String password;
+}
+```
+
+**正确 body**：
+```bash
+curl.exe -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"studentId":"2023010001","password":"123456"}'
+
+# 返 {"code":200,"data":{"token":"eyJ..."}}
+```
+
+---
+
+### 15.8 `vue-tsc --build` 退出码 0 但 `npm run build` 跳过类型检查
+
+**症状**：CI 上 `vue-tsc --build` 通过，但生产环境运行时浏览器 console 报 `Cannot read property 'X' of undefined` —— 严格说 `vue-tsc` **没报错**，但 Vite 构建时跳过了类型检查。
+
+**原因**：
+- `vue-tsc --build` 只检查 .ts 文件，不深度检查 .vue `<script setup>` 里的类型
+- `npm run build` 默认调用 `vue-tsc --noEmit && vite build`，但很多项目把 `vue-tsc` 拿掉只跑 `vite build`（为了构建快）
+
+**解决**：
+- **CI 强制跑 `vue-tsc --noEmit`**：
+  ```bash
+  # package.json
+  "scripts": {
+    "build": "vue-tsc --noEmit && vite build",
+    "type-check": "vue-tsc --noEmit"
+  }
+  ```
+- **`--noEmit` 不输出 .js，只做类型检查**——比 `--build` 更准确
+- **如果还想更深检查**：用 `vue-tsc --noEmit --skipLibCheck` + `tsc --noEmit` 双重跑
+
+---
+
+### 15.9 Cloudflare Pages Functions 与前端 `vite build` 打架
+
+**症状**：Cloudflare Pages 部署时日志报 `Could not resolve './functions/...'`，前端构建产物不完整。
+
+**原因**：`vue-3d/functions/` 目录是 Cloudflare Pages Functions 的入口，会被 Cloudflare 自动识别为 worker 函数。如果 `vite build` 也扫到 `functions/` 里的代码，会试图把它打进前端 bundle，结果冲突。
+
+**解决**：
+- **删除 `vue-3d/functions/` 目录**（如果用 Cloudflare 反代代替 Pages Functions）
+- 或者**改用 Pages Functions 方案**（用 `functions/api/[[path]].js` 写 worker 反代）：
+  ```js
+  // functions/api/[[path]].js
+  export async function onRequest(context) {
+    const url = new URL(context.request.url)
+    url.hostname = '8.137.80.194'  // ECS IP
+    return fetch(url, context.request)
+  }
+  ```
+
+---
+
+## 0. 求救流程
+
+如果上面的都没解决：
+
+1. **截图**（错误信息 + 文件路径 + 行号）
+2. **描述复现步骤**（我做了什么 → 出现什么）
+3. **在群里 @组长**，附上截图
+4. 不要自己瞎试各种"网上搜到的"方案 → 可能把代码搞炸
+
+---
+
+**写于第 N 次踩坑之后，痛定思痛。**
 

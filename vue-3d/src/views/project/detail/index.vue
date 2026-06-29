@@ -288,7 +288,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <div class="right">
             <h2>{{ projectStore.currentProject.project.projectName }}</h2>
             <p class="meta">
-              <el-tag size="small">{{ ProjectStatusText[projectStore.currentProject.project.status] }}</el-tag>
+              <el-tag size="small" effect="dark">{{ ProjectStatusText[projectStore.currentProject.project.status] }}</el-tag>
               <span>负责人：{{ projectStore.currentProject.project.leaderId }}</span>
               <span>开始：{{ formatDate(projectStore.currentProject.project.startDate, 'YYYY-MM-DD') }}</span>
             </p>
@@ -341,7 +341,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           </el-table-column>
           <el-table-column label="角色" width="120">
             <template #default="{ row }">
-              <el-tag size="small" :type="memberRoleTagType(row.roleInProject)">
+              <el-tag size="small" :type="memberRoleTagType(row.roleInProject)" effect="dark">
                 {{ ProjectRoleText[row.roleInProject as keyof typeof ProjectRoleText] }}
               </el-tag>
             </template>
@@ -401,7 +401,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <el-table-column prop="fileName" label="文件名" min-width="200" show-overflow-tooltip />
           <el-table-column label="类型" width="100">
             <template #default="{ row }">
-              <el-tag size="small">{{ ['', '设计图', 'STL', '照片', '文档', '其他'][row.fileType] }}</el-tag>
+              <el-tag size="small" effect="dark">{{ ['', '设计图', 'STL', '照片', '文档', '其他'][row.fileType] }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="大小" width="120">
@@ -427,7 +427,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
-              <el-tag size="small">{{ ['', '', '已通过', '已驳回', '排队中', '打印中', '已完成', '已取消'][row.status] || '待审批' }}</el-tag>
+              <el-tag size="small" effect="dark">{{ ['', '', '已通过', '已驳回', '排队中', '打印中', '已完成', '已取消'][row.status] || '待审批' }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="申请时间" width="160">

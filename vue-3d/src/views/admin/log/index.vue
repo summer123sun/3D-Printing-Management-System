@@ -121,7 +121,7 @@ const getOperationTagType = (op: string) => {
         </el-table-column>
         <el-table-column label="操作" width="160">
           <template #default="{ row }">
-            <el-tag :type="getOperationTagType(row.operation)">
+            <el-tag :type="getOperationTagType(row.operation)" effect="dark">
               {{ getOperationName(row.operation) }}
             </el-tag>
             <div style="font-size: 11px; color: var(--text-secondary); font-family: monospace; margin-top: 2px">{{ row.operation }}</div>

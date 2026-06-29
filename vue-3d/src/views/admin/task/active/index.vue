@@ -205,9 +205,9 @@ const handleFinish = async () => {
           <el-table-column label="打印机" width="140">
             <template #default="{ row }">
               <el-tooltip v-if="row.printerId" :content="`编号：${row.printerId}`" placement="top">
-                <el-tag size="small">{{ row.printerModel || row.printerId }}</el-tag>
+                <el-tag size="small" effect="dark">{{ row.printerModel || row.printerId }}</el-tag>
               </el-tooltip>
-              <el-tag v-else type="warning" size="small">未分配</el-tag>
+              <el-tag v-else type="warning" size="small" effect="dark">未分配</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="240" fixed="right">
@@ -228,7 +228,7 @@ const handleFinish = async () => {
     <AppDialog v-model="assignDialogVisible" title="分配打印机" icon="Printer" width="520px" @confirm="handleAssign">
       <el-form :model="assignForm" label-width="100px">
         <el-form-item label="任务编号">
-          <el-tag size="large" type="info">{{ assignForm.taskId }}</el-tag>
+          <el-tag size="large" type="info" effect="dark">{{ assignForm.taskId }}</el-tag>
         </el-form-item>
         <el-form-item label="选择打印机" required>
           <el-select
@@ -271,7 +271,7 @@ const handleFinish = async () => {
     <AppDialog v-model="finishDialogVisible" title="完成打印" icon="Check" width="520px" @confirm="handleFinish">
       <el-form :model="finishForm" label-width="100px">
         <el-form-item label="任务编号">
-          <el-tag size="large" type="info">{{ finishForm.taskId }}</el-tag>
+          <el-tag size="large" type="info" effect="dark">{{ finishForm.taskId }}</el-tag>
         </el-form-item>
         <el-form-item label="实际耗材 (g)" required>
           <el-input-number v-model="finishForm.actualWeight" :min="0.01" :precision="2" style="width: 100%" />
