@@ -66,7 +66,7 @@ const sortedStocks = computed(() => {
   })
 })
 
-const onSortChange = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+const onSortChange = ({ prop, order }: { prop: string | null; order: 'ascending' | 'descending' | null }) => {
   sortKey.value = (prop as keyof typeof store.stocks[0]) || ''
   sortOrder.value = order || ''
 }

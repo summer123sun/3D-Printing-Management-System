@@ -55,7 +55,7 @@ const editDialogVisible = ref(false)
 const editForm = reactive<ProjectCreateDTO & { projectId: number }>({
   projectId: 0,
   projectName: '',
-  projectType: ProjectType.OTHER,
+  projectType: ProjectType.CREATION,  // ✅ 默认「作品创作」（ProjectType 没 OTHER；只有 CREATION/COMPETE/ORDER/ACTIVITY）
   startDate: '',
   endDate: '',
   budget: 0,

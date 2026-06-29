@@ -22,7 +22,7 @@ const authStore = useAuthStore()
 
 const filter = ref({
   keyword: '',
-  role: undefined as number | undefined,  // 按角色筛选（undefined = 全部）
+  role: null as number | null,  // 按角色筛选（null = 全部）
   page: 1,
   size: 15,
 })
@@ -52,7 +52,7 @@ const fetchData = async () => {
       page: filter.value.page,
       size: filter.value.size,
       keyword: filter.value.keyword.trim() || undefined,
-      role: filter.value.role,
+      role: filter.value.role ?? undefined,
     })
     list.value = res.list || []
     total.value = res.total
@@ -248,7 +248,7 @@ const handleAdd = async () => {
           style="width: 160px"
           @change="onSearch"
         >
-          <el-option label="全部角色" :value="undefined" />
+          <el-option label="全部角色" :value="undefined as unknown as number" />
           <el-option v-for="r in roleOptions" :key="r.value" :label="r.label" :value="r.value" />
         </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>

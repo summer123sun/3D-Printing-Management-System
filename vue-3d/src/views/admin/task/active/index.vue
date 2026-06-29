@@ -53,10 +53,10 @@ const PriorityText: Record<Priority, string> = {
   [Priority.LOW]: '低优',
 }
 
-const openPriority = (row: { taskId: string; title: string; priority: number }) => {
-  priorityForm.taskId = row.taskId
-  priorityForm.taskTitle = row.title
-  priorityForm.newPriority = row.priority || Priority.NORMAL
+const openPriority = (row: { taskId?: string; title?: string; priority?: number }) => {
+  priorityForm.taskId = row.taskId ?? ''
+  priorityForm.taskTitle = row.title ?? ''
+  priorityForm.newPriority = row.priority ?? Priority.NORMAL
   priorityDialogVisible.value = true
 }
 
