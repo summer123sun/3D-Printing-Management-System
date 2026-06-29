@@ -5,6 +5,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Search } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -20,8 +21,13 @@ const rejectDialogVisible = ref(false)
 const rejectForm = reactive({ taskId: '', approveComment: '' })
 
 const fetchData = async () => {
-  await taskStore.fetchPendingTasks({ page: 1, size: 50 })
+  await taskStore.fetchPendingTasks({ page: 1, size: 50, keyword: searchKeyword.value.trim() || undefined })
 }
+
+// ✅ v2.2 新增：搜索
+const searchKeyword = ref('')
+const onSearch = () => fetchData()
+
 onMounted(fetchData)
 
 const handleApprove = async (taskId: string) => {
@@ -51,6 +57,16 @@ const handleReject = async () => {
 <template>
   <div class="admin-task-pending-page">
     <PageHeader title="待审批任务">
+      <el-input
+        v-model="searchKeyword"
+        placeholder="按任务/学号/姓名搜索"
+        clearable
+        style="width: 220px"
+        @keyup.enter="onSearch"
+      >
+        <template #prefix><el-icon><Search /></el-icon></template>
+      </el-input>
+      <el-button type="primary" @click="onSearch">搜索</el-button>
       <el-button @click="fetchData">刷新</el-button>
     </PageHeader>
 

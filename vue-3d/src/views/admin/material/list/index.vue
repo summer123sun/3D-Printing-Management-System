@@ -44,6 +44,32 @@ const stockByType = computed(() => {
   }
   return map
 })
+
+// ✅ v2.2 修复：库存表点击列头排序（前端排序，因为后端 stockList 不支持排序参数）
+const sortKey = ref<keyof typeof store.stocks[0] | ''>('')
+const sortOrder = ref<'ascending' | 'descending' | ''>('')
+
+const sortedStocks = computed(() => {
+  if (!sortKey.value || !sortOrder.value) {
+    return [...store.stocks]  // 保持原顺序（按 materialType+color）
+  }
+  const k = sortKey.value as keyof typeof store.stocks[0]
+  const dir = sortOrder.value === 'ascending' ? 1 : -1
+  return [...store.stocks].sort((a, b) => {
+    const av = a[k]
+    const bv = b[k]
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+    return String(av).localeCompare(String(bv)) * dir
+  })
+})
+
+const onSortChange = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+  sortKey.value = (prop as keyof typeof store.stocks[0]) || ''
+  sortOrder.value = order || ''
+}
 </script>
 
 <template>
@@ -135,12 +161,12 @@ const stockByType = computed(() => {
         </el-button>
       </EmptyState>
 
-      <el-table v-else :data="store.stocks" stripe>
-        <el-table-column prop="materialType" label="材料类型" width="140">
+      <el-table v-else :data="sortedStocks" stripe @sort-change="onSortChange">
+        <el-table-column prop="materialType" label="材料类型" width="140" sortable="custom">
           <template #default="{ row }">{{ MaterialTypeText[row.materialType as keyof typeof MaterialTypeText] || row.materialType }}</template>
         </el-table-column>
-        <el-table-column prop="color" label="颜色" width="120" />
-        <el-table-column label="当前库存（克）" min-width="120" sortable>
+        <el-table-column prop="color" label="颜色" width="120" sortable="custom" />
+        <el-table-column prop="currentStock" label="当前库存（克）" min-width="120" sortable="custom">
           <template #default="{ row }">
             <b :style="{ color: row.currentStock < threshold ? '#f56c6c' : '#67c23a' }">
               {{ row.currentStock }} g
@@ -154,7 +180,7 @@ const stockByType = computed(() => {
             <el-tag v-else type="success" effect="dark">充足</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="最近更新" width="180">
+        <el-table-column label="最近更新" width="180" sortable="custom" prop="lastUpdateTime">
           <template #default="{ row }">{{ formatDateTime(row.lastUpdateTime) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">

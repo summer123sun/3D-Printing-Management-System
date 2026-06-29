@@ -7,6 +7,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Search } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -25,6 +26,7 @@ const loading = ref(false)
 const ALL_FINISHED = '5,6,8'
 const filter = ref({
   status: ALL_FINISHED as number | string,
+  keyword: '',  // ✅ v2.2 新增：按标题/型号/学号/姓名搜索
   page: 1,
   size: 20,
 })
@@ -32,17 +34,21 @@ const filter = ref({
 const fetchData = async () => {
   loading.value = true
   try {
-    // 用我的任务接口（管理端没有专门的"全部历史"接口，先简化）
-    // 实际开发时可以加 /api/task/history 后端接口
     const res = await get<PageResult<PrintTask>>('/task/my', {
       page: filter.value.page,
       size: filter.value.size,
       status: filter.value.status,
+      keyword: filter.value.keyword.trim() || undefined,
     })
     list.value = res
   } finally {
     loading.value = false
   }
+}
+
+const onSearch = () => {
+  filter.value.page = 1
+  fetchData()
 }
 onMounted(fetchData)
 
@@ -58,6 +64,7 @@ const statusOptions = [
 
 const resetFilter = () => {
   filter.value.status = ALL_FINISHED
+  filter.value.keyword = ''
   filter.value.page = 1
   fetchData()
 }
@@ -74,6 +81,16 @@ const resetFilter = () => {
           :value="o.value"
         />
       </el-select>
+      <el-input
+        v-model="filter.keyword"
+        placeholder="按任务/学号/姓名搜索"
+        clearable
+        style="width: 220px"
+        @keyup.enter="onSearch"
+      >
+        <template #prefix><el-icon><Search /></el-icon></template>
+      </el-input>
+      <el-button type="primary" @click="onSearch">搜索</el-button>
       <el-button @click="fetchData">刷新</el-button>
     </PageHeader>
 

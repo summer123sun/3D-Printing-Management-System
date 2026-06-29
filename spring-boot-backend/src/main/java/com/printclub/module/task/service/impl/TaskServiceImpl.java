@@ -225,9 +225,25 @@ public class TaskServiceImpl implements TaskService {
                 w.in(PrintTask::getStatus, statusList);
             }
         }
+        // v2.2 增强：keyword 现在支持 title / modelName / applicantId（学号）/ applicantName（姓名）
+        // 姓名匹配通过 member 表查出学号列表后 OR 起来（避免 JOIN）
         if (q.getKeyword() != null && !q.getKeyword().isBlank()) {
-            w.and(x -> x.like(PrintTask::getTitle, q.getKeyword())
-                    .or().like(PrintTask::getModelName, q.getKeyword()));
+            String kw = q.getKeyword().trim();
+            // 姓名 → 学号列表（用现有 memberMapper，不增加新方法）
+            java.util.List<String> nameMatchedIds = memberMapper.selectList(
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.printclub.module.user.entity.Member>()
+                            .select(com.printclub.module.user.entity.Member::getStudentId)
+                            .like(com.printclub.module.user.entity.Member::getName, kw)
+            ).stream()
+                    .map(com.printclub.module.user.entity.Member::getStudentId)
+                    .collect(java.util.stream.Collectors.toList());
+
+            w.and(x -> x
+                    .like(PrintTask::getTitle, kw)
+                    .or().like(PrintTask::getModelName, kw)
+                    .or().like(PrintTask::getApplicantId, kw)
+                    .or().in(!nameMatchedIds.isEmpty(), PrintTask::getApplicantId, nameMatchedIds)
+            );
         }
     }
 
