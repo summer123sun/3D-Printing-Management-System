@@ -53,6 +53,19 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
+  /**
+   * 修改项目（项目负责人）
+   * v2.2 新增：之前前端没封装 update action，给 admin/project/manage 加编辑按钮必须先加这个
+   */
+  const update = async (id: number, dto: ProjectCreateDTO) => {
+    submitting.value = true
+    try {
+      await projectApi.updateProject(id, dto)
+    } finally {
+      submitting.value = false
+    }
+  }
+
   const complete = async (id: number) => {
     await projectApi.completeProject(id)
   }
@@ -82,6 +95,7 @@ export const useProjectStore = defineStore('project', () => {
     fetchList,
     fetchDetail,
     create,
+    update,
     complete,
     cancel,
     addMember,

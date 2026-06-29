@@ -27,6 +27,13 @@ export const projectDetail = (id: number) =>
 export const completeProject = (id: number) =>
   put<void>(`/project/${id}/complete`)
 
+/**
+ * 修改项目（项目负责人 + 技术骨干+）
+ * 后端：PUT /api/project/{id}
+ */
+export const updateProject = (id: number, dto: ProjectCreateDTO) =>
+  put<void>(`/project/${id}`, dto)
+
 /** 取消项目 */
 export const cancelProject = (id: number) =>
   put<void>(`/project/${id}/cancel`)
