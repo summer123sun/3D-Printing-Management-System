@@ -5,8 +5,8 @@ import { get, put } from '@/utils/request'
 import type { Member, Role, SkillLevel, UserStatsVO } from '@/types/member'
 import type { PageResult } from '@/types/api'
 
-/** 成员列表（分页 + 搜索） */
-export const memberList = (params: { page?: number; size?: number; keyword?: string }) =>
+/** 成员列表（分页 + 关键字搜索 + 角色筛选） */
+export const memberList = (params: { page?: number; size?: number; keyword?: string; role?: number }) =>
   get<PageResult<Member>>('/user/list', params as Record<string, unknown>)
 
 /** 修改成员角色（仅社长） */

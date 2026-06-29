@@ -82,7 +82,17 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 3. 写入上下文
         String studentId = claims.getSubject();
-        Integer role = claims.get("role", Integer.class);
+        // ⚠️ 健壮性修复：JJWT 0.12.x 默认把 JSON 数字反序列化为 Long
+        // 用 Number.intValue() 兼容所有数字类型，避免 Integer.class 转换失败
+        Integer role = null;
+        Object roleClaim = claims.get("role");
+        if (roleClaim instanceof Number n) {
+            role = n.intValue();
+        } else if (roleClaim != null) {
+            try { role = Integer.parseInt(roleClaim.toString()); } catch (NumberFormatException ignore) {}
+        }
+        log.debug("[JWT] studentId={}, role={}, roleClaimType={}",
+                studentId, role, roleClaim == null ? "null" : roleClaim.getClass().getName());
         SecurityContext.set(studentId, role);
 
         // 4. 角色校验

@@ -22,9 +22,18 @@ const authStore = useAuthStore()
 
 const filter = ref({
   keyword: '',
+  role: undefined as number | undefined,  // 按角色筛选（undefined = 全部）
   page: 1,
   size: 15,
 })
+
+// 角色选项（给筛选下拉框用）
+const roleOptions = [
+  { value: Role.PRESIDENT, label: RoleText[Role.PRESIDENT] },
+  { value: Role.TECH_LEAD, label: RoleText[Role.TECH_LEAD] },
+  { value: Role.MEMBER, label: RoleText[Role.MEMBER] },
+  { value: Role.NEWBIE, label: RoleText[Role.NEWBIE] },
+]
 
 const list = ref<Member[]>([])
 const total = ref(0)
@@ -43,6 +52,7 @@ const fetchData = async () => {
       page: filter.value.page,
       size: filter.value.size,
       keyword: filter.value.keyword.trim() || undefined,
+      role: filter.value.role,
     })
     list.value = res.list || []
     total.value = res.total
@@ -160,6 +170,16 @@ const skillTagType = (s: number) => {
         >
           <template #prefix><el-icon><Search /></el-icon></template>
         </el-input>
+        <el-select
+          v-model="filter.role"
+          placeholder="全部角色"
+          clearable
+          style="width: 160px"
+          @change="onSearch"
+        >
+          <el-option label="全部角色" :value="undefined" />
+          <el-option v-for="r in roleOptions" :key="r.value" :label="r.label" :value="r.value" />
+        </el-select>
         <el-button type="primary" @click="onSearch">搜索</el-button>
         <el-button @click="fetchData">
           <el-icon><Refresh /></el-icon> 刷新

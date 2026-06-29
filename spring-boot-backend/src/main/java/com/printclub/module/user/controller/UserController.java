@@ -27,15 +27,16 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "成员列表（分页 + 搜索）")
+    @Operation(summary = "成员列表（分页 + 关键字搜索 + 角色筛选）")
     @GetMapping("/list")
     @RequireAuth
     public Result<PageResult<Member>> list(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer role
     ) {
-        return Result.success(userService.list(page, size, keyword));
+        return Result.success(userService.list(page, size, keyword, role));
     }
 
     @Operation(summary = "修改成员角色（仅社长）")

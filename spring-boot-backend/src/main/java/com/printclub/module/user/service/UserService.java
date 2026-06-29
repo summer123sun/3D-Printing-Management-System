@@ -12,9 +12,9 @@ import com.printclub.module.user.entity.Member;
 public interface UserService {
 
     /**
-     * 成员列表（分页 + 关键字搜索）
+     * 成员列表（分页 + 关键字 + 角色筛选）
      */
-    PageResult<Member> list(Integer page, Integer size, String keyword);
+    PageResult<Member> list(Integer page, Integer size, String keyword, Integer role);
 
     /**
      * 修改角色（仅社长）

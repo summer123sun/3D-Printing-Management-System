@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService {
     private final LogService logService;
 
     @Override
-    public PageResult<Member> list(Integer page, Integer size, String keyword) {
+    public PageResult<Member> list(Integer page, Integer size, String keyword, Integer role) {
         LambdaQueryWrapper<Member> wrapper = new LambdaQueryWrapper<>();
         // 关键字搜索：按学号或姓名模糊匹配
         if (keyword != null && !keyword.isBlank()) {
@@ -41,6 +41,10 @@ public class UserServiceImpl implements UserService {
                     .or()
                     .like(Member::getName, keyword)
             );
+        }
+        // 按角色筛选
+        if (role != null) {
+            wrapper.eq(Member::getRole, role);
         }
         wrapper.orderByDesc(Member::getCreateTime);
 
