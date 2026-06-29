@@ -2,7 +2,7 @@
  * 认证相关 API
  */
 import { get, post } from '@/utils/request'
-import type { LoginDTO, ChangePasswordDTO, Member } from '@/types/member'
+import type { LoginDTO, ChangePasswordDTO, Member, UpdateUserInfoDTO } from '@/types/member'
 
 /** 登录 */
 export const login = (dto: LoginDTO) => {
@@ -19,9 +19,12 @@ export const getUserInfo = () => {
   return get<Member>('/auth/info')
 }
 
-/** 修改个人信息 */
-export const updateUserInfo = (user: Partial<Member>) => {
-  return post('/user/info', user)
+/**
+ * 修改个人信息（对应后端 POST /api/user/info）
+ * 后端只接受 phone/email/avatar，其他字段会被忽略
+ */
+export const updateUserInfo = (dto: UpdateUserInfoDTO) => {
+  return post<void>('/user/info', dto)
 }
 
 /** 修改密码 */

@@ -2,7 +2,7 @@
  * 成员/用户 API（v2）
  */
 import { get, put } from '@/utils/request'
-import type { Member, Role, SkillLevel } from '@/types/member'
+import type { Member, Role, SkillLevel, UserStatsVO } from '@/types/member'
 import type { PageResult } from '@/types/api'
 
 /** 成员列表（分页 + 搜索） */
@@ -19,9 +19,8 @@ export const updateMemberSkill = (studentId: string, skillLevel: SkillLevel) =>
 
 /**
  * 获取成员统计信息（个人中心用）
- * 对应后端 GET /api/user/stats?studentId=xxx
- * 返回字段：submittedTasks, approvedTasks, completedTasks, cancelledTasks,
- *          totalPrintHours, totalWeightUsed, involvedProjects
+ * 对应后端 GET /api/user/{studentId}/stats（路径变量风格）
+ * 返回字段：totalPrints（打印次数）/ totalProjects（参与项目）/ totalArtworks（作品数）
  */
 export const getUserStats = (studentId?: string) =>
-  get<Record<string, unknown>>('/user/stats', { studentId } as Record<string, unknown>)
+  get<UserStatsVO>(`/user/${studentId}/stats`)

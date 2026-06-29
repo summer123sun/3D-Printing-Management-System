@@ -7,12 +7,13 @@ import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { useAuthStore } from '@/stores/auth'
-import { RoleText, SkillLevelText, type Member } from '@/types/member'
+import { RoleText, SkillLevelText, type UserStatsVO } from '@/types/member'
 import { formatDate } from '@/utils/format'
 import { getUserStats } from '@/api/user'
+import { updateUserInfo } from '@/api/auth'
 
 const authStore = useAuthStore()
-const stats = ref({ totalPrints: 0, totalProjects: 0, totalArtworks: 0 })
+const stats = ref<UserStatsVO>({ totalPrints: 0, totalProjects: 0, totalArtworks: 0 })
 
 onMounted(async () => {
   if (!authStore.user) {
@@ -24,9 +25,9 @@ onMounted(async () => {
   if (authStore.user?.studentId) {
     try {
       const result = await getUserStats(authStore.user.studentId)
-      stats.value = result as unknown as typeof stats.value
+      stats.value = result
     } catch {
-      // 统计接口失败不提示
+      // 统计接口失败不提示（保持默认值 0）
     }
   }
 })
@@ -34,6 +35,44 @@ onMounted(async () => {
 const changePasswordDialogVisible = ref(false)
 const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' })
 const submittingPassword = ref(false)
+
+// ===== 编辑个人信息弹窗（修复：原按钮没绑 @click） =====
+const editDialogVisible = ref(false)
+const editForm = ref({ phone: '', email: '' })
+const submittingEdit = ref(false)
+
+const openEditDialog = () => {
+  editForm.value = {
+    phone: authStore.user?.phone || '',
+    email: authStore.user?.email || '',
+  }
+  editDialogVisible.value = true
+}
+
+const handleEditConfirm = async () => {
+  // 基础校验
+  const phone = editForm.value.phone?.trim()
+  const email = editForm.value.email?.trim()
+  if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+    ElNotification.warning('手机号格式不正确（11 位数字，1 开头）')
+    return
+  }
+  if (email && !/^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(email)) {
+    ElNotification.warning('邮箱格式不正确')
+    return
+  }
+  submittingEdit.value = true
+  try {
+    await updateUserInfo({ phone, email })
+    ElNotification.success('个人信息已更新')
+    await authStore.fetchUserInfo() // 刷新本地 user
+    editDialogVisible.value = false
+  } catch (e) {
+    console.error('[编辑信息] 失败：', e)
+  } finally {
+    submittingEdit.value = false
+  }
+}
 
 /** 密码强度：6-20 位 + 至少字母+数字 */
 const passwordStrength = computed(() => {
@@ -146,7 +185,7 @@ const skillPercent = computed(() => {
         <el-card>
           <template #header>
             <span>基本信息</span>
-            <el-button text type="primary" style="float: right">编辑</el-button>
+            <el-button text type="primary" style="float: right" @click="openEditDialog">编辑</el-button>
           </template>
           <el-descriptions :column="1" border>
             <el-descriptions-item label="学号">
@@ -256,6 +295,25 @@ const skillPercent = computed(() => {
           >
             ⚠️ 两次密码不一致
           </div>
+        </el-form-item>
+      </el-form>
+    </AppDialog>
+
+    <!-- 编辑个人信息弹窗（修复：原按钮没绑 @click） -->
+    <AppDialog v-model="editDialogVisible" title="编辑个人信息" icon="Edit" type="primary" width="480px"
+               confirm-text="保存" :loading="submittingEdit" @confirm="handleEditConfirm">
+      <el-form :model="editForm" label-width="90px">
+        <el-form-item label="学号">
+          <el-input :model-value="authStore.user?.studentId" disabled />
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input :model-value="authStore.user?.name" disabled />
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="editForm.phone" placeholder="请输入 11 位手机号" maxlength="11" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="editForm.email" placeholder="example@print.club" />
         </el-form-item>
       </el-form>
     </AppDialog>

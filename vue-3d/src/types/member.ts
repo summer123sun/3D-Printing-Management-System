@@ -81,3 +81,26 @@ export interface ChangePasswordDTO {
   oldPassword: string
   newPassword: string
 }
+
+/**
+ * 修改个人信息请求（对应后端 UpdateUserInfoDTO）
+ * 后端只接受 phone/email/avatar，其他字段会被忽略
+ */
+export interface UpdateUserInfoDTO {
+  phone?: string
+  email?: string
+  avatar?: string
+}
+
+/**
+ * 个人统计返回（对应后端 UserStatsVO）
+ * 来源：GET /api/user/{studentId}/stats
+ */
+export interface UserStatsVO {
+  /** 累计打印次数 */
+  totalPrints: number
+  /** 参与项目数 */
+  totalProjects: number
+  /** 作品数 */
+  totalArtworks: number
+}

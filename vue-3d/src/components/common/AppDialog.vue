@@ -217,10 +217,12 @@ const handleUpdate = (val: boolean) => {
   }
 
   // 隐藏 Element Plus 默认 header
+  // ❌ 不要 height: 0 —— 会让 .app-dialog-header 的 56px 内容溢出遮挡 body
+  // ✅ 只清 padding/margin/border，让 header flex item 自动撑开
   .el-dialog__header {
     padding: 0 !important;
-    height: 0 !important;
     margin: 0 !important;
+    border-bottom: none !important;
   }
 
   // 自定义 header（紫系渐变标题栏）
