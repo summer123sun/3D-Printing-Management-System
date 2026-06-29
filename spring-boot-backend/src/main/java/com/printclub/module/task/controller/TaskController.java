@@ -120,6 +120,18 @@ public class TaskController {
         return Result.success();
     }
 
+    /**
+     * 修改任务（仅 priority / title 等可改字段；任务流转请用专门接口）
+     * 技术骨干及以上可改优先级
+     */
+    @Operation(summary = "修改任务（priority / title）")
+    @PutMapping("/{id}")
+    @RequireRole({1, 2})
+    public Result<Void> update(@PathVariable("id") String id, @RequestBody UpdateTaskDTO dto) {
+        taskService.update(id, dto);
+        return Result.success();
+    }
+
     @Operation(summary = "任务统计（看板）")
     @GetMapping("/stats")
     @RequireRole({1, 2})

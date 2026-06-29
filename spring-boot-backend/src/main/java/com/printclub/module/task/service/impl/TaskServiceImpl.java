@@ -348,6 +348,12 @@ public class TaskServiceImpl implements TaskService {
 
         // 2. 扣减耗材库存
         BigDecimal currentBalance = getCurrentBalance(task.getMaterialType(), task.getColor());
+        // ⚠️ v2.2 修复：null 表示"该材料+颜色没有任何库存记录"（从未入库过），
+        //          0 表示"库存恰好为 0"，要区分两种情况给不同提示
+        if (currentBalance == null) {
+            throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
+                    "未找到耗材库存记录：" + task.getMaterialType() + " " + task.getColor() + "，请先入库");
+        }
         BigDecimal newBalance = currentBalance.subtract(dto.getActualWeight());
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
@@ -397,6 +403,9 @@ public class TaskServiceImpl implements TaskService {
 
     /**
      * 获取指定耗材+颜色的当前库存余额
+     * ⚠️ v2.2 修复：返回 null 表示"该材料+颜色从未入库过"（区别于"库存恰好为 0"）
+     *
+     * @return 当前库存余额；如果没有任何 material_log 记录则返回 null
      */
     private BigDecimal getCurrentBalance(String materialType, String color) {
         MaterialLog latest = materialLogMapper.selectOne(
@@ -406,7 +415,7 @@ public class TaskServiceImpl implements TaskService {
                         .orderByDesc(MaterialLog::getLogId)
                         .last("LIMIT 1")
         );
-        return latest == null ? BigDecimal.ZERO : latest.getBalance();
+        return latest == null ? null : latest.getBalance();
     }
 
     // ============================================
@@ -453,6 +462,33 @@ public class TaskServiceImpl implements TaskService {
         taskMapper.updateById(task);
 
         logService.recordCurrent("task.cancel", "task", taskId, "用户取消任务");
+    }
+
+    /**
+     * 修改任务（部分字段）
+     * v2.2 新增：让技术骨干及以上角色可以修改 priority 等非流转字段
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void update(String taskId, UpdateTaskDTO dto) {
+        PrintTask task = mustGetTask(taskId);
+
+        // 优先级
+        if (dto.getPriority() != null) {
+            // 已完成/已取消的任务不能改优先级
+            if (task.getStatus() == PrintTask.STATUS_DONE
+                    || task.getStatus() == PrintTask.STATUS_CANCELLED
+                    || task.getStatus() == PrintTask.STATUS_PICKED_UP) {
+                throw new BusinessException(ResultCode.TASK_STATUS_INVALID,
+                        "已完成/已取件/已取消的任务不能修改优先级");
+            }
+            Integer oldPriority = task.getPriority();
+            task.setPriority(dto.getPriority());
+            logService.recordCurrent("task.updatePriority", "task", taskId,
+                    "修改优先级：" + oldPriority + " → " + dto.getPriority());
+        }
+
+        taskMapper.updateById(task);
     }
 
     // ============================================

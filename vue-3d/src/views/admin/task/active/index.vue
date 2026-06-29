@@ -14,7 +14,8 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { usePrinterStore } from '@/stores/printer'
-import { TaskStatus } from '@/types/task'
+import { TaskStatus, Priority } from '@/types/task'
+import { updateTask } from '@/api/task'
 
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -34,6 +35,38 @@ const submittingAssign = ref(false)
 const finishDialogVisible = ref(false)
 const finishForm = reactive({ taskId: '', actualWeight: 0, actualTime: 0, qualityScore: 5 })
 const submittingFinish = ref(false)
+
+// ===== 优先级修改弹窗（v2.2 新增） =====
+const priorityDialogVisible = ref(false)
+const priorityForm = reactive({ taskId: '', taskTitle: '', newPriority: Priority.NORMAL })
+const submittingPriority = ref(false)
+
+const PriorityText: Record<Priority, string> = {
+  [Priority.URGENT]: '紧急',
+  [Priority.NORMAL]: '普通',
+  [Priority.LOW]: '低优',
+}
+
+const openPriority = (row: { taskId: string; title: string; priority: number }) => {
+  priorityForm.taskId = row.taskId
+  priorityForm.taskTitle = row.title
+  priorityForm.newPriority = row.priority || Priority.NORMAL
+  priorityDialogVisible.value = true
+}
+
+const handlePriority = async () => {
+  submittingPriority.value = true
+  try {
+    await updateTask(priorityForm.taskId, { priority: priorityForm.newPriority })
+    ElNotification.success(`优先级已更新为「${PriorityText[priorityForm.newPriority]}」`)
+    priorityDialogVisible.value = false
+    await fetchData()
+  } catch (e: any) {
+    console.error('[修改优先级] 失败：', e)
+  } finally {
+    submittingPriority.value = false
+  }
+}
 
 /** 当前选中的打印机详情 */
 const selectedPrinter = computed(() => {
@@ -210,9 +243,10 @@ const handleFinish = async () => {
               <el-tag v-else type="warning" size="small" effect="dark">未分配</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="240" fixed="right">
+          <el-table-column label="操作" width="280" fixed="right">
             <template #default="{ row }">
               <el-button text type="primary" @click="router.push(`/task/${row.taskId}`)">详情</el-button>
+              <el-button text type="warning" @click="openPriority(row)">改优先级</el-button>
               <template v-if="row.status === TaskStatus.QUEUED || row.status === TaskStatus.APPROVED">
                 <el-button v-if="!row.printerId" text type="primary" @click="openAssign(row.taskId)">分配</el-button>
                 <el-button v-else text type="success" @click="handleStart(row.taskId)">开始</el-button>
@@ -286,6 +320,32 @@ const handleFinish = async () => {
           完成后会自动：扣减库存 + 累计打印次数。<br />
           <b>作品需要用户手动登记</b>（到【我的作品】→ 登记作品上传照片 + 心得）
         </el-alert>
+      </el-form>
+    </AppDialog>
+
+    <!-- 修改优先级弹窗（v2.2 新增） -->
+    <AppDialog v-model="priorityDialogVisible" title="修改优先级" icon="Bell" type="warning" width="440px"
+               confirm-text="保存" :loading="submittingPriority" @confirm="handlePriority">
+      <el-form :model="priorityForm" label-width="80px">
+        <el-form-item label="任务编号">
+          <el-tag size="large" type="info" effect="dark">{{ priorityForm.taskId }}</el-tag>
+        </el-form-item>
+        <el-form-item label="任务标题">
+          <span>{{ priorityForm.taskTitle }}</span>
+        </el-form-item>
+        <el-form-item label="优先级" required>
+          <el-radio-group v-model="priorityForm.newPriority">
+            <el-radio :value="Priority.URGENT" :label="Priority.URGENT">
+              <el-tag type="danger" effect="dark" size="small">紧急</el-tag>
+            </el-radio>
+            <el-radio :value="Priority.NORMAL" :label="Priority.NORMAL">
+              <el-tag type="primary" effect="dark" size="small">普通</el-tag>
+            </el-radio>
+            <el-radio :value="Priority.LOW" :label="Priority.LOW">
+              <el-tag effect="dark" size="small">低优</el-tag>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
       </el-form>
     </AppDialog>
   </div>

@@ -71,6 +71,14 @@ public interface TaskService {
     void cancel(String taskId);
 
     /**
+     * 修改任务（目前仅支持 priority 字段）
+     *
+     * @param taskId 任务编号
+     * @param dto 修改字段（只更新非 null 的字段）
+     */
+    void update(String taskId, UpdateTaskDTO dto);
+
+    /**
      * 打印队列（按 priority → apply_time 排序）
      */
     PageResult<PrintTask> queue(TaskQuery query);

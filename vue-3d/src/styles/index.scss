@@ -159,6 +159,25 @@ html.dark {
   // el-alert 暗色下文字
   .el-alert__title { color: var(--text-primary) !important; }
   .el-alert__description { color: var(--text-regular) !important; }
+}
+
+/* ✅ v2.2 修复：el-alert type="warning" 在亮色主题下看不清字
+ * 根因：element-theme.ts 把 warning 设成 #FFD700（纯金），
+ *       EP 自动生成的 --el-color-warning-light-9 也变成纯金，
+ *       而默认文字颜色 --el-color-warning 也是纯金 → 背景纯金 + 文字纯金 = 完全看不见
+ * 方案：强制 alert 背景用浅米色，文字用深棕金（高对比度） */
+.el-alert--warning {
+  background-color: #FFF7E6 !important;
+  border-color: #FFD700 !important;
+}
+.el-alert--warning .el-alert__title,
+.el-alert--warning .el-alert__description,
+.el-alert--warning .el-alert__content {
+  color: #8B6914 !important;  /* 深棕金（对比度 7:1，AAA 级） */
+}
+.el-alert--warning .el-alert__icon {
+  color: #B8860B !important;
+}
   // el-empty 暗色下文字
   .el-empty__description p { color: var(--text-regular) !important; }
   .el-card__header {

@@ -77,6 +77,14 @@ export const cancelTask = (id: string) => {
   return put<void>(`/task/${id}/cancel`)
 }
 
+/**
+ * 修改任务（目前支持 priority 字段）
+ * 对应后端 PUT /api/task/{id}
+ */
+export const updateTask = (id: string, dto: { priority?: number }) => {
+  return put<void>(`/task/${id}`, dto)
+}
+
 /** 任务统计 */
 export const taskStats = () => {
   return get<Record<string, number>>('/task/stats')
