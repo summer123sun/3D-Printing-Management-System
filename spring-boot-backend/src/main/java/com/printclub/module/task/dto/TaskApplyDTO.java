@@ -29,6 +29,8 @@ public class TaskApplyDTO {
     @Pattern(regexp = "PLA|PETG|TPU|ABS", message = "材料类型必须是 PLA/PETG/TPU/ABS")
     private String materialType;
 
+    /** ✅ v2.2 修复：color 之前没 NotBlank，导致可以建 color=NULL 的任务，后续 finishPrint 查不到库存报 0g */
+    @NotBlank(message = "颜色不能为空")
     @Size(max = 20)
     private String color;
 

@@ -38,8 +38,8 @@ const form = defineModel<TaskApplyDTO>({ required: true })
         </el-form-item>
       </el-col>
       <el-col :span="8">
-        <el-form-item label="颜色">
-          <el-select v-model="form.color" placeholder="选择颜色" clearable style="width: 100%">
+        <el-form-item label="颜色" required>
+          <el-select v-model="form.color" placeholder="选择颜色" style="width: 100%">
             <el-option v-for="c in MaterialColor" :key="c" :label="c" :value="c" />
           </el-select>
         </el-form-item>

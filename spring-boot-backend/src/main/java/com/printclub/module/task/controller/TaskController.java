@@ -127,7 +127,11 @@ public class TaskController {
     @Operation(summary = "修改任务（priority / title）")
     @PutMapping("/{id}")
     @RequireRole({1, 2})
-    public Result<Void> update(@PathVariable("id") String id, @RequestBody UpdateTaskDTO dto) {
+    public Result<Void> update(@PathVariable("id") String id, @RequestBody(required = false) @Valid UpdateTaskDTO dto) {
+        // ✅ v2.2 防御性：dto 可能 null（前端没传 body），给个空对象让 service 走"不修改"分支
+        if (dto == null) {
+            dto = new UpdateTaskDTO();
+        }
         taskService.update(id, dto);
         return Result.success();
     }
