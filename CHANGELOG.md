@@ -380,7 +380,9 @@ cd spring-boot-backend
 mvn clean package -DskipTests
 
 # 上传 jar 到 ECS
-scp target/print-club-backend.jar root@8.137.80.194:/opt/printclub/app/
+# ⚠️ scp 目标必须和 systemctl cat printclub.service 里 WD + ExecStart -jar 路径对齐
+#    验证：ssh root@8.137.80.194 "systemctl cat printclub.service | grep -E 'WorkingDirectory|ExecStart'"
+scp target/print-club-backend.jar root@8.137.80.194:/opt/printclub/app/spring-boot-backend/target/print-club-backend.jar
 
 # 在 ECS 上重启服务
 ssh root@8.137.80.194

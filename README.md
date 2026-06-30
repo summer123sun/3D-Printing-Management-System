@@ -167,7 +167,11 @@ git add . && git commit -m "..." && git push
 # 后端：scp jar + systemctl restart
 cd ../spring-boot-backend
 mvn clean package -DskipTests
-scp target/print-club-backend.jar root@8.137.80.194:/opt/printclub/app/
+# ⚠️ scp 目标路径必须和 ECS 上 systemctl 的 WorkingDirectory + ExecStart 里 -jar 的相对路径对齐
+#    验证：ssh root@8.137.80.194 "systemctl cat printclub.service | grep -E 'WorkingDirectory|ExecStart'"
+#    当前生产是 WD=/opt/printclub/app/spring-boot-backend + -jar target/print-club-backend.jar
+#    所以 jar 真实在 WD/target/ = /opt/printclub/app/spring-boot-backend/target/print-club-backend.jar
+scp target/print-club-backend.jar root@8.137.80.194:/opt/printclub/app/spring-boot-backend/target/print-club-backend.jar
 ssh root@8.137.80.194 "systemctl restart printclub && journalctl -u printclub -n 30 -f"
 ```
 
