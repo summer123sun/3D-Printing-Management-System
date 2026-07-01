@@ -99,9 +99,8 @@ export const routes: RouteRecordRaw[] = [
 
   // ===== 项目管理（M3 - B 负责）=====
   // ✅ v2.2 round 4 修复（用户反馈）：合并"项目列表"和"项目管理（管理端）"为单一入口
-  //    - 顶级 /project 下只保留一个子菜单"项目列表"
-  //    - 项目列表 page 内部按角色显示操作按钮（看/编辑/完成/取消）
-  //    - 删 /project/manage 子菜单、删 /admin/project/manage 路由（保留 redirect 兼容老链接）
+  // ✅ v2.2 round 5 修复（用户反馈）：普通社员作为项目负责人能编辑自己项目，但 sidebar 没有"创建项目"菜单
+  //    修复：把"创建项目"路由从 /admin/project/create 移到顶级 /project/create（roles [1, 2, 3]）
   {
     path: '/project',
     component: Layout,
@@ -113,6 +112,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'ProjectList',
         component: () => import('@/views/project/list/index.vue'),
         meta: { title: '项目列表', icon: 'Files', transition: 'page-zoom' },
+      },
+      {
+        path: 'create',
+        name: 'ProjectCreate',
+        component: () => import('@/views/admin/project/create/index.vue'),
+        meta: { title: '创建项目', icon: 'Plus', roles: [1, 2, 3], transition: 'page-flip' },
       },
       {
         path: ':id',
@@ -201,12 +206,12 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/task/stats/index.vue'),
         meta: { title: '任务统计', icon: 'TrendCharts', roles: [1, 2], parent: '/admin/task', transition: 'page-slide-up' },
       },
-      // 管理端项目（**B**）
+      // ✅ v2.2 round 5 修复："创建项目"已经从 /admin 移到顶级 /project/create
+      //    旧路径 /admin/project/create → 跳 /project/create（保留兼容老链接）
       {
         path: 'project/create',
-        name: 'AdminProjectCreate',
-        component: () => import('@/views/admin/project/create/index.vue'),
-        meta: { title: '创建项目', icon: 'Plus', roles: [1, 2], transition: 'page-flip' },
+        redirect: '/project/create',
+        meta: { hidden: true },
       },
       // ✅ v2.2 round 4 修复：/admin/project/manage 已经被项目列表取代
       //    旧路径 /admin/project/manage → 跳 /project/list（保留兼容老链接）

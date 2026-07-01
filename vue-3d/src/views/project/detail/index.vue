@@ -293,7 +293,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
         </el-empty>
       </el-card>
     </template>
-    <template v-else-if="projectStore.currentProject">
+    <template v-else-if="projectStore.currentProject && projectStore.currentProject.project">
       <!-- 项目头部卡片 -->
       <el-card class="project-header-card">
         <div class="header-content">
@@ -456,6 +456,14 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           </el-table-column>
         </el-table>
         <EmptyState v-else description="还没有关联的打印任务" hint="在打印任务申请时选择关联到此项目即可。" />
+      </el-card>
+    </template>
+    <!-- ✅ v2.2 round 5 修复：fetchDetail 静默成功但 data=null 时的兜底（之前整页空白） -->
+    <template v-else>
+      <el-card>
+        <el-empty description="项目数据加载中..." :image-size="80">
+          <el-button type="primary" @click="fetchData">重新加载</el-button>
+        </el-empty>
       </el-card>
     </template>
 

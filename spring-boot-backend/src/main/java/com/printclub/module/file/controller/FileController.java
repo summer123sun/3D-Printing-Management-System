@@ -6,6 +6,10 @@ import com.printclub.common.exception.BusinessException;
 import com.printclub.common.result.Result;
 import com.printclub.common.result.ResultCode;
 import com.printclub.common.util.FileUploadUtil;
+import com.printclub.common.util.SecurityContext;
+import com.printclub.module.log.service.LogService;
+import com.printclub.module.user.entity.Member;
+import com.printclub.module.user.mapper.MemberMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +48,10 @@ import java.util.Map;
 public class FileController {
 
     private final FileUploadUtil fileUploadUtil;
+    // ✅ v2.2 round 5 修复（用户反馈）：删除文件不写日志
+    //    修复：注入 logService + memberMapper（查真实姓名）
+    private final LogService logService;
+    private final MemberMapper memberMapper;
 
     @Value("${file.upload-dir:./uploads/}")
     private String uploadDir;
@@ -239,6 +247,7 @@ public class FileController {
      * 文件删除（DELETE /api/file/**）
      * ✅ v2.2 修复：现在 @RequireAuth 任何登录用户都能删自己的文件
      *    管理员想删任意文件用下面的 /admin 接口
+     * ✅ v2.2 round 5 修复：删除文件要写日志（用户反馈删了没记录）
      */
     @Operation(summary = "文件删除（用户自己的）")
     @DeleteMapping("/**")
@@ -262,6 +271,8 @@ public class FileController {
             throw new BusinessException(ResultCode.SERVER_ERROR, "删除失败");
         }
         log.info("文件已删除：{}", file.getAbsolutePath());
+        // 写审计日志
+        recordFileLog("file.delete", relativePath, "删除文件");
         return Result.success();
     }
 
@@ -284,6 +295,28 @@ public class FileController {
             throw new BusinessException(ResultCode.SERVER_ERROR, "删除失败");
         }
         log.info("管理员删除文件：{}", file.getAbsolutePath());
+        recordFileLog("file.adminDelete", path, "管理员强制删除文件");
         return Result.success();
+    }
+
+    /**
+     * 写文件操作的审计日志（用 recordAs 显式传 userId + 真实姓名，因为 SecurityContext 可能在异步场景拿不到）
+     */
+    private void recordFileLog(String operation, String path, String desc) {
+        try {
+            String userId = SecurityContext.getCurrentUserId();
+            String username = userId;
+            if (userId != null) {
+                try {
+                    Member m = memberMapper.selectById(userId);
+                    if (m != null && m.getName() != null) {
+                        username = m.getName();
+                    }
+                } catch (Exception ignore) {}
+            }
+            logService.recordAs(userId, username, operation, "file", path, desc + "：" + path);
+        } catch (Exception e) {
+            log.warn("记录文件操作日志失败：op={}, path={}", operation, path, e);
+        }
     }
 }

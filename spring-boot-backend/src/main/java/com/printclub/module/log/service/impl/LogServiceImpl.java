@@ -51,15 +51,28 @@ public class LogServiceImpl implements LogService {
     public PageResult<SystemLog> list(LogQuery query) {
         Page<SystemLog> p = new Page<>(query.getPage(), query.getSize());
         LambdaQueryWrapper<SystemLog> wrapper = new LambdaQueryWrapper<>();
-        // ✅ v2.2 修复：userId 字段同时匹配学号和姓名（LIKE OR）
-        //    之前：eq(SystemLog::getUserId, query.getUserId()) → 只能精确匹配学号
-        //    现在：like(userId) OR like(username) → 输入"刘洋"也能查到
+        // ✅ v2.2 round 5 修复（用户反馈）：搜"刘洋"找不到历史日志
+        //    原因：历史日志 username 字段是 null（之前 LogServiceImpl.recordCurrent 没查 member 真实姓名）
+        //    修复：除了 userId / username 字段 LIKE，再加 in-memory 反查 member.name → userId 列表
+        //          （即使用户没运行过 recordAs 修复历史数据，也能查出来）
         if (StrUtil.isNotBlank(query.getUserId())) {
-            wrapper.and(w -> w
-                    .like(SystemLog::getUserId, query.getUserId())
-                    .or()
-                    .like(SystemLog::getUsername, query.getUserId())
-            );
+            String kw = query.getUserId().trim();
+            java.util.Set<String> userIds = new java.util.HashSet<>();
+            try {
+                List<Member> matched = memberMapper.selectList(
+                        new LambdaQueryWrapper<Member>().like(Member::getName, kw)
+                );
+                matched.forEach(m -> userIds.add(m.getStudentId()));
+            } catch (Exception e) {
+                log.warn("按姓名反查 member 失败：{}", kw, e);
+            }
+            wrapper.and(w -> {
+                w.like(SystemLog::getUserId, kw)
+                        .or().like(SystemLog::getUsername, kw);
+                if (!userIds.isEmpty()) {
+                    w.or().in(SystemLog::getUserId, userIds);
+                }
+            });
         }
         if (StrUtil.isNotBlank(query.getOperation())) wrapper.like(SystemLog::getOperation, query.getOperation());
         if (StrUtil.isNotBlank(query.getTargetType())) wrapper.eq(SystemLog::getTargetType, query.getTargetType());
