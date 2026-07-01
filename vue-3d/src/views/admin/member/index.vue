@@ -156,6 +156,7 @@ const skillTagType = (s: number) => {
 
 // ============== 新增成员（仅社长） ==============
 const addDialog = ref({ visible: false, submitting: false })
+const addFormRef = ref()  // ✅ v2.2 修复：form ref 用来 validate
 const addForm = reactive({
   studentId: '',
   name: '',
@@ -167,6 +168,42 @@ const addForm = reactive({
   joinDate: new Date().toISOString().slice(0, 10),  // 默认今天
 })
 
+// ✅ v2.2 修复（用户反馈）：el-form 规则（前端校验，红框显示在输入框下方，比 ElMessage.warning 更醒目）
+const addFormRules = {
+  studentId: [
+    { required: true, message: '学号不能为空', trigger: 'blur' },
+    { pattern: /^\d{10}$/, message: '学号必须是 10 位数字', trigger: 'blur' },
+  ],
+  name: [
+    { required: true, message: '姓名不能为空', trigger: 'blur' },
+    { min: 1, max: 20, message: '姓名长度 1-20', trigger: 'blur' },
+  ],
+  password: [
+    {
+      validator: (_: unknown, value: string, cb: (err?: Error) => void) => {
+        if (value && value.length > 0 && value.length < 6) {
+          cb(new Error('密码至少 6 位（留空则默认 123456）'))
+        } else {
+          cb()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+  email: [
+    {
+      validator: (_: unknown, value: string, cb: (err?: Error) => void) => {
+        if (value && !/^[\w.+-]+@[\w-]+\.[\w.-]+$/.test(value)) {
+          cb(new Error('邮箱格式不正确'))
+        } else {
+          cb()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+}
+
 const openAddDialog = () => {
   // 重置表单
   addForm.studentId = ''
@@ -177,21 +214,18 @@ const openAddDialog = () => {
   addForm.phone = ''
   addForm.email = ''
   addForm.joinDate = new Date().toISOString().slice(0, 10)
+  // 清掉上次的校验错误（避免红框残留）
+  addFormRef.value?.clearValidate()
   addDialog.value.visible = true
 }
 
 const handleAdd = async () => {
-  // 前端基础校验（更严格的留给后端 @Valid）
-  if (!/^\d{10}$/.test(addForm.studentId)) {
-    ElMessage.warning('学号必须是 10 位数字')
-    return
-  }
-  if (!addForm.name.trim()) {
-    ElMessage.warning('姓名不能为空')
-    return
-  }
-  if (addForm.password && addForm.password.length < 6) {
-    ElMessage.warning('密码至少 6 位（留空则默认 123456）')
+  // ✅ v2.2 修复：用 el-form 自带 validate 校验，红框显示在输入框下方（之前 handleAdd 里 ElMessage.warning 容易被 AppDialog 遮住）
+  if (!addFormRef.value) return
+  try {
+    await addFormRef.value.validate()
+  } catch {
+    // 校验失败，el-form 会自动显示红框 + 错误信息
     return
   }
 
@@ -215,7 +249,8 @@ const handleAdd = async () => {
     addDialog.value.visible = false
     fetchData()
   } catch (e: any) {
-    ElMessage.error(e?.message || '新增失败')
+    // 业务错误已被 request.ts 拦截器弹过通知，不重复弹
+    console.error('[新增成员] 失败：', e)
   } finally {
     addDialog.value.submitting = false
   }
@@ -405,14 +440,14 @@ const handleAdd = async () => {
       :loading="addDialog.submitting"
       @confirm="handleAdd"
     >
-      <el-form :model="addForm" label-width="100px">
-        <el-form-item label="学号" required>
+      <el-form ref="addFormRef" :model="addForm" :rules="addFormRules" label-width="100px">
+        <el-form-item label="学号" prop="studentId">
           <el-input v-model="addForm.studentId" placeholder="10 位数字" maxlength="10" />
         </el-form-item>
-        <el-form-item label="姓名" required>
+        <el-form-item label="姓名" prop="name">
           <el-input v-model="addForm.name" placeholder="姓名" maxlength="20" />
         </el-form-item>
-        <el-form-item label="角色" required>
+        <el-form-item label="角色" prop="role">
           <el-radio-group v-model="addForm.role">
             <el-radio :value="Role.TECH_LEAD">技术骨干</el-radio>
             <el-radio :value="Role.MEMBER">普通社员</el-radio>
@@ -424,7 +459,7 @@ const handleAdd = async () => {
             <el-option v-for="(label, value) in SkillLevelText" :key="value" :label="label" :value="Number(value)" />
           </el-select>
         </el-form-item>
-        <el-form-item label="初始密码">
+        <el-form-item label="初始密码" prop="password">
           <el-input v-model="addForm.password" placeholder="留空则默认 123456" type="password" show-password maxlength="30" />
         </el-form-item>
         <el-form-item label="入社日期">
@@ -433,7 +468,7 @@ const handleAdd = async () => {
         <el-form-item label="手机号">
           <el-input v-model="addForm.phone" placeholder="可选" maxlength="20" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="邮箱" prop="email">
           <el-input v-model="addForm.email" placeholder="可选" maxlength="100" />
         </el-form-item>
         <el-alert type="info" :closable="false" show-icon style="margin-top: 4px">

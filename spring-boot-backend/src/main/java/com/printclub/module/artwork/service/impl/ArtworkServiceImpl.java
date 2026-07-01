@@ -95,7 +95,7 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     public Integer create(ArtworkCreateDTO dto, String currentUserId) {
-        // 1. 校验 task 存在 + 属于当前用户 + 已完结
+        // 1. 校验 task 存在 + 属于当前用户 + 已完结（或已取件）
         PrintTask task = taskMapper.selectById(dto.getTaskId());
         if (task == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "关联任务不存在");
@@ -103,7 +103,12 @@ public class ArtworkServiceImpl implements ArtworkService {
         if (!task.getApplicantId().equals(currentUserId)) {
             throw new BusinessException(ResultCode.FORBIDDEN, "只能登记自己的任务");
         }
-        if (task.getStatus() == null || task.getStatus() != 5) {
+        // ✅ v2.2 修复：用户反馈 "选了关联任务但提示只能从已完结的任务登记"
+        //    原因：v2 pickup() 把 status 从 DONE(5) 改成 PICKED_UP(8)，老代码 magic number 5 漏了 PICKED_UP
+        //    修复：用 PrintTask 常量替代 magic number，且同时允许 DONE + PICKED_UP
+        if (task.getStatus() == null
+                || (task.getStatus() != PrintTask.STATUS_DONE
+                    && task.getStatus() != PrintTask.STATUS_PICKED_UP)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "只能从已完结的任务登记作品");
         }
         // 2. 校验该任务还没登记过（task_id UNIQUE）

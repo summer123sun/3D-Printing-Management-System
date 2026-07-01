@@ -55,6 +55,41 @@ export const useAuthStore = defineStore('auth', () => {
     return authApi.changePassword(dto)
   }
 
+  /**
+   * ✅ v2.2 修复（用户反馈）：同浏览器多窗口（Tab）不同账号登录导致权限混乱
+   *    原因：localStorage 是浏览器级共享的，Tab A 改 token 后 Tab B 内存里的 store.user 没更新
+   *    修复：监听 'storage' 事件（同一浏览器不同 Tab 触发），token 变化时重新拉用户信息
+   *    注：storage 事件**不会**在当前 Tab 自己改 localStorage 时触发，所以新登录 Tab 自己 store 同步没问题
+   *
+   * 必须在 main.ts 启动时调用一次：useAuthStore().setupStorageSync()
+   */
+  const setupStorageSync = () => {
+    if (typeof window === 'undefined') return
+    window.addEventListener('storage', async (e) => {
+      // 监听 auth-token 变化（setToken 写入 'auth-token' 这个 key）
+      if (e.key !== 'auth-token') return
+      const newToken = e.newValue
+      const oldToken = e.oldValue
+      if (newToken === oldToken) return
+
+      // 另一 Tab 退出登录（newValue=null）→ 自己 Tab 也跟着退出
+      if (!newToken) {
+        logout()
+        // 路由守卫会自动跳 /login
+        return
+      }
+
+      // 另一 Tab 登录/换号 → 重新拉 user info（用新 token）
+      token.value = newToken
+      try {
+        await fetchUserInfo()
+      } catch {
+        // 拉失败（可能 token 已失效）→ 退出
+        logout()
+      }
+    })
+  }
+
   return {
     token,
     user,
@@ -66,5 +101,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     fetchUserInfo,
     changePassword,
+    setupStorageSync,
   }
 })

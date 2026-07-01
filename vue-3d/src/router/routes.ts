@@ -110,6 +110,17 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/project/list/index.vue'),
         meta: { title: '项目列表', icon: 'Files', transition: 'page-zoom' },
       },
+      // ✅ v2.2 修复（用户反馈）：从管理后台 /admin/project/manage 移到顶级 /project 下
+      //    原因：管理后台 /admin 子菜单里"项目管理"和顶级"项目管理"重名迷惑，且两个菜单项指向不同路径
+      //    修复：把"项目管理（管理端）"放进顶级"项目管理"展开子菜单
+      //    - 角色限制：仅 PRESIDENT + TECH_LEAD 可见
+      //    - 路径：/project/manage（不再是 /admin/project/manage）
+      {
+        path: 'manage',
+        name: 'ProjectManage',
+        component: () => import('@/views/admin/project/manage/index.vue'),
+        meta: { title: '项目管理（管理端）', icon: 'FolderOpened', roles: [1, 2], transition: 'page-zoom' },
+      },
       {
         path: ':id',
         name: 'ProjectDetail',
@@ -204,11 +215,13 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/project/create/index.vue'),
         meta: { title: '创建项目', icon: 'Plus', roles: [1, 2], transition: 'page-flip' },
       },
+      // ✅ v2.2 修复：/admin/project/manage 已移到顶级 /project/manage（避免菜单重名）
+      //    旧路径 /admin/project/manage → 跳 /project/manage（保留兼容老链接）
+      //    meta.hidden=true 让 sidebar 不再渲染这个 redirect
       {
         path: 'project/manage',
-        name: 'AdminProjectManage',
-        component: () => import('@/views/admin/project/manage/index.vue'),
-        meta: { title: '项目管理', icon: 'FolderOpened', roles: [1, 2], transition: 'page-zoom' },
+        redirect: '/project/manage',
+        meta: { hidden: true },
       },
       // 作品库管理（C）
       {

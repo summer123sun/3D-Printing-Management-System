@@ -183,8 +183,9 @@ const statusTagType = (s: number) => {
               <!-- 以下三按钮：只有社长 + 技术骨干可见（普通社员/新成员完全不展示） -->
               <template v-if="canEdit">
                 <el-button text type="warning" size="small" @click="openEditDialog(row)">编辑</el-button>
+                <!-- ✅ v2.2 修复（用户反馈）：已完成 + 已取消的项目不再显示「完成/取消」按钮 -->
                 <el-button v-if="row.status === ProjectStatus.RUNNING" text type="success" size="small" @click="handleComplete(row.projectId)">完成</el-button>
-                <el-button v-if="row.status !== ProjectStatus.DONE" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
+                <el-button v-if="row.status !== ProjectStatus.DONE && row.status !== ProjectStatus.CANCELLED" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
               </template>
               <!-- 否则给个占位 -->
               <span v-else class="readonly-tip" title="仅社长/技术骨干可操作">

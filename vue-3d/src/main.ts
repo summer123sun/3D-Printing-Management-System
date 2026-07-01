@@ -15,6 +15,9 @@ setElementPlusTheme()
 // 全局指令
 import { setupDebounceClickDirective } from '@/directives/debounce-click'
 
+// 认证 store（用于全局一次性初始化 storage 同步）
+import { useAuthStore } from '@/stores/auth'
+
 const app = createApp(App)
 
 app.use(createPinia())
@@ -29,6 +32,10 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 setupDebounceClickDirective(app)
 
 app.mount('#app')
+
+// ✅ v2.2 修复（用户反馈）：同浏览器多 Tab 不同账号登录导致权限混乱
+//    启动后注册 storage 事件监听，token 变化时自动同步 store.user
+useAuthStore().setupStorageSync()
 
 // ============================================
 // 全局 ElNotification 交互增强

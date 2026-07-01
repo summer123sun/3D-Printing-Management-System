@@ -319,6 +319,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void startPrint(String taskId) {
         PrintTask task = mustGetTask(taskId);
         if (task.getStatus() != PrintTask.STATUS_QUEUED) {
@@ -326,6 +327,26 @@ public class TaskServiceImpl implements TaskService {
         }
         if (task.getPrinterId() == null) {
             throw new BusinessException(ResultCode.TASK_NO_PRINTER, "请先分配打印机");
+        }
+
+        // ✅ v2.2 修复（用户反馈）：把耗材库存预检从 finishPrint 移到 startPrint
+        //    原流程：分配→开始打印→打印中→完成（才发现没库存）→ 失败
+        //    新流程：分配→开始打印（预检库存）→ 打印中→完成（信任已预检）→ 成功
+        //    业务上更合理：没料不许开打
+        BigDecimal currentBalance = getCurrentBalance(task.getMaterialType(), task.getColor());
+        if (currentBalance == null) {
+            throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
+                    "未找到耗材库存记录：" + task.getMaterialType() + " " + task.getColor() + "，请先入库");
+        }
+        if (currentBalance.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
+                    "耗材库存已耗尽（" + task.getMaterialType() + " " + task.getColor() + " 当前 0g），请先入库");
+        }
+        // 粗略预检：预估重量（estWeight）> 当前库存 也提前拒绝
+        //   注：实际用 actualWeight 结算，这里只是友好提示，避免开打后才发现不够
+        if (task.getEstWeight() != null && task.getEstWeight().compareTo(currentBalance) > 0) {
+            throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
+                    "耗材库存不足：预估需要 " + task.getEstWeight() + "g，当前仅剩 " + currentBalance + "g（" + task.getMaterialType() + " " + task.getColor() + "）");
         }
 
         task.setStatus(PrintTask.STATUS_PRINTING);
@@ -363,17 +384,19 @@ public class TaskServiceImpl implements TaskService {
         taskMapper.updateById(task);
 
         // 2. 扣减耗材库存
+        // ✅ v2.2 修复（用户反馈）：库存预检已经从 finishPrint 移到 startPrint
+        //    这里 startPrint 已经过检，不再校验 null / 0 / 预估不足
+        //    但保留 "扣减后变负" 兜底（实际用量 > 预估，挤出负数 → 异常回滚事务）
         BigDecimal currentBalance = getCurrentBalance(task.getMaterialType(), task.getColor());
-        // ⚠️ v2.2 修复：null 表示"该材料+颜色没有任何库存记录"（从未入库过），
-        //          0 表示"库存恰好为 0"，要区分两种情况给不同提示
         if (currentBalance == null) {
+            // 理论上 startPrint 已经过检，这里是保险（并发场景：startPrint 后库存被清空）
             throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
-                    "未找到耗材库存记录：" + task.getMaterialType() + " " + task.getColor() + "，请先入库");
+                    "耗材库存记录异常消失（" + task.getMaterialType() + " " + task.getColor() + "），请检查");
         }
         BigDecimal newBalance = currentBalance.subtract(dto.getActualWeight());
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
             throw new BusinessException(ResultCode.TASK_INSUFFICIENT_STOCK,
-                    "耗材库存不足：当前 " + currentBalance + "g，需要 " + dto.getActualWeight() + "g");
+                    "耗材库存不足：当前 " + currentBalance + "g，实际用 " + dto.getActualWeight() + "g（" + task.getMaterialType() + " " + task.getColor() + "）");
         }
 
         MaterialLog logEntry = new MaterialLog();
