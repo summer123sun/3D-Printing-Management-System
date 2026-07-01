@@ -35,7 +35,11 @@ const projectId = computed(() => Number(route.params.id))
 //    修复：catch 错误，保存到 ref，template 显示错误信息 + 重试按钮
 const loadError = ref<string | null>(null)
 
-const isLeader = computed(() => projectStore.currentProject?.project.leaderId === authStore.user?.studentId)
+// ✅ v2.2 round 6 修复（用户反馈）：项目查看空白页面的真凶
+//    根因：currentProject?.project.leaderId 第二个 .project 没保护 → currentProject=null 时 NPE
+//         Vue 3 computed 抛错 → 整页静默白屏（不显示错误信息）
+//    修复：全链 ?.
+const isLeader = computed(() => projectStore.currentProject?.project?.leaderId === authStore.user?.studentId)
 const isStaff = computed(() => {
   const role = authStore.user?.role ?? 0
   return role === Role.PRESIDENT || role === Role.TECH_LEAD
@@ -271,14 +275,14 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
 <template>
   <div class="project-detail-page" v-loading="projectStore.loading">
     <PageHeader
-      :title="projectStore.currentProject?.project.projectName || '项目详情'"
+      :title="projectStore.currentProject?.project?.projectName || '项目详情'"
       :show-back="true"
       @back="router.back()"
     >
-      <el-button v-if="isLeader && projectStore.currentProject?.project.status === ProjectStatus.RUNNING" type="success" @click="handleComplete">
+      <el-button v-if="isLeader && projectStore.currentProject?.project?.status === ProjectStatus.RUNNING" type="success" @click="handleComplete">
         标记完成
       </el-button>
-      <el-button v-if="isLeader && projectStore.currentProject?.project.status !== ProjectStatus.DONE" type="danger" plain @click="handleCancel">
+      <el-button v-if="isLeader && projectStore.currentProject?.project?.status !== ProjectStatus.DONE" type="danger" plain @click="handleCancel">
         取消项目
       </el-button>
       <el-button @click="fetchData">刷新</el-button>
