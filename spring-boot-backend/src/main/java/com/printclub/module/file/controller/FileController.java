@@ -178,6 +178,10 @@ public class FileController {
     /**
      * ✅ v2.2 修复（用户反馈）：管理员列出所有已上传文件
      * GET /api/file/list?type=stl  （type 可选：stl / img / project；不传 = 全部）
+     *
+     * ✅ v2.2 round 4 修复：FileUploadUtil.save() 把文件存到 <type>/<yyyyMM>/<fileName>，
+     *    之前 list 只扫描 <type>/ 这一层，漏了 <yyyyMM>/ 子目录里所有文件
+     *    修复：用 walk 递归扫描，返回完整相对路径（stl/202607/xxx.stl）
      */
     @Operation(summary = "管理员列出所有文件（仅 PRESIDENT/TECH_LEAD）")
     @GetMapping("/list")
@@ -188,33 +192,47 @@ public class FileController {
             return Result.success(new ArrayList<>());
         }
         List<Map<String, Object>> out = new ArrayList<>();
-        File[] typeDirs;
+        // 起点目录：传 type 就在 <type>/ 下递归；不传就在 upload 根目录下递归
+        File[] startDirs;
         if (type != null && !type.isBlank()) {
             File d = new File(root, type);
-            typeDirs = d.exists() ? new File[]{d} : new File[0];
+            startDirs = d.exists() ? new File[]{d} : new File[0];
         } else {
-            typeDirs = root.listFiles(File::isDirectory);
-            if (typeDirs == null) typeDirs = new File[0];
+            startDirs = root.listFiles(File::isDirectory);
+            if (startDirs == null) startDirs = new File[0];
         }
-        for (File dir : typeDirs) {
-            String typeName = dir.getName();
-            File[] files = dir.listFiles();
-            if (files == null) continue;
-            for (File f : files) {
-                if (!f.isFile()) continue;
-                Map<String, Object> entry = new HashMap<>();
-                entry.put("name", f.getName());
-                entry.put("type", typeName);
-                // 相对路径（前端可拼 /api/file/download/{relPath} 下载）
-                entry.put("path", typeName + "/" + f.getName());
-                entry.put("size", f.length());
-                entry.put("lastModified", f.lastModified());
-                out.add(entry);
-            }
+        for (File typeDir : startDirs) {
+            walkAndCollect(typeDir, typeDir.getName(), out);
         }
         // 按修改时间倒序
         out.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("lastModified")).longValue()).reversed());
         return Result.success(out);
+    }
+
+    /**
+     * 递归扫描目录下所有文件（最多 2 层：type/yyyyMM/file.ext）
+     */
+    private void walkAndCollect(File dir, String typeName, List<Map<String, Object>> out) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isFile()) {
+                Map<String, Object> entry = new HashMap<>();
+                // 相对 uploadDir 的路径
+                String relativePath = dir.getName().equals(typeName)
+                        ? typeName + "/" + f.getName()
+                        : typeName + "/" + dir.getName() + "/" + f.getName();
+                entry.put("name", f.getName());
+                entry.put("type", typeName);
+                entry.put("path", relativePath);
+                entry.put("size", f.length());
+                entry.put("lastModified", f.lastModified());
+                out.add(entry);
+            } else if (f.isDirectory()) {
+                // 递归子目录（一般是 yyyyMM 月份目录）
+                walkAndCollect(f, typeName, out);
+            }
+        }
     }
 
     /**

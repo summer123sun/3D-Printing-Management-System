@@ -63,7 +63,8 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("登录成功 - 学号 {} 角色 {}", member.getStudentId(), member.getRole());
         // 审计：登录成功也写日志（IP 自动从 RequestContextHolder 取）
-        logService.recordCurrent("auth.login", "user", member.getStudentId(),
+        // ✅ v2.2 修复：用 recordAs 显式传 userId + 真实姓名（之前用 recordCurrent 但 SecurityContext 还没设，username 字段是 null）
+        logService.recordAs(member.getStudentId(), member.getName(), "auth.login", "user", member.getStudentId(),
                 "登录成功，角色 role=" + member.getRole());
         return new LoginVO(token, member);
     }

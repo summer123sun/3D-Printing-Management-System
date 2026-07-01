@@ -141,6 +141,34 @@ public class LogServiceImpl implements LogService {
     }
 
     @Override
+    public void recordAs(String userId, String username, String operation, String targetType, String targetId, String description) {
+        // ✅ v2.2 修复（用户反馈）：auth.login 日志 username 字段一直是 null
+        //    原因：recordCurrent 走 SecurityContext 取 userId，但登录接口本身 SecurityContext 还没设置
+        //    修复：让调用方（AuthServiceImpl.login）显式传 userId + 真实姓名
+        try {
+            String ip = "internal";
+            try {
+                ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                if (attrs != null) {
+                    String header = attrs.getRequest().getHeader("X-Forwarded-For");
+                    if (StrUtil.isNotBlank(header)) {
+                        ip = header.split(",")[0].trim();
+                    } else {
+                        ip = attrs.getRequest().getRemoteAddr();
+                    }
+                }
+            } catch (Exception ignore) {
+                // 非 Web 线程
+            }
+            // username 兜底：传空就 fallback 到 userId（学号）
+            String finalUsername = StrUtil.isBlank(username) ? userId : username;
+            self.record(userId, finalUsername, operation, targetType, targetId, description, ip);
+        } catch (Exception e) {
+            log.error("recordAs 失败：op={}", operation, e);
+        }
+    }
+
+    @Override
     public int cleanOldLogs(int keepDays) {
         LocalDateTime threshold = LocalDateTime.now().minusDays(keepDays);
         LambdaQueryWrapper<SystemLog> wrapper = new LambdaQueryWrapper<>();

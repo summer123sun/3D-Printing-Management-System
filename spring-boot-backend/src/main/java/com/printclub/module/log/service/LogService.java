@@ -61,6 +61,13 @@ public interface LogService {
      */
     void recordCurrent(String operation, String targetType, String targetId, String description);
 
+    /**
+     * ✅ v2.2 修复（用户反馈）：显式传 userId + username 写日志
+     * 适用场景：auth.login（此时 SecurityContext 还没设置，但已经有 Member 对象）
+     *           或任何想覆盖自动获取逻辑的场景
+     */
+    void recordAs(String userId, String username, String operation, String targetType, String targetId, String description);
+
     /** 清理过期日志（保留 N 天） */
     int cleanOldLogs(int keepDays);
 }
