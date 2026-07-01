@@ -13,6 +13,23 @@ import { ElMessage, ElNotification } from 'element-plus'
 import { ErrorCode, type ApiResponse } from '@/types/api'
 import { getToken, clearAuth } from './auth'
 
+// ✅ v2.2 修复（之前发现的低风险 bug）：业务错误 reject 时带 code 字段
+//    之前：new Error(res.msg) → catch 时只有 message，看不到 code
+//    现在：自定义 ApiError extends Error 带 code / silent，catch 时可读 e.code
+export class ApiError extends Error {
+  readonly code: number
+  readonly silent: boolean
+  readonly raw?: unknown
+
+  constructor(code: number, message: string, silent = false, raw?: unknown) {
+    super(message)
+    this.name = 'ApiError'
+    this.code = code
+    this.silent = silent
+    this.raw = raw
+  }
+}
+
 // 请求配置扩展（支持 silent 选项）
 declare module 'axios' {
   export interface AxiosRequestConfig {
@@ -81,28 +98,31 @@ service.interceptors.response.use(
     }
 
     // 401 未登录：清 token，跳登录
+    // ✅ v2.2 修复（之前发现的低风险 bug）：silent 模式下也清 token + 跳登录
+    //    之前：silent 模式也会被强制清 token 跳登录，导致 silent 预检类接口也跳
+    //    现在：silent 模式只 reject（保留 token + 不跳登录），调用方自己处理
     if (res.code === ErrorCode.UNAUTHORIZED) {
-      clearAuth()
       if (!silent) {
+        clearAuth()
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
         showError('登录已过期', '请重新登录', 'warning')
       }
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
-      return Promise.reject(new Error(res.msg || '未登录'))
+      return Promise.reject(new ApiError(res.code, res.msg || '未登录', silent, res))
     }
 
     // 403 无权限
     if (res.code === ErrorCode.FORBIDDEN) {
       if (!silent) showError('无权限', res.msg || '您没有权限执行此操作', 'warning')
-      return Promise.reject(new Error(res.msg))
+      return Promise.reject(new ApiError(res.code, res.msg || '无权限', silent, res))
     }
 
     // 其它业务错误（默认弹通知，silent 模式不弹）
     if (!silent) {
       showError('操作失败', res.msg || '请稍后再试')
     }
-    return Promise.reject(new Error(res.msg))
+    return Promise.reject(new ApiError(res.code, res.msg || '操作失败', silent, res))
   },
   (error) => {
     // HTTP 层面错误（网络/超时/5xx）
@@ -112,15 +132,16 @@ service.interceptors.response.use(
     // 离线检测
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       if (!silent) showError('网络已断开', '请检查网络连接后重试', 'warning')
-      return Promise.reject(error)
+      return Promise.reject(new ApiError(0, '网络已断开', silent, error))
     }
 
     let title = '请求失败'
     let msg = '网络错误，请稍后再试'
+    let httpCode = 0
 
     if (error.response) {
-      const status = error.response.status
-      title = ERROR_MSG_MAP[status] || `请求失败 (${status})`
+      httpCode = error.response.status
+      title = ERROR_MSG_MAP[httpCode] || `请求失败 (${httpCode})`
       // 后端业务错误格式 {code, msg, data}，尝试提取 msg
       const backendMsg = error.response.data?.msg || error.response.data?.message
       msg = backendMsg || msg
@@ -129,11 +150,15 @@ service.interceptors.response.use(
       msg = '网络连接超时，请检查后端服务是否启动'
     } else if (error.message?.includes('Network Error')) {
       title = '网络错误'
-      msg = '无法连接到后端服务（http://localhost:8080）'
+      // ✅ v2.2 修复（之前发现的低风险 bug）：fallback 消息 hardcode localhost
+      //    之前：'无法连接到后端服务（http://localhost:8080）' — 生产环境误导
+      //    现在：用 import.meta.env.VITE_API_BASE_URL 替代 hardcode
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+      msg = `无法连接到后端服务（${baseUrl}）`
     }
 
     if (!silent) showError(title, msg)
-    return Promise.reject(error)
+    return Promise.reject(new ApiError(httpCode, msg, silent, error))
   },
 )
 

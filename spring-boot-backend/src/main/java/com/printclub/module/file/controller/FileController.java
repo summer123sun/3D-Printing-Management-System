@@ -1,6 +1,7 @@
 package com.printclub.module.file.controller;
 
 import com.printclub.common.annotation.RequireAuth;
+import com.printclub.common.annotation.RequireRole;
 import com.printclub.common.exception.BusinessException;
 import com.printclub.common.result.Result;
 import com.printclub.common.result.ResultCode;
@@ -22,6 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,9 +176,53 @@ public class FileController {
     }
 
     /**
-     * 文件删除（DELETE /api/file/**）
+     * ✅ v2.2 修复（用户反馈）：管理员列出所有已上传文件
+     * GET /api/file/list?type=stl  （type 可选：stl / img / project；不传 = 全部）
      */
-    @Operation(summary = "文件删除")
+    @Operation(summary = "管理员列出所有文件（仅 PRESIDENT/TECH_LEAD）")
+    @GetMapping("/list")
+    @RequireRole({1, 2})
+    public Result<List<Map<String, Object>>> list(@RequestParam(required = false) String type) {
+        File root = new File(uploadDir);
+        if (!root.exists() || !root.isDirectory()) {
+            return Result.success(new ArrayList<>());
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        File[] typeDirs;
+        if (type != null && !type.isBlank()) {
+            File d = new File(root, type);
+            typeDirs = d.exists() ? new File[]{d} : new File[0];
+        } else {
+            typeDirs = root.listFiles(File::isDirectory);
+            if (typeDirs == null) typeDirs = new File[0];
+        }
+        for (File dir : typeDirs) {
+            String typeName = dir.getName();
+            File[] files = dir.listFiles();
+            if (files == null) continue;
+            for (File f : files) {
+                if (!f.isFile()) continue;
+                Map<String, Object> entry = new HashMap<>();
+                entry.put("name", f.getName());
+                entry.put("type", typeName);
+                // 相对路径（前端可拼 /api/file/download/{relPath} 下载）
+                entry.put("path", typeName + "/" + f.getName());
+                entry.put("size", f.length());
+                entry.put("lastModified", f.lastModified());
+                out.add(entry);
+            }
+        }
+        // 按修改时间倒序
+        out.sort(Comparator.comparingLong((Map<String, Object> m) -> ((Number) m.get("lastModified")).longValue()).reversed());
+        return Result.success(out);
+    }
+
+    /**
+     * 文件删除（DELETE /api/file/**）
+     * ✅ v2.2 修复：现在 @RequireAuth 任何登录用户都能删自己的文件
+     *    管理员想删任意文件用下面的 /admin 接口
+     */
+    @Operation(summary = "文件删除（用户自己的）")
     @DeleteMapping("/**")
     @RequireAuth
     public Result<Void> delete(HttpServletRequest request) {
@@ -197,6 +244,28 @@ public class FileController {
             throw new BusinessException(ResultCode.SERVER_ERROR, "删除失败");
         }
         log.info("文件已删除：{}", file.getAbsolutePath());
+        return Result.success();
+    }
+
+    /**
+     * ✅ v2.2 新增：管理员强制删除任意文件
+     * DELETE /api/file/admin?path=stl/xxx.stl
+     */
+    @Operation(summary = "管理员删除任意文件（仅 PRESIDENT/TECH_LEAD）")
+    @DeleteMapping("/admin")
+    @RequireRole({1, 2})
+    public Result<Void> adminDelete(@RequestParam String path) {
+        if (path == null || path.isBlank() || path.contains("..")) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "非法路径");
+        }
+        File file = new File(uploadDir, path);
+        if (!file.exists()) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "文件不存在");
+        }
+        if (!file.delete()) {
+            throw new BusinessException(ResultCode.SERVER_ERROR, "删除失败");
+        }
+        log.info("管理员删除文件：{}", file.getAbsolutePath());
         return Result.success();
     }
 }

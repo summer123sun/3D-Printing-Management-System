@@ -30,6 +30,11 @@ const authStore = useAuthStore()
 
 const projectId = computed(() => Number(route.params.id))
 
+// ✅ v2.2 修复（用户反馈）：项目查看空白页面
+//    原因：fetchDetail 失败时 currentProject 保持 null，<template v-if="currentProject"> 整段不渲染 → 空白
+//    修复：catch 错误，保存到 ref，template 显示错误信息 + 重试按钮
+const loadError = ref<string | null>(null)
+
 const isLeader = computed(() => projectStore.currentProject?.project.leaderId === authStore.user?.studentId)
 const isStaff = computed(() => {
   const role = authStore.user?.role ?? 0
@@ -47,7 +52,14 @@ const memberForm = ref({ memberId: '', roleInProject: ProjectRole.PARTICIPANT, c
 const submittingMember = ref(false)
 
 const fetchData = async () => {
-  await projectStore.fetchDetail(projectId.value)
+  loadError.value = null
+  try {
+    await projectStore.fetchDetail(projectId.value)
+  } catch (e: any) {
+    // 业务错误已被 request.ts 拦截器弹过通知，这里把消息存到 ref 让 template 显示
+    loadError.value = e?.message || '加载失败，请稍后再试'
+    console.error('[项目详情] 加载失败：', e)
+  }
 }
 onMounted(fetchData)
 
@@ -272,7 +284,16 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       <el-button @click="fetchData">刷新</el-button>
     </PageHeader>
 
-    <template v-if="projectStore.currentProject">
+    <template v-if="loadError">
+      <!-- ✅ v2.2 修复：fetchDetail 失败时显示错误信息（之前整页空白） -->
+      <el-card>
+        <el-empty :description="loadError" :image-size="80">
+          <el-button type="primary" @click="fetchData">重新加载</el-button>
+          <el-button @click="router.back()">返回上一页</el-button>
+        </el-empty>
+      </el-card>
+    </template>
+    <template v-else-if="projectStore.currentProject">
       <!-- 项目头部卡片 -->
       <el-card class="project-header-card">
         <div class="header-content">

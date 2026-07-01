@@ -94,7 +94,8 @@ const getOperationTagType = (op: string) => {
 <template>
   <div class="admin-log-page">
     <PageHeader title="系统日志">
-      <el-input v-model="filter.userId" placeholder="操作人学号" clearable style="width: 140px" @keyup.enter="onSearch" @clear="onSearch" />
+      <!-- ✅ v2.2 修复（用户反馈）：后端同时支持学号和姓名搜索（LIKE OR） -->
+      <el-input v-model="filter.userId" placeholder="操作人姓名/学号" clearable style="width: 160px" @keyup.enter="onSearch" @clear="onSearch" />
       <el-input v-model="filter.operation" placeholder="操作类型（如 task.approve）" clearable style="width: 200px" @keyup.enter="onSearch" @clear="onSearch" />
       <el-input v-model="filter.targetType" placeholder="对象类型（task/project/...）" clearable style="width: 160px" @keyup.enter="onSearch" @clear="onSearch" />
       <el-button type="primary" @click="onSearch">搜索</el-button>

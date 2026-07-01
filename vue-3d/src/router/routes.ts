@@ -268,6 +268,13 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/member/index.vue'),
         meta: { title: '成员管理', icon: 'UserFilled', roles: [1, 2], transition: 'page-zoom' },
       },
+      // ✅ v2.2 新增（用户反馈）：管理员文件管理（STL/图片/项目文件）
+      {
+        path: 'file/manage',
+        name: 'AdminFileManage',
+        component: () => import('@/views/admin/file/manage/index.vue'),
+        meta: { title: '文件管理', icon: 'FolderOpened', roles: [1, 2], transition: 'page-zoom' },
+      },
       // 系统日志（C）
       {
         path: 'log',

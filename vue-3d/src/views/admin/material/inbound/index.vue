@@ -23,6 +23,30 @@ const form = reactive({
 
 const submitting = ref(false)
 
+// ✅ v2.2 修复（用户反馈）：用 el-form :rules + ref + validate，错误直接红框显示在输入框下
+//    之前：ElMessage.warning 容易被 PageHeader 挡住
+const formRef = ref()
+const formRules = {
+  materialType: [{ required: true, message: '请选择材料类型', trigger: 'change' }],
+  color: [
+    { required: true, message: '请填写颜色', trigger: 'blur' },
+    { min: 1, max: 20, message: '颜色长度 1-20', trigger: 'blur' },
+  ],
+  weightChange: [
+    { required: true, message: '请填写入库重量', trigger: 'blur' },
+    {
+      validator: (_: unknown, value: number, cb: (err?: Error) => void) => {
+        if (value == null || value <= 0) {
+          cb(new Error('入库重量必须为正数'))
+        } else {
+          cb()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+}
+
 // ============== 成功/失败反馈弹窗 ==============
 const resultDialog = reactive({
   visible: false,
@@ -42,16 +66,11 @@ const backToList = () => {
 }
 
 const handleSubmit = async () => {
-  if (!form.materialType) {
-    ElMessage.warning('请选择材料类型')
-    return
-  }
-  if (!form.color || !form.color.trim()) {
-    ElMessage.warning('请填写颜色')
-    return
-  }
-  if (!form.weightChange || form.weightChange <= 0) {
-    ElMessage.warning('入库重量必须为正数')
+  if (!formRef.value) return
+  try {
+    await formRef.value.validate()
+  } catch {
+    // 校验失败，el-form 自动显示红框 + 错误信息
     return
   }
 
@@ -110,16 +129,16 @@ const handleSubmit = async () => {
         <p>所有入库记录会保存在"耗材流水"中可追溯</p>
       </el-alert>
 
-      <el-form :model="form" label-width="120px" style="max-width: 600px">
-        <el-form-item label="材料类型" required>
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="120px" style="max-width: 600px">
+        <el-form-item label="材料类型" prop="materialType">
           <el-select v-model="form.materialType" style="width: 100%">
             <el-option v-for="t in MaterialTypes" :key="t" :label="MaterialTypeText[t]" :value="t" />
           </el-select>
         </el-form-item>
-        <el-form-item label="颜色" required>
+        <el-form-item label="颜色" prop="color">
           <el-input v-model="form.color" placeholder="如 黑色、白色、红色" maxlength="20" />
         </el-form-item>
-        <el-form-item label="入库重量" required>
+        <el-form-item label="入库重量" prop="weightChange">
           <el-input-number
             v-model="form.weightChange"
             :min="1"

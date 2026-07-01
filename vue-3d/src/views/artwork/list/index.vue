@@ -74,9 +74,13 @@ const handleDelete = async (id: number) => {
   }
 }
 
-const canDelete = (authorId: string) => {
+// ✅ v2.2 修复（用户反馈）：作品列表里只有管理员（PRESIDENT/TECH_LEAD）能删除
+//    之前：作品列表的删除按钮仅作者本人可见
+//    现在：作品列表=浏览为主，删除仅 admin 可见；作者本人想删去"我的作品"页
+import { Role } from '@/utils/enum'
+const canDelete = () => {
   if (!authStore.user) return false
-  return authStore.user.studentId === authorId
+  return authStore.user.role === Role.PRESIDENT || authStore.user.role === Role.TECH_LEAD
 }
 </script>
 
@@ -143,7 +147,7 @@ const canDelete = (authorId: string) => {
             <p v-if="item.experience" class="artwork-experience">
               {{ item.experience.slice(0, 50) }}{{ item.experience.length > 50 ? '...' : '' }}
             </p>
-            <div v-if="canDelete(item.authorId)" class="artwork-actions" @click.stop>
+            <div v-if="canDelete()" class="artwork-actions" @click.stop>
               <el-button size="small" type="danger" @click="handleDelete(item.artworkId)">
                 删除
               </el-button>
