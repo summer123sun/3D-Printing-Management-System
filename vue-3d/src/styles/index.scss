@@ -12,21 +12,23 @@
 // 组件里直接用 var(--text-primary) 等，自动适配明暗
 // ============================================
 :root {
-  --text-primary: #{var(--text-primary)};
-  --text-regular: #{var(--text-regular)};
-  --text-secondary: #{var(--text-secondary)};
-  --text-placeholder: #{var(--text-placeholder)};
+  // ✅ v2.10 修复：之前用 `#{var(--X)}` 是递归引用，CSS 变量在亮色模式下 undefined
+  // 改用 SCSS 变量 `#{$X}` 直接插值，确保 var(--bg-card) / --text-primary 等在亮色下有值
+  --text-primary: #{$text-primary};
+  --text-regular: #{$text-regular};
+  --text-secondary: #{$text-secondary};
+  --text-placeholder: #{$text-placeholder};
   --text-on-dark: #{$text-on-dark};
 
-  --border-base: #{var(--border-base)};
-  --border-light: #{var(--border-light)};
-  --border-lighter: #{var(--border-lighter)};
-  --border-extra-light: #{var(--border-extra-light)};
+  --border-base: #{$border-base};
+  --border-light: #{$border-light};
+  --border-lighter: #{$border-lighter};
+  --border-extra-light: #{$border-extra-light};
 
-  --bg-base: #{var(--bg-base)};
-  --bg-page: #{var(--bg-page)};
-  --bg-card: #{var(--bg-card)};
-  --bg-dark: #{var(--bg-dark)};
+  --bg-base: #{$bg-base};
+  --bg-page: #{$bg-page};
+  --bg-card: #{$bg-card};
+  --bg-dark: #{$bg-dark};
 
   --primary-color: #{$primary-color};
   --primary-light: #{$primary-color-light};
