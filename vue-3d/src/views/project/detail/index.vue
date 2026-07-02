@@ -318,24 +318,6 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       <el-button @click="() => fetchData()">刷新</el-button>
     </PageHeader>
 
-    <!-- ✅ v2.2 修复（用户反馈）：项目查看整页空白
-         之前现象：项目详情页 body 完全空白，刷新才好
-         根因可能：onMounted 未触发 / 路由组件复用 / chunk 加载失败
-         修复：永远显示一个调试条（红底白字），让用户/我们一眼能看出当前状态
-         如果连这个调试条都看不到 → 组件根本没挂载（路由或 chunk 问题）
-         如果看到调试条 → fetchData 逻辑没跑通
-    -->
-    <div style="background:#ff4d4f;color:#fff;padding:8px 16px;border-radius:6px;margin-bottom:12px;font-family:monospace;font-size:12px;line-height:1.6">
-      🐛 DEBUG:
-      token={{ authStore.token ? authStore.token.slice(0, 20) + '...' : '❌空' }}
-      | projectId={{ projectId }}
-      | loadError={{ loadError || 'null' }}
-      | currentProject={{ projectStore.currentProject ? '✓' : '✗' }}
-      | project={{ projectStore.currentProject?.project ? '✓' : '✗' }}
-      | loading={{ projectStore.loading }}
-      | routeId={{ route.params.id }}
-    </div>
-
     <template v-if="loadError">
       <!-- ✅ v2.2 修复：fetchDetail 失败时显示错误信息（之前整页空白） -->
       <el-card>
