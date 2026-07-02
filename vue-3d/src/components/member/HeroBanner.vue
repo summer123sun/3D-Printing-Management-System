@@ -56,6 +56,14 @@ const gradientStyle = computed(() => {
       return 'linear-gradient(135deg, #0A2540 0%, #1E3A5F 50%, #00A88A 100%)'
   }
 })
+
+// 暗色模式下用更亮的渐变（避免太暗）
+const isDark = computed(() => {
+  if (typeof document !== 'undefined') {
+    return document.documentElement.classList.contains('dark')
+  }
+  return false
+})
 </script>
 
 <template>
@@ -88,6 +96,7 @@ const gradientStyle = computed(() => {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(10, 37, 64, 0.18);
   min-height: 240px;
+  transition: box-shadow 0.3s ease;
 
   // 装饰光晕
   &::before {
@@ -111,6 +120,12 @@ const gradientStyle = computed(() => {
     background: radial-gradient(circle, rgba(0, 212, 170, 0.15) 0%, transparent 70%);
     border-radius: 50%;
     pointer-events: none;
+  }
+
+  // 暗色模式：更亮的渐变 + 强化阴影
+  html.dark & {
+    background: linear-gradient(135deg, #1A3F5F 0%, #2A5A7F 50%, #00A88A 100%) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -155,6 +170,11 @@ const gradientStyle = computed(() => {
   backdrop-filter: blur(8px);
   .tip-icon { font-size: 16px; }
   .tip-text { color: #FFF9D6; }
+
+  html.dark & {
+    background: rgba(255, 215, 0, 0.28);
+    border-color: rgba(255, 215, 0, 0.5);
+  }
 }
 
 .hero-illustration {

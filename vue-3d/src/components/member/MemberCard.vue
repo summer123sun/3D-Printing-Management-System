@@ -44,7 +44,7 @@ withDefaults(defineProps<Props>(), {
 
 <style lang="scss" scoped>
 .member-card {
-  background: #FFFFFF;
+  background: var(--bg-card);
   border: 1px solid var(--border-extra-light);
   box-shadow: 0 2px 12px rgba(10, 37, 64, 0.05);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
@@ -53,12 +53,21 @@ withDefaults(defineProps<Props>(), {
   flex-direction: column;
   gap: 12px;
 
+  // 暗色模式：阴影变深 + 边框更亮一点
+  html.dark & {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  }
+
   &.is-hoverable {
     cursor: pointer;
 
     &:hover {
       transform: translateY(-3px);
       box-shadow: 0 10px 24px rgba(10, 37, 64, 0.12);
+
+      html.dark & {
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+      }
     }
   }
 }

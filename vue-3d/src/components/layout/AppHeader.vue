@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled, Menu as MenuIcon } from '@element-plus/icons-vue'
+import { Fold, Expand, Moon, Sunny, SwitchButton, User, WarningFilled, Menu as MenuIcon, House } from '@element-plus/icons-vue'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { RoleText, Role } from '@/types/member'
@@ -9,6 +9,12 @@ import { RoleText, Role } from '@/types/member'
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const router = useRouter()
+
+// 成员端：role >= 3，隐藏 sidebar 折叠按钮
+const isMemberLayout = computed(() => {
+  const role = authStore.user?.role ?? Role.NEWBIE
+  return role >= Role.MEMBER
+})
 
 defineEmits<{
   (e: 'toggle-sidebar'): void
@@ -25,19 +31,29 @@ const confirmLogout = () => {
 const cancelLogout = () => {
   logoutVisible.value = false
 }
+
+const goHome = () => {
+  router.push('/home')
+}
 </script>
 
 <template>
   <div class="header-container">
     <div class="header-left">
-      <!-- 桌面端：折叠/展开 sidebar -->
-      <el-button text class="desktop-only" @click="appStore.toggleSidebar()">
+      <!-- 成员端：直接显示"首页"图标按钮（无 sidebar） -->
+      <el-tooltip v-if="isMemberLayout" content="返回首页">
+        <el-button text class="member-home-btn" @click="goHome">
+          <el-icon :size="20"><House /></el-icon>
+        </el-button>
+      </el-tooltip>
+      <!-- 桌面端：折叠/展开 sidebar（仅后台端） -->
+      <el-button v-else text class="desktop-only" @click="appStore.toggleSidebar()">
         <el-icon :size="20">
           <component :is="appStore.sidebarCollapsed ? Expand : Fold" />
         </el-icon>
       </el-button>
       <!-- 移动端：汉堡菜单（emit 给父组件 AppLayout 控制抽屉） -->
-      <el-button text class="mobile-only" @click="$emit('toggle-sidebar')">
+      <el-button v-if="!isMemberLayout" text class="mobile-only" @click="$emit('toggle-sidebar')">
         <el-icon :size="20"><MenuIcon /></el-icon>
       </el-button>
       <span class="header-title">{{ $route.meta?.title || '' }}</span>
