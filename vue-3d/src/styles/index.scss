@@ -162,6 +162,60 @@ html.dark {
 
   // el-empty 暗色下文字
   .el-empty__description p { color: var(--text-regular) !important; }
+
+  // v2.8 el-descriptions 暗色下文字（默认深色文字在深色卡片上不可见）
+  .el-descriptions__label {
+    color: var(--text-secondary) !important;
+    background-color: var(--bg-base) !important;
+  }
+  .el-descriptions__content {
+    color: var(--text-primary) !important;
+    background-color: var(--bg-card) !important;
+  }
+  .el-descriptions__cell.is-bordered,
+  .el-descriptions__label.is-bordered-label {
+    border-color: var(--border-lighter) !important;
+  }
+
+  // v2.8 el-progress 暗色下（默认深海蓝在深色页面上看不见）
+  .el-progress__text { color: var(--text-primary) !important; }
+  .el-progress-bar__outer { background-color: var(--border-light) !important; }
+  .el-progress-bar__inner {
+    background: linear-gradient(90deg, $accent-color-light 0%, #4FE5C7 100%) !important;
+    box-shadow: 0 0 8px rgba(0, 212, 170, 0.5);
+  }
+
+  // v2.8 el-result / el-steps 暗色下文字
+  .el-result__title, .el-result__subtitle { color: var(--text-primary) !important; }
+  .el-step__title.is-process { color: var(--text-primary) !important; }
+  .el-step__description { color: var(--text-regular) !important; }
+  .el-step__title.is-finish { color: var(--text-regular) !important; }
+
+  // v2.8 el-tabs 暗色下
+  .el-tabs__item { color: var(--text-secondary) !important; }
+  .el-tabs__item.is-active { color: var(--primary-color) !important; }
+  .el-tabs__active-bar { background-color: var(--primary-color) !important; }
+
+  // v2.8 el-pagination 暗色下
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next,
+  .el-pager li {
+    background: var(--bg-base) !important;
+    color: var(--text-regular) !important;
+  }
+  .el-pager li.is-active {
+    background: var(--primary-color) !important;
+    color: #fff !important;
+  }
+
+  // v2.8 el-input-number 暗色下
+  .el-input-number .el-input__inner {
+    background: var(--bg-base) !important;
+    color: var(--text-primary) !important;
+  }
+
+  // v2.8 el-switch 暗色下文字
+  .el-switch__core { border-color: var(--border-lighter) !important; }
   .el-card__header {
     border-bottom-color: var(--border-lighter) !important;
     color: var(--text-primary) !important;

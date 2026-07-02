@@ -449,6 +449,10 @@ const handleSetStatus = async (row: any, newStatus: number) => {
   font-weight: 600;
   color: #0A2540;
   letter-spacing: 0.3px;
+  // 暗色下换亮色
+  html.dark & {
+    color: #4FE5C7;
+  }
 }
 .section-required {
   margin-left: auto;

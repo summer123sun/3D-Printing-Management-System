@@ -240,6 +240,10 @@ export default { name: 'TaskMyPage' }
   border-left: 3px solid $brand-color;
   font-size: $font-size-base;
   color: var(--text-regular);
+  // 暗色下换亮色（深海蓝在深色页面上看不见）
+  html.dark & {
+    border-left-color: $accent-color-light;
+  }
 }
 
 // ============ 成员端样式 ============
@@ -260,6 +264,13 @@ export default { name: 'TaskMyPage' }
     padding: 0 8px;
     background: linear-gradient(135deg, #0A2540 0%, #00A88A 100%);
     color: #fff;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    // 暗色下用稍亮的深蓝起始
+    html.dark & {
+      background: linear-gradient(135deg, #1A3F5F 0%, #00A88A 100%);
+    }
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;

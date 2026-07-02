@@ -98,5 +98,9 @@ const statusCards = [
   font-size: 36px;
   font-weight: 600;
   color: $brand-color;
+  // 暗色下换亮色
+  html.dark & {
+    color: #4FE5C7;
+  }
 }
 </style>

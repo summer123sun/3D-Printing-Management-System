@@ -186,6 +186,11 @@ onMounted(async () => {
   font-size: 12px;
   font-weight: 700;
   font-family: 'Consolas', monospace;
+  // 暗色下起始色用稍亮的深蓝（避免与深色背景融合）
+  html.dark & {
+    background: linear-gradient(135deg, #1A3F5F 0%, #00A88A 100%);
+    box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3);
+  }
 }
 .queue-title {
   margin: 0;

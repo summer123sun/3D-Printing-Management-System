@@ -511,5 +511,9 @@ const handleAdd = async () => {
   color: var(--text-regular);
   .el-icon { color: $accent-color; }
   b { color: $primary-color; font-weight: 600; }
+  // 暗色下 b 标签换亮色
+  html.dark & {
+    b { color: $accent-color-light; }
+  }
 }
 </style>

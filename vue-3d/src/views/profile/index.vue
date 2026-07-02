@@ -337,8 +337,12 @@ const skillPercent = computed(() => {
 .stat-num {
   font-size: 28px;
   font-weight: 600;
-  color: $brand-color;
+  color: $brand-color;  // 亮色：深海蓝
   margin: 0;
+  // 暗色下换亮色（深海蓝在深色页面上看不见）
+  html.dark & {
+    color: #4FE5C7;  // 亮薄荷青（高对比）
+  }
 }
 .stat-label {
   font-size: $font-size-small;
@@ -366,6 +370,10 @@ const skillPercent = computed(() => {
   height: 4px;
   border-radius: 2px;
   transition: background 0.2s;
+  // 暗色下空 cell 用更亮的底色
+  html.dark & {
+    background: rgba(255, 255, 255, 0.12) !important;
+  }
 }
 .pwd-strength-text {
   font-weight: 500;
@@ -376,6 +384,50 @@ const skillPercent = computed(() => {
   margin-top: 4px;
   font-size: 12px;
   color: #f56c6c;
+}
+
+// el-progress 暗色适配（默认主色深海蓝在深色页面上看不见）
+:deep(.el-progress__text) {
+  color: var(--text-primary) !important;
+}
+:deep(.el-progress-bar__outer) {
+  background-color: var(--border-light) !important;
+}
+:deep(.el-progress-bar__inner) {
+  // 亮色：薄荷青
+  background: linear-gradient(90deg, $accent-color 0%, $accent-color-light 100%) !important;
+}
+html.dark :deep(.el-progress-bar__inner) {
+  background: linear-gradient(90deg, $accent-color-light 0%, #4FE5C7 100%) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 170, 0.5);
+}
+
+// el-descriptions 暗色适配（深色页面上默认边框看不清）
+:deep(.el-descriptions__label) {
+  color: var(--text-secondary) !important;
+  background-color: var(--bg-page) !important;
+}
+:deep(.el-descriptions__content) {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-card) !important;
+}
+:deep(.el-descriptions__label.is-bordered-label) {
+  border-color: var(--border-lighter) !important;
+}
+:deep(.el-descriptions__cell) {
+  border-color: var(--border-lighter) !important;
+}
+:deep(.el-descriptions__cell.is-bordered) {
+  border-color: var(--border-lighter) !important;
+}
+
+// el-tag dark 效果（确保暗色页面上"普通社员"等深底 tag 白字不丢）
+:deep(.el-tag--dark) {
+  color: #fff !important;
+  html.dark & {
+    color: #fff !important;
+    border-color: transparent !important;
+  }
 }
 </style>
 

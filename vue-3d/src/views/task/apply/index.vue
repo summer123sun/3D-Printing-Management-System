@@ -271,6 +271,10 @@ const handleSubmit = async () => {
   font-size: $font-size-large;
   font-weight: 500;
   color: $brand-color;
+  // 暗色下换亮色（深海蓝在深色页面上看不见）
+  html.dark & {
+    color: #4FE5C7;  // 亮薄荷青
+  }
 }
 .action-bar {
   display: flex;

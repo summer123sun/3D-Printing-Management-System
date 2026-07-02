@@ -217,6 +217,12 @@ const goHome = () => {
   border: 1px solid rgba(10, 37, 64, 0.08) !important;
   box-shadow: 0 12px 32px rgba(10, 37, 64, 0.18) !important;
   background: #ffffff !important;
+  // 暗色模式：菜单本身也变深
+  html.dark & {
+    background: #15233D !important;
+    border-color: #243149 !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+  }
 }
 .el-dropdown-menu__item {
   padding: 8px 16px !important;
@@ -236,9 +242,8 @@ const goHome = () => {
   }
   // 暗色模式
   html.dark & {
-    background: #15233D !important;
     color: #E5EAF2 !important;
-    border-color: #243149 !important;
+    background: transparent !important;
     &:hover, &:focus:not(.is-disabled) {
       background: #1E3A5F !important;
       color: #4FE5C7 !important;
