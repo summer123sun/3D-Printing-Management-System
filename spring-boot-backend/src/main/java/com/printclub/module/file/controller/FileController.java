@@ -190,12 +190,18 @@ public class FileController {
             contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
 
-        // 4. 返回
+        // ✅ v2.14 修复（审查发现）：之前用 inline 让浏览器内联渲染，
+        //    如果用户上传了 .html / .svg 含 <script>，浏览器直接执行 → XSS
+        //    修法：改成 attachment 强制浏览器下载（不渲染），contentType 仅给浏览器作下载提示
+        //    复用现有 Files.probeContentType（v2.12 已加），不重新造 mime 工具
         Resource resource = new FileSystemResource(file);
+        // 用 RFC 5987 编码文件名（中文不乱码）
+        String encodedName = java.net.URLEncoder.encode(file.getName(), java.nio.charset.StandardCharsets.UTF_8)
+                .replace("+", "%20");
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + file.getName() + "\"")
+                        "attachment; filename=\"" + file.getName() + "\"; filename*=UTF-8''" + encodedName)
                 .body(resource);
     }
 

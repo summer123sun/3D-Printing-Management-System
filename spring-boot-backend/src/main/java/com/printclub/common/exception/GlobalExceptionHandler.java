@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 
 import java.util.stream.Collectors;
 
@@ -63,12 +64,15 @@ public class GlobalExceptionHandler {
     /**
      * ✅ v2.13 修复（审查发现）：之前文件超过 max-file-size 直接 500，
      *    前端 catch 静默失败，用户反复提交都"没反应"
-     *    修法：单独捕获 MaxUploadSizeExceededException，返回友好错误
-     *    同时处理 FileSizeLimitExceededException（Tomcat 内部抛的）
+     *    修法：单独捕获 MaxUploadSizeExceededException（Spring），
+     *    返回友好错误 "文件过大"
+     *
+     * 注：Tomcat 10 fileupload 的 SizeException / FileSizeLimitExceededException
+     *     实际是 org.apache.tomcat.util.http.fileupload.impl.SizeException，
+     *     它继承自 IllegalStateException，会被 Spring 转成 MultipartException
+     *     抛出，所以只需处理 MaxUploadSizeExceededException + MultipartException 即可
      */
-    @ExceptionHandler({MaxUploadSizeExceededException.class,
-                       org.apache.tomcat.util.http.fileupload.FileSizeLimitExceededException.class,
-                       org.apache.tomcat.util.http.fileupload.FileUploadBase.SizeException.class})
+    @ExceptionHandler({MaxUploadSizeExceededException.class, MultipartException.class})
     public Result<Void> handleUploadSizeExceeded(Exception e) {
         log.warn("文件上传超过大小限制：{}", e.getMessage());
         return Result.error(ResultCode.BAD_REQUEST.getCode(),

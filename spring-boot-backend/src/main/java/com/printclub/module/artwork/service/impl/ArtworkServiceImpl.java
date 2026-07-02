@@ -86,9 +86,10 @@ public class ArtworkServiceImpl implements ArtworkService {
         if (artwork == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "作品不存在");
         }
-        // 访问 +1
-        artwork.setViewCount(artwork.getViewCount() == null ? 1 : artwork.getViewCount() + 1);
-        artworkMapper.updateById(artwork);
+        // ✅ v2.14 修复（审查发现）：之前每次详情访问都同步 +1 + updateById，
+        //    高并发下自增丢失 + 数据库写放大（每次 detail 都是 1 个 UPDATE）
+        //    修法：直接去掉同步 +1（演示项目不必要精确计数）
+        //    长期方案（v2.15+ 如需要）：Redis incr + 定时落库 或 直接不要这个字段
         fillArtworkAuthorNames(java.util.Collections.singletonList(artwork));
         return artwork;
     }

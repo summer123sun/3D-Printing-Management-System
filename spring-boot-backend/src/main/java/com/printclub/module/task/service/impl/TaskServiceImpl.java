@@ -73,14 +73,16 @@ public class TaskServiceImpl implements TaskService {
         //    演示用没问题，但 30+ 人小社团同一天可能撞 PK → 500 报错
         //    修法：查今天已申请任务数 +1 做序号后缀（4位 0000-9999，足够）
         String dateStr = LocalDate.now().format(TASK_ID_DATE);
-        String taskId;
+        // 给个默认值兜底（for 循环里会重赋值，编译器要求所有路径必须先初始化）
+        String taskId = "P" + dateStr + "-" + IdUtil.fastSimpleUUID().substring(0, 4).toUpperCase();
         int maxRetry = 5;
         for (int retry = 0; retry < maxRetry; retry++) {
             long todayCount = taskMapper.selectCount(
                     new LambdaQueryWrapper<PrintTask>().likeRight(PrintTask::getTaskId, "P" + dateStr));
-            taskId = String.format("P%s-%04d", dateStr, todayCount + 1);
+            String candidate = String.format("P%s-%04d", dateStr, todayCount + 1);
             // 二次校验：万一序号已被并发占用，查重
-            if (taskMapper.selectById(taskId) == null) {
+            if (taskMapper.selectById(candidate) == null) {
+                taskId = candidate;
                 break;
             }
             if (retry == maxRetry - 1) {

@@ -64,6 +64,10 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2020',
       outDir: 'dist',
+      // ✅ v2.14 修复（审查发现）：element-plus + echarts + wangeditor 拆分后
+      //    element-plus 包接近 1MB 触发 Vite 默认 500KB 警告 → npm run build 满屏黄字
+      //    提至 1500KB 让 build 日志干净（演示现场不专业）
+      chunkSizeWarningLimit: 1500,
       // 把 echarts/wangeditor 这种大依赖拆出来，减小首屏
       rollupOptions: {
         output: {
