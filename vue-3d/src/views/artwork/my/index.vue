@@ -121,7 +121,14 @@ const handleDelete = async (id: number) => {
               :src="item.previewImage"
               fit="cover"
               class="cover-img"
-            />
+            >
+              <template #error>
+                <div class="cover-placeholder">
+                  <el-icon :size="48"><Picture /></el-icon>
+                  <span>暂无预览</span>
+                </div>
+              </template>
+            </el-image>
             <div v-else class="cover-placeholder">
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>
@@ -142,7 +149,9 @@ const handleDelete = async (id: number) => {
           </div>
           <template #footer>
             <div class="artwork-actions">
-              <el-button size="small" text @click.stop="viewDetail(item.artworkId)">查看</el-button>
+              <el-button size="small" type="primary" plain @click.stop="viewDetail(item.artworkId)">
+                <el-icon><View /></el-icon> 查看
+              </el-button>
               <el-button size="small" type="primary" plain @click.stop="handleEdit(item.artworkId)">
                 <el-icon><Edit /></el-icon> 编辑
               </el-button>
@@ -182,7 +191,14 @@ const handleDelete = async (id: number) => {
               :src="item.previewImage"
               fit="cover"
               class="cover-img"
-            />
+            >
+              <template #error>
+                <div class="cover-placeholder">
+                  <el-icon :size="48"><Picture /></el-icon>
+                  <span>暂无预览</span>
+                </div>
+              </template>
+            </el-image>
             <div v-else class="cover-placeholder">
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>
@@ -283,7 +299,8 @@ const handleDelete = async (id: number) => {
   overflow: hidden;
 }
 .artwork-actions {
-  display: flex; gap: 4px; align-items: center; width: 100%;
+  display: flex; gap: 6px; align-items: center; width: 100%;
+  flex-wrap: wrap;  // 按钮多时换行，避免被裁
 }
 .pagination-wrap {
   display: flex; justify-content: center; margin-top: $spacing-large;

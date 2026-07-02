@@ -153,7 +153,14 @@ const canDelete = () => {
               :src="item.previewImage"
               fit="cover"
               class="cover-img"
-            />
+            >
+              <template #error>
+                <div class="cover-placeholder">
+                  <el-icon :size="48"><Picture /></el-icon>
+                  <span>暂无预览</span>
+                </div>
+              </template>
+            </el-image>
             <div v-else class="cover-placeholder">
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>
@@ -207,7 +214,14 @@ const canDelete = () => {
               :src="item.previewImage"
               fit="cover"
               class="cover-img"
-            />
+            >
+              <template #error>
+                <div class="cover-placeholder">
+                  <el-icon :size="48"><Picture /></el-icon>
+                  <span>暂无预览</span>
+                </div>
+              </template>
+            </el-image>
             <div v-else class="cover-placeholder">
               <el-icon :size="48"><Picture /></el-icon>
               <span>暂无预览</span>

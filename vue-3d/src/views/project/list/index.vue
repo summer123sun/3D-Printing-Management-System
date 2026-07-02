@@ -222,7 +222,14 @@ const statusStyle = (status: number) => {
                   :src="proj.coverImage"
                   fit="cover"
                   class="cover-image"
-                />
+                >
+                  <template #error>
+                    <div class="cover-placeholder">
+                      <span class="placeholder-icon">📁</span>
+                      <span class="placeholder-text">项目封面</span>
+                    </div>
+                  </template>
+                </el-image>
                 <div v-else class="cover-placeholder">
                   <span class="placeholder-icon">📁</span>
                 </div>

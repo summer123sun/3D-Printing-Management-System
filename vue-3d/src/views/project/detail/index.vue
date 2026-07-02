@@ -344,7 +344,14 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
             :src="projectStore.currentProject.project.coverImage"
             fit="cover"
             class="hero-cover-image"
-          />
+          >
+            <template #error>
+              <div class="hero-cover-placeholder">
+                <span class="placeholder-icon">📁</span>
+                <span class="placeholder-text">{{ projectStore.currentProject.project.projectName }}</span>
+              </div>
+            </template>
+          </el-image>
           <div v-else class="hero-cover-placeholder">
             <span class="placeholder-icon">📁</span>
             <span class="placeholder-text">暂无封面</span>

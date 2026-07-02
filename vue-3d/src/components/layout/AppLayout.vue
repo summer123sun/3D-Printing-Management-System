@@ -126,6 +126,14 @@ onBeforeUnmount(() => {
     rgba(10, 37, 64, 0.35) 0%,
     rgba(10, 37, 64, 0.55) 100%
   );
+  // 亮色下整体压暗 20%（不破坏可读性，但比纯亮模式更"沉稳"）
+  html:not(.dark) & {
+    background: linear-gradient(
+      180deg,
+      rgba(10, 37, 64, 0.20) 0%,
+      rgba(10, 37, 64, 0.40) 100%
+    );
+  }
 }
 @keyframes bg-drift {
   0%   { transform: scale(1.05) translate(0, 0); }
