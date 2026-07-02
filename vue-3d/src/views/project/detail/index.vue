@@ -12,6 +12,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
+import MemberCard from '@/components/member/MemberCard.vue'
 import { useProjectStore } from '@/stores/project'
 import { useMemberStyle } from '@/composables/useMemberStyle'
 import { useAuthStore } from '@/stores/auth'
@@ -414,14 +415,16 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
         </div>
       </el-card>
 
-      <!-- Tab 切换 -->
-      <el-tabs v-model="activeTab" class="detail-tabs">
-        <el-tab-pane label="概览" name="overview" />
-        <el-tab-pane :label="`成员 (${projectStore.currentProject.members.length})`" name="members" />
-        <el-tab-pane :label="`阶段 (${projectStore.currentProject.stages.length})`" name="stages" />
-        <el-tab-pane :label="`文件 (${projectStore.currentProject.files.length})`" name="files" />
-        <el-tab-pane :label="`关联任务 (${projectStore.currentProject.relatedTasks.length})`" name="tasks" />
-      </el-tabs>
+      <!-- Tab 切换（v2.11 修复：包进 MemberCard 避免坐在背景图上看不清） -->
+      <MemberCard padding="0" :radius="16">
+        <el-tabs v-model="activeTab" class="detail-tabs">
+          <el-tab-pane label="概览" name="overview" />
+          <el-tab-pane :label="`成员 (${projectStore.currentProject.members.length})`" name="members" />
+          <el-tab-pane :label="`阶段 (${projectStore.currentProject.stages.length})`" name="stages" />
+          <el-tab-pane :label="`文件 (${projectStore.currentProject.files.length})`" name="files" />
+          <el-tab-pane :label="`关联任务 (${projectStore.currentProject.relatedTasks.length})`" name="tasks" />
+        </el-tabs>
+      </MemberCard>
 
       <!-- 概览 Tab -->
       <el-card v-if="activeTab === 'overview'">
@@ -777,7 +780,25 @@ export default { name: 'ProjectDetailPage' }
   }
 }
 .detail-tabs {
-  margin-bottom: $spacing-medium;
+  margin-bottom: 0;
+  padding: 4px 16px 0;
+  // ✅ v2.11 修复：强制 tab 文字色用我们自己的 CSS 变量
+  // EP 默认 el-tabs__item 颜色是 --el-text-color-primary（白底/灰字）
+  // 在亮色 + 背景图下，深灰字会和 EP 默认底色冲突 → 强制用 --text-regular
+  :deep(.el-tabs__item) {
+    color: var(--text-regular);
+    font-weight: 500;
+  }
+  :deep(.el-tabs__item.is-active) {
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+  :deep(.el-tabs__active-bar) {
+    background-color: var(--primary-color);
+  }
+  :deep(.el-tabs__header) {
+    margin-bottom: 0;
+  }
 }
 .text-placeholder {
   color: var(--text-placeholder);

@@ -15,16 +15,14 @@ import {
   Printer, Bell, Operation, Folder, Picture, User, ArrowRight, ArrowDown,
 } from '@element-plus/icons-vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import { getUserStats } from '@/api/user'
+import { useTaskStore } from '@/stores/task'
+import { TaskStatus } from '@/types/task'
 
 const authStore = useAuthStore()
+const taskStore = useTaskStore()
 const router = useRouter()
 const { isAdmin, isMember, isNewbie } = useMemberStyle()
-
-onMounted(() => {
-  if (authStore.token && !authStore.user) {
-    authStore.fetchUserInfo().catch(() => {})
-  }
-})
 
 function getGreeting(): string {
   const h = new Date().getHours()
@@ -65,7 +63,8 @@ const quickEntries = [
   },
 ]
 
-// 今日速览（mock）
+// ✅ v2.11 修复（用户反馈）：之前是写死 mock 全 0，账号有作品也显示 0
+//    改成调真实接口 getUserStats（profile 在用）+ 本地 filter myTasks 算待处理
 const stats = ref([
   { key: 'myTasks', label: '我的任务', value: 0, icon: Bell, color: '#0A2540' },
   { key: 'pending', label: '待处理', value: 0, icon: Printer, color: '#F2A93B' },
@@ -73,11 +72,47 @@ const stats = ref([
   { key: 'artworks', label: '我的作品', value: 0, icon: Picture, color: '#DC2626' },
 ])
 
+/** 拉首页统计：3 个数走 user/stats，"待处理"从 myTasks 本地 filter */
+const fetchStats = async () => {
+  if (!authStore.user?.studentId) return
+  // 1) 3 个总数（我的任务 / 参与项目 / 我的作品）
+  try {
+    const result = await getUserStats(authStore.user.studentId)
+    stats.value[0]!.value = result.totalPrints ?? 0      // 我的任务（累计打印）
+    stats.value[2]!.value = result.totalProjects ?? 0    // 参与项目
+    stats.value[3]!.value = result.totalArtworks ?? 0    // 我的作品
+  } catch {
+    // 接口失败保持 0（不弹错误，避免首页卡死）
+  }
+  // 2) 待处理：调一次我的任务列表，本地 filter PENDING + APPROVED + PRINTING
+  try {
+    await taskStore.fetchMyTasks({ page: 1, size: 100 })
+    const list = taskStore.myTasks?.list ?? []
+    stats.value[1]!.value = list.filter((t) =>
+      t.status === TaskStatus.PENDING ||
+      t.status === TaskStatus.APPROVED ||
+      t.status === TaskStatus.PRINTING
+    ).length
+  } catch {
+    // 同上
+  }
+}
+
 // 滚动到内容区
 const scrollToContent = () => {
   const el = document.querySelector('.home-content')
   el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+onMounted(async () => {
+  if (authStore.token && !authStore.user) {
+    try { await authStore.fetchUserInfo() } catch { /* 静默 */ }
+  }
+  // ✅ v2.11：拉首页真实统计（成员端需要展示我的任务/作品等数字）
+  if (isMember) {
+    await fetchStats()
+  }
+})
 </script>
 
 <template>

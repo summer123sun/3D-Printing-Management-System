@@ -81,10 +81,9 @@ const handleDelete = async () => {
 
 <template>
   <div class="artwork-detail-page" v-loading="store.loading">
-    <el-button text class="back-btn" @click="router.back()">
-      <el-icon><ArrowLeft /></el-icon> 返回
-    </el-button>
-
+    <!-- ✅ v2.11 修复（用户反馈）：删除页内"返回"键，保留 AppMain 渲染的"← 返回首页"统一出口
+         原因：之前页内灰色"返回"和 AppMain 白底胶囊"返回首页"位置冲突 + 视觉不一致
+         AppMain 的"返回首页"已统一处理成员端所有非 /home 页面的返回交互 -->
     <el-card v-if="store.current" class="detail-card">
       <div class="header">
         <div class="header-left">
@@ -146,9 +145,6 @@ const handleDelete = async () => {
 <style lang="scss" scoped>
 .artwork-detail-page {
   padding: 0;
-}
-.back-btn {
-  margin-bottom: $spacing-small;
 }
 .detail-card {
   max-width: 960px;
