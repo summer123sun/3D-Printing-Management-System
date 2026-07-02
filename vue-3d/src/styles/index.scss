@@ -193,6 +193,32 @@ html.dark {
   .el-step__description { color: var(--text-regular) !important; }
   .el-step__title.is-finish { color: var(--text-regular) !important; }
 
+  // ✅ v2.15 修复（用户反馈）：el-timeline 暗色下文字看不清
+  //    v2.8 只覆盖了 el-steps，漏了 el-timeline
+  //    task/detail 的 TaskTimeline 在成员端 beijing.png 暗背景上节点文字糊在一起
+  .el-timeline-item__node {
+    background-color: var(--bg-card);
+    border-color: var(--primary-color);
+  }
+  .el-timeline-item__node--primary {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+  }
+  .el-timeline-item__node--success {
+    background-color: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+  }
+  .el-timeline-item__wrapper {
+    color: var(--text-regular) !important;
+    background: transparent;
+  }
+  .el-timeline-item__timestamp {
+    color: var(--text-secondary) !important;
+  }
+  .el-timeline-item__content {
+    color: var(--text-primary) !important;
+  }
+
   // v2.8 el-tabs 暗色下
   .el-tabs__item { color: var(--text-secondary) !important; }
   .el-tabs__item.is-active { color: var(--primary-color) !important; }
