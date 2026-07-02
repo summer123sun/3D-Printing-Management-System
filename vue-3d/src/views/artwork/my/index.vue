@@ -74,7 +74,6 @@ const handleDelete = async (id: number) => {
       v-if="isMember"
       title="我的作品"
       subtitle="记录你的 3D 创作历程 · 分享你的灵感与心得"
-      illustration="hero-home"
       :is-newbie="isNewbie"
       newbie-tip="完成打印任务后，请到这里点击「登记作品」上传照片 + 心得。"
     >
@@ -99,7 +98,6 @@ const handleDelete = async (id: number) => {
     <MemberCard v-if="isMember" v-loading="store.loading" padding="32px">
       <EmptyState
         v-if="myArtworkList.length === 0"
-        illustration="empty-artwork"
         description="你还没有作品"
         hint="完成打印任务后，请到这里点击「登记作品」上传照片 + 心得~"
       >

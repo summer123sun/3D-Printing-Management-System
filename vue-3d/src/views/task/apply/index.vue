@@ -209,7 +209,6 @@ const handleSubmit = async () => {
       v-if="isMember"
       title="提交打印任务"
       subtitle="把你的创意变成实体 · 上传 STL 文件，一键启动"
-      illustration="cta-apply"
       :is-newbie="isNewbie"
       newbie-tip="不确定参数怎么填？默认的 PLA + 0.2mm 层厚 + 20% 填充率就够日常用了。"
     />

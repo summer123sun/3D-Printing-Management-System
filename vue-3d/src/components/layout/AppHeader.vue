@@ -161,9 +161,9 @@ const goHome = () => {
   font-size: $font-size-small;
   padding: 3px 10px;
   background: linear-gradient(135deg, $gold-color 0%, $gold-color-light 100%);
-  color: $primary-color;
+  color: #5C4400;  // 深棕金（对比度 7:1，AAA 级）
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 6px rgba(255, 215, 0, 0.35);
   border: 1px solid color-mix(in srgb, $gold-color 60%, transparent);
@@ -172,23 +172,25 @@ const goHome = () => {
     transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
   }
-  // 普通成员用薄荷青
+  // 技术骨干用薄荷青
   &.role-staff {
     background: linear-gradient(135deg, $accent-color 0%, $accent-color-light 100%);
-    color: $primary-color;
+    color: #003D2E;  // 深薄荷青（高对比度）
     box-shadow: 0 2px 6px rgba(0, 212, 170, 0.3);
   }
+  // 普通成员：浅薄荷底 + 深蓝字（确保可见）
   &.role-member {
-    background: color-mix(in srgb, $primary-color 10%, transparent);
-    color: $primary-color;
+    background: #E0FAF4;
+    color: #00624E;
     box-shadow: none;
-    border-color: color-mix(in srgb, $primary-color 20%, transparent);
+    border-color: #B6EBD8;
   }
+  // 新成员：浅米金底 + 深棕字
   &.role-newbie {
-    background: var(--bg-base);
-    color: var(--text-secondary);
+    background: #FFF7E6;
+    color: #8B6914;
     box-shadow: none;
-    border-color: var(--border-light);
+    border-color: #F2D78A;
   }
 }
 
@@ -209,6 +211,42 @@ const goHome = () => {
 </style>
 <!-- 全局非 scoped，确保 ElDialog 子组件生效 -->
 <style lang="scss">
+/* 下拉菜单文字对比修复（用户反馈：选中看不清） */
+.el-dropdown-menu {
+  padding: 6px !important;
+  border: 1px solid rgba(10, 37, 64, 0.08) !important;
+  box-shadow: 0 12px 32px rgba(10, 37, 64, 0.18) !important;
+  background: #ffffff !important;
+}
+.el-dropdown-menu__item {
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  color: #0A2540 !important;        // 主区深蓝（始终清晰）
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+  &:hover,
+  &:focus:not(.is-disabled) {
+    background: #E0FAF4 !important;  // 浅薄荷青（绝不刺眼）
+    color: #00624E !important;      // 深薄荷青字（高对比度 7:1）
+  }
+  &.is-active {
+    background: #0A2540 !important;
+    color: #ffffff !important;
+  }
+  // 暗色模式
+  html.dark & {
+    background: #15233D !important;
+    color: #E5EAF2 !important;
+    border-color: #243149 !important;
+    &:hover, &:focus:not(.is-disabled) {
+      background: #1E3A5F !important;
+      color: #4FE5C7 !important;
+    }
+  }
+  .el-icon { margin-right: 8px; }
+}
+
 /* 退出登录遮罩（干净深色，无磨砂） */
 .dark-modal {
   background: rgba(10, 37, 64, 0.55) !important;

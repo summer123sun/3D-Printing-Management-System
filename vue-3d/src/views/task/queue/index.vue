@@ -36,7 +36,6 @@ onMounted(async () => {
       v-if="isMember"
       title="打印队列"
       :subtitle="`排队中 ${queuedCount} 个 · 打印中 ${printingCount} 个`"
-      illustration="hero-home"
     >
       <template #actions>
         <el-button type="primary" size="large" round @click="router.push('/task/apply')">
@@ -51,7 +50,6 @@ onMounted(async () => {
     <MemberCard v-if="isMember" v-loading="taskStore.loading" padding="20px">
       <template v-if="!taskStore.queue || queueList.length === 0">
         <EmptyState
-          illustration="empty-queue"
           description="队列里没有任务"
           hint="所有任务都已打印完成或等待中。提交一个任务试试？"
         >

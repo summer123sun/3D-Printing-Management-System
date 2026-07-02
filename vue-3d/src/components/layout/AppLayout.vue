@@ -3,19 +3,19 @@
  * 顶层布局
  * - 社长 / 技术骨干 (role 1/2): 完整布局（顶部 header + 左侧 sidebar + 主区）
  * - 普通社员 / 新成员 (role 3/4): 简化布局（仅顶部 header，主区铺满，无 sidebar）
+ *   - 全屏背景图 beijing.png（v2.7）
  */
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
 import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppMain from './AppMain.vue'
+import CursorEffect from '@/components/common/CursorEffect.vue'
 import { useAppStore } from '@/stores/app'
 import { useAuthStore } from '@/stores/auth'
 import { Role } from '@/types/member'
 
 const appStore = useAppStore()
 const authStore = useAuthStore()
-const route = useRoute()
 
 const isMobile = ref(false)
 const drawerVisible = ref(false)
@@ -31,30 +31,33 @@ const checkMobile = () => {
   if (!isMobile.value) drawerVisible.value = false
 }
 
-// 路由变化时关闭移动端抽屉
-const stopRouteWatch = () => {
-  // noop，router.afterEach 已替代
-}
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
 })
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkMobile)
-  stopRouteWatch()
 })
 </script>
 
 <template>
-  <!-- 成员端：仅 header + 主区（无 sidebar） -->
-  <el-container v-if="isMemberLayout()" class="app-layout app-layout-member">
-    <el-header class="app-header">
-      <AppHeader @toggle-sidebar="drawerVisible = !drawerVisible" />
-    </el-header>
-    <el-main class="app-main app-main-member">
-      <AppMain />
-    </el-main>
-  </el-container>
+  <!-- 成员端：仅 header + 主区（无 sidebar），全屏背景图 -->
+  <template v-if="isMemberLayout()">
+    <div class="member-bg">
+      <div class="member-bg-image" />
+      <div class="member-bg-overlay" />
+    </div>
+    <el-container class="app-layout app-layout-member">
+      <el-header class="app-header app-header-transparent">
+        <AppHeader @toggle-sidebar="drawerVisible = !drawerVisible" />
+      </el-header>
+      <el-main class="app-main app-main-member">
+        <AppMain />
+      </el-main>
+    </el-container>
+    <!-- 自定义鼠标 + 点击涟漪（仅成员端） -->
+    <CursorEffect />
+  </template>
 
   <!-- 后台端：完整布局 -->
   <el-container v-else class="app-layout">
@@ -95,15 +98,57 @@ onBeforeUnmount(() => {
 .app-layout {
   height: 100vh;
 }
+
+// 成员端：背景层（fixed 全屏，盖在所有内容下层）
+.member-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.member-bg-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('@/assets/member/beijing.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  // 轻微缩放 + 缓慢漂移，让背景"活"起来
+  animation: bg-drift 30s ease-in-out infinite alternate;
+}
+.member-bg-overlay {
+  // 半透明深色蒙版，确保前景文字可读
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 37, 64, 0.35) 0%,
+    rgba(10, 37, 64, 0.55) 100%
+  );
+}
+@keyframes bg-drift {
+  0%   { transform: scale(1.05) translate(0, 0); }
+  100% { transform: scale(1.12) translate(-2%, -1%); }
+}
+
 .app-layout-member {
+  position: relative;
+  z-index: 1;
   height: 100vh;
-  background: var(--bg-page);
-  // 成员端主区完全铺满
+  background: transparent;  // 背景层在 .member-bg，主区透明
   .app-main-member {
     padding: 0;
-    background: var(--bg-page);
+    background: transparent;
   }
 }
+.app-header-transparent {
+  background: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+  border-bottom: 1px solid rgba(10, 37, 64, 0.08) !important;
+}
+
 .app-aside {
   background: var(--bg-card);
   border-right: 1px solid var(--border-extra-light);

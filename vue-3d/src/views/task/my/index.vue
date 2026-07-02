@@ -86,7 +86,6 @@ onMounted(fetchData)
       v-if="isMember"
       title="我的任务"
       :subtitle="`待处理 ${pendingCount} 个 · 打印中 ${printingCount} 个`"
-      illustration="hero-home"
       :is-newbie="isNewbie"
       newbie-tip="提交任务后，在这里查看审批进度、打印队列、取件提醒。"
     >
@@ -113,7 +112,6 @@ onMounted(fetchData)
       <div v-if="taskGroups.length === 0">
         <MemberCard padding="40px">
           <EmptyState
-            illustration="empty-task"
             description="还没有任务记录"
             hint="提交第一个打印任务，让你的创意变成实体"
           >

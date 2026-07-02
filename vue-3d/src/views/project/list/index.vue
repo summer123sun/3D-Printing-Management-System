@@ -150,7 +150,6 @@ const statusStyle = (status: number) => {
       v-if="isMember"
       title="项目中心"
       :subtitle="activeTab === 'mine' ? '我参与的项目' : '浏览全部项目 · 找到你想加入的那个'"
-      illustration="project-hero"
     >
       <template #actions>
         <el-input
@@ -202,7 +201,6 @@ const statusStyle = (status: number) => {
       <MemberCard v-loading="projectStore.loading" padding="32px">
         <template v-if="projectList.length === 0">
           <EmptyState
-            illustration="empty-project"
             :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目记录'"
             :hint="activeTab === 'mine' ? '请让项目负责人把你加入项目，或切换到【全部项目】看看。' : '立项第一个项目，把分散的打印任务组织起来。'"
           >

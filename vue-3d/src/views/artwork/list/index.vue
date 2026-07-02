@@ -91,7 +91,6 @@ const canDelete = () => {
       v-if="isMember"
       title="作品库"
       subtitle="看看社团成员们的得意之作 · 也许下一个就是你"
-      illustration="hero-home"
     >
       <template #actions>
         <el-input
@@ -137,7 +136,6 @@ const canDelete = () => {
     <MemberCard v-if="isMember" v-loading="store.loading" padding="32px">
       <EmptyState
         v-if="artworkList.length === 0"
-        illustration="empty-artwork"
         description="还没有作品"
         hint="打印完成的任务会自动归档到这里哦~"
       />
