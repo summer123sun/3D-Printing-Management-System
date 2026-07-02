@@ -68,6 +68,8 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     EmptyState: typeof import('./components/common/EmptyState.vue')['default']
+    HeroBanner: typeof import('./components/member/HeroBanner.vue')['default']
+    MemberCard: typeof import('./components/member/MemberCard.vue')['default']
     PageHeader: typeof import('./components/common/PageHeader.vue')['default']
     ParamForm: typeof import('./components/task/apply/ParamForm.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

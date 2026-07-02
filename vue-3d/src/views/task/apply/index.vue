@@ -6,14 +6,18 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
+import HeroBanner from '@/components/member/HeroBanner.vue'
+import MemberCard from '@/components/member/MemberCard.vue'
 import StlUploader from '@/components/task/apply/StlUploader.vue'
 import ParamForm from '@/components/task/apply/ParamForm.vue'
 import { useTaskStore } from '@/stores/task'
+import { useMemberStyle } from '@/composables/useMemberStyle'
 import { Priority } from '@/types/task'
 import type { TaskApplyDTO } from '@/types/task'
 
 const router = useRouter()
 const taskStore = useTaskStore()
+const { isMember, isNewbie } = useMemberStyle()
 
 const stlPath = ref<string>('')
 
@@ -200,9 +204,42 @@ const handleSubmit = async () => {
 
 <template>
   <div class="task-apply-page">
-    <PageHeader title="提交打印申请" :show-back="true" @back="router.back()" />
+    <!-- 成员端 HeroBanner -->
+    <HeroBanner
+      v-if="isMember"
+      title="提交打印任务"
+      subtitle="把你的创意变成实体 · 上传 STL 文件，一键启动"
+      illustration="cta-apply"
+      :is-newbie="isNewbie"
+      newbie-tip="不确定参数怎么填？默认的 PLA + 0.2mm 层厚 + 20% 填充率就够日常用了。"
+    />
 
-    <el-card>
+    <!-- 后台端 PageHeader -->
+    <PageHeader v-else title="提交打印申请" :show-back="true" @back="router.back()" />
+
+    <MemberCard v-if="isMember" padding="32px">
+      <!-- 第一步：上传 STL -->
+      <h3 class="step-title">① 上传 STL 文件</h3>
+      <StlUploader v-model="stlPath" />
+
+      <el-divider />
+
+      <!-- 第二步：填写参数 -->
+      <h3 class="step-title">② 填写打印参数</h3>
+      <ParamForm v-model="form" />
+
+      <el-divider />
+
+      <!-- 提交 -->
+      <div class="action-bar">
+        <el-button @click="router.back()">取消</el-button>
+        <el-button type="primary" size="large" round :loading="submitting" @click="handleSubmit">
+          提交申请
+        </el-button>
+      </div>
+    </MemberCard>
+
+    <el-card v-else>
       <!-- 第一步：上传 STL -->
       <h3 class="step-title">① 上传 STL 文件</h3>
       <StlUploader v-model="stlPath" />

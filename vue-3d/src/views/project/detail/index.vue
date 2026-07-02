@@ -13,12 +13,13 @@ import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { useProjectStore } from '@/stores/project'
+import { useMemberStyle } from '@/composables/useMemberStyle'
 import { useAuthStore } from '@/stores/auth'
 import {
   ProjectStatus, ProjectStatusText,
   ProjectRole, ProjectRoleText,
   StageStatus, StageStatusText,
-  ProjectMemberStatus, ProjectType,
+  ProjectMemberStatus, ProjectType, ProjectTypeText,
 } from '@/types/project'
 import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
@@ -27,6 +28,7 @@ const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const authStore = useAuthStore()
+const { isMember } = useMemberStyle()
 
 const projectId = computed(() => Number(route.params.id))
 
@@ -334,8 +336,53 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       </el-card>
     </template>
     <template v-else-if="projectStore.currentProject && projectStore.currentProject.project">
-      <!-- 项目头部卡片 -->
-      <el-card class="project-header-card">
+      <!-- 成员端：项目 Hero 卡片 -->
+      <div v-if="isMember" class="member-project-hero">
+        <div class="hero-cover">
+          <el-image
+            v-if="projectStore.currentProject.project.coverImage"
+            :src="projectStore.currentProject.project.coverImage"
+            fit="cover"
+            class="hero-cover-image"
+          />
+          <div v-else class="hero-cover-placeholder">
+            <span class="placeholder-icon">📁</span>
+            <span class="placeholder-text">暂无封面</span>
+          </div>
+          <div class="hero-overlay" />
+        </div>
+        <div class="hero-body">
+          <div class="hero-info">
+            <div class="hero-tags">
+              <span class="hero-status" :class="'status-' + projectStore.currentProject.project.status">
+                {{ ProjectStatusText[projectStore.currentProject.project.status] }}
+              </span>
+              <span class="hero-type">{{ ProjectTypeText[projectStore.currentProject.project.projectType as keyof typeof ProjectTypeText] }}</span>
+            </div>
+            <h1 class="hero-title">{{ projectStore.currentProject.project.projectName }}</h1>
+            <p v-if="projectStore.currentProject.project.description" class="hero-desc">
+              {{ projectStore.currentProject.project.description }}
+            </p>
+            <div class="hero-meta-row">
+              <div class="meta-pill">
+                <span class="meta-icon">👤</span>
+                <span class="meta-text">负责人：{{ projectStore.currentProject.project.leaderId }}</span>
+              </div>
+              <div class="meta-pill">
+                <span class="meta-icon">📅</span>
+                <span class="meta-text">开始：{{ formatDate(projectStore.currentProject.project.startDate, 'YYYY-MM-DD') }}</span>
+              </div>
+              <div v-if="projectStore.currentProject.project.budget" class="meta-pill">
+                <span class="meta-icon">💰</span>
+                <span class="meta-text">预算：{{ projectStore.currentProject.project.budget }} 元</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 后台端：原 header card -->
+      <el-card v-else class="project-header-card">
         <div class="header-content">
           <div class="left">
             <el-image
@@ -548,6 +595,115 @@ export default { name: 'ProjectDetailPage' }
 
 <style lang="scss" scoped>
 .project-detail-page {
+
+// ============ 成员端：项目 Hero ============
+.member-project-hero {
+  border-radius: 20px;
+  overflow: hidden;
+  background: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(10, 37, 64, 0.08);
+  border: 1px solid var(--border-extra-light);
+}
+.hero-cover {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  background: linear-gradient(135deg, #0A2540 0%, #1E3A5F 50%, #00A88A 100%);
+  overflow: hidden;
+}
+.hero-cover-image {
+  width: 100%;
+  height: 100%;
+}
+.hero-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0A2540 0%, #1E3A5F 50%, #00A88A 100%);
+  color: rgba(255, 255, 255, 0.6);
+  .placeholder-icon { font-size: 64px; }
+  .placeholder-text { font-size: 14px; margin-top: 8px; }
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(10, 37, 64, 0.55) 0%, transparent 50%);
+  pointer-events: none;
+}
+.hero-body {
+  padding: 32px 40px;
+}
+.hero-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hero-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #E0FAF4;
+  color: #00A88A;
+
+  &.status-0 { background: #E8EEF5; color: #0A2540; }
+  &.status-1 { background: #E0FAF4; color: #00A88A; }
+  &.status-2 { background: #DCFCE7; color: #15803D; }
+  &.status-3 { background: #F4F4F5; color: #71717A; }
+}
+.hero-type {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(0, 212, 170, 0.12);
+  color: #00A88A;
+}
+.hero-title {
+  margin: 0 0 12px;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+.hero-desc {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-regular);
+  max-width: 720px;
+}
+.hero-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-base);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--text-regular);
+}
+.meta-icon { font-size: 14px; }
+.meta-text { color: var(--text-regular); }
+
+@include mobile {
+  .hero-body { padding: $spacing-large; }
+  .hero-title { font-size: 24px; }
+  .hero-cover { height: 180px; }
+}
   padding: 0;
 }
 .project-header-card {

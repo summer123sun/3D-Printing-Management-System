@@ -1,31 +1,20 @@
 <script setup lang="ts">
 /**
  * 项目列表（统一版 v2.2 round 4）
- *
- * ✅ 合并前：
- *   - 顶级"项目管理"下有"项目列表（社员端）"和"项目管理（管理端）"两个菜单
- *   - 列表有"查看"按钮（任何人可见）
- *   - 管理端有"编辑/完成/取消"按钮（仅 admin + 项目负责人）
- *
- * ✅ 合并后（用户反馈）：
- *   - 顶级"项目管理"下只有"项目列表"一个菜单
- *   - 列表里按角色显示操作按钮：
- *     - 所有人都有"查看"
- *     - 社长 + 技术骨干 + 项目负责人 → 有"编辑/完成/取消"
- *     - 已取消/已完成的 → 隐藏对应按钮
- *
- * Tab：我参与的 / 全部（保留原社员端能力）
+ * v2.3 重构：成员端表格 -> 卡片网格
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Calendar, User, View, Edit, Check, CircleClose } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import StatusTag from '@/components/common/StatusTag.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
+import HeroBanner from '@/components/member/HeroBanner.vue'
+import MemberCard from '@/components/member/MemberCard.vue'
 import { useProjectStore } from '@/stores/project'
 import { useAuthStore } from '@/stores/auth'
+import { useMemberStyle } from '@/composables/useMemberStyle'
 import { ProjectStatusText, ProjectTypeText, ProjectStatus, ProjectType, type ProjectCreateDTO } from '@/types/project'
 import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
@@ -33,6 +22,7 @@ import { formatDate } from '@/utils/format'
 const router = useRouter()
 const projectStore = useProjectStore()
 const authStore = useAuthStore()
+const { isMember } = useMemberStyle()
 
 const activeTab = ref<'mine' | 'all'>('all')
 const filter = ref({
@@ -40,12 +30,10 @@ const filter = ref({
   keyword: '',
 })
 
-// ============== 角色判断 ==============
 const isStaff = computed(() => {
   const r = authStore.user?.role
   return r === Role.PRESIDENT || r === Role.TECH_LEAD
 })
-// 操作列：社长 + 技术骨干 + 项目负责人 可看到"编辑/完成/取消"
 const canOperate = (row: any) => {
   if (!authStore.user) return false
   if (isStaff.value) return true
@@ -62,26 +50,22 @@ const fetchData = async () => {
   })
 }
 onMounted(fetchData)
-
 const onTabChange = () => {
   filter.value.keyword = ''
   fetchData()
 }
 
-// ============== 操作：完成/取消 ==============
 const handleComplete = async (id: number) => {
   await projectStore.complete(id)
   ElMessage.success('已标记完成')
   fetchData()
 }
-
 const handleCancel = async (id: number) => {
   await projectStore.cancel(id)
   ElMessage.success('已取消')
   fetchData()
 }
 
-// ============== 操作：编辑（弹窗） ==============
 const editDialogVisible = ref(false)
 const submittingEdit = ref(false)
 const editForm = reactive<ProjectCreateDTO & { projectId: number }>({
@@ -140,11 +124,53 @@ const handleEditConfirm = async () => {
     submittingEdit.value = false
   }
 }
+
+const projectList = computed(() => projectStore.projectList?.list ?? [])
+
+// 状态色
+const statusMeta = (status: number) => {
+  const colors: Record<number, { label: string; bg: string; color: string }> = {
+    [ProjectStatus.PREPARING]: { label: '筹备中', bg: '#E8EEF5', color: '#0A2540' },
+    [ProjectStatus.RUNNING]: { label: '进行中', bg: '#E0FAF4', color: '#00A88A' },
+    [ProjectStatus.DONE]: { label: '已完成', bg: '#DCFCE7', color: '#15803D' },
+    [ProjectStatus.CANCELLED]: { label: '已取消', bg: '#F4F4F5', color: '#71717A' },
+  }
+  return colors[status] || colors[ProjectStatus.RUNNING]!
+}
+const statusStyle = (status: number) => {
+  const m = statusMeta(status)
+  return { background: m.bg, color: m.color }
+}
 </script>
 
 <template>
   <div class="project-list-page">
-    <PageHeader title="项目">
+    <!-- 成员端 HeroBanner -->
+    <HeroBanner
+      v-if="isMember"
+      title="项目中心"
+      :subtitle="activeTab === 'mine' ? '我参与的项目' : '浏览全部项目 · 找到你想加入的那个'"
+      illustration="project-hero"
+    >
+      <template #actions>
+        <el-input
+          v-model="filter.keyword"
+          placeholder="按名称搜索"
+          clearable
+          round
+          size="large"
+          style="width: 240px"
+          @keyup.enter="fetchData"
+          @clear="fetchData"
+        />
+        <el-button type="primary" size="large" round @click="router.push('/project/create')">
+          <el-icon><Plus /></el-icon> 立项新项目
+        </el-button>
+      </template>
+    </HeroBanner>
+
+    <!-- 后台端 PageHeader -->
+    <PageHeader v-else title="项目管理">
       <el-input
         v-model="filter.keyword"
         placeholder="按名称搜索"
@@ -156,111 +182,174 @@ const handleEditConfirm = async () => {
       <el-button @click="fetchData">搜索</el-button>
     </PageHeader>
 
-    <el-card>
+    <!-- Tab 切换 -->
+    <MemberCard v-if="isMember" padding="20px">
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
         <el-tab-pane label="全部项目" name="all" />
         <el-tab-pane label="我参与的" name="mine" />
       </el-tabs>
+    </MemberCard>
 
-      <div v-loading="projectStore.loading">
-        <template v-if="!projectStore.projectList || projectStore.projectList.list.length === 0">
+    <el-card v-else>
+      <el-tabs v-model="activeTab" @tab-change="onTabChange">
+        <el-tab-pane label="全部项目" name="all" />
+        <el-tab-pane label="我参与的" name="mine" />
+      </el-tabs>
+    </el-card>
+
+    <!-- ============== 成员端：卡片网格 ============== -->
+    <template v-if="isMember">
+      <MemberCard v-loading="projectStore.loading" padding="32px">
+        <template v-if="projectList.length === 0">
           <EmptyState
-            :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目'"
-            :hint="activeTab === 'mine' ? '请联系管理员把你加入项目，或切换到【全部项目】看看。' : '立项第一个项目，把分散的打印任务组织起来。'"
+            illustration="empty-project"
+            :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目记录'"
+            :hint="activeTab === 'mine' ? '请让项目负责人把你加入项目，或切换到【全部项目】看看。' : '立项第一个项目，把分散的打印任务组织起来。'"
           >
-            <el-button v-if="activeTab === 'all'" type="primary" @click="router.push('/project/create')">
-              <el-icon><Plus /></el-icon> 创建项目
+            <el-button v-if="activeTab === 'all'" type="primary" round size="large" @click="router.push('/project/create')">
+              <el-icon><Plus /></el-icon> 立项新项目
             </el-button>
-            <el-button v-else @click="activeTab = 'all'">查看全部项目</el-button>
+            <el-button v-else round size="large" @click="activeTab = 'all'">查看全部项目</el-button>
           </EmptyState>
         </template>
 
-        <el-table
-          v-else
-          :data="projectStore.projectList.list"
-          stripe
-        >
-          <el-table-column prop="projectId" label="ID" width="80" />
-          <el-table-column prop="projectName" label="项目名称" min-width="200" show-overflow-tooltip />
-          <el-table-column label="类型" width="120">
-            <template #default="{ row }">
-              {{ ProjectTypeText[row.projectType as keyof typeof ProjectTypeText] }}
-            </template>
-          </el-table-column>
-          <el-table-column label="状态" width="100">
-            <template #default="{ row }">
-              <el-tag size="small" :type="statusTagType(row.status)" effect="dark">
-                {{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="负责人" width="120">
-            <template #default="{ row }">
-              <el-tooltip :content="`学号：${row.leaderId}`" placement="top">
-                <span>{{ row.leaderName || row.leaderId }}</span>
-              </el-tooltip>
-            </template>
-          </el-table-column>
-          <el-table-column label="开始日期" width="120">
-            <template #default="{ row }">{{ formatDate(row.startDate, 'YYYY-MM-DD') }}</template>
-          </el-table-column>
-          <el-table-column label="操作" width="280" fixed="right">
-            <template #default="{ row }">
-              <!-- 查看：所有人都有 -->
-              <el-button text type="primary" size="small" @click="router.push(`/project/${row.projectId}`)">查看</el-button>
-              <!-- 编辑/完成/取消：仅社长 + 技术骨干 + 项目负责人 -->
-              <template v-if="canOperate(row)">
-                <el-button text type="warning" size="small" @click="openEditDialog(row)">编辑</el-button>
-                <el-button v-if="row.status === ProjectStatus.RUNNING" text type="success" size="small" @click="handleComplete(row.projectId)">完成</el-button>
-                <el-button v-if="row.status !== ProjectStatus.DONE && row.status !== ProjectStatus.CANCELLED" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
-              </template>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-card>
-  </div>
+        <el-row v-else :gutter="20">
+          <el-col v-for="proj in projectList" :key="proj.projectId" :xs="24" :sm="12" :md="8" :lg="8" :xl="6">
+            <MemberCard hoverable padding="0" :radius="16" @click="router.push(`/project/${proj.projectId}`)">
+              <!-- 封面 banner -->
+              <div class="project-cover" :class="'type-' + proj.projectType">
+                <span class="project-type-tag">{{ ProjectTypeText[proj.projectType as keyof typeof ProjectTypeText] }}</span>
+                <el-image
+                  v-if="proj.coverImage"
+                  :src="proj.coverImage"
+                  fit="cover"
+                  class="cover-image"
+                />
+                <div v-else class="cover-placeholder">
+                  <span class="placeholder-icon">📁</span>
+                </div>
+              </div>
+              <!-- 内容区 -->
+              <div class="project-content">
+                <h3 class="project-name">{{ proj.projectName }}</h3>
+                <div class="project-status-row">
+                  <span class="status-badge" :style="statusStyle(proj.status)">
+                    {{ statusMeta(proj.status).label }}
+                  </span>
+                </div>
+                <div class="project-meta">
+                  <div class="meta-item">
+                    <el-icon :size="14"><User /></el-icon>
+                    <span>{{ proj.leaderName || proj.leaderId }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <el-icon :size="14"><Calendar /></el-icon>
+                    <span>{{ formatDate(proj.startDate, 'YYYY-MM-DD') }}</span>
+                  </div>
+                </div>
+              </div>
+            </MemberCard>
+          </el-col>
+        </el-row>
+      </MemberCard>
+    </template>
 
-  <!-- 编辑项目弹窗 -->
-  <AppDialog
-    v-model="editDialogVisible"
-    title="编辑项目"
-    icon="Edit"
-    type="warning"
-    width="560px"
-    confirm-text="保存"
-    :loading="submittingEdit"
-    @confirm="handleEditConfirm"
-  >
-    <el-form :model="editForm" label-width="100px">
-      <el-form-item label="项目名称" required>
-        <el-input v-model="editForm.projectName" placeholder="项目名称" maxlength="100" />
-      </el-form-item>
-      <el-form-item label="项目类型">
-        <el-select v-model="editForm.projectType" style="width: 100%">
-          <el-option v-for="(label, value) in ProjectTypeText" :key="value" :label="label" :value="Number(value)" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="开始日期">
-        <el-input v-model="editForm.startDate" placeholder="YYYY-MM-DD" />
-      </el-form-item>
-      <el-form-item label="结束日期">
-        <el-input v-model="editForm.endDate" placeholder="YYYY-MM-DD" />
-      </el-form-item>
-      <el-form-item label="预算（元）">
-        <el-input-number v-model="editForm.budget" :min="0" :precision="2" style="width: 100%" />
-      </el-form-item>
-      <el-form-item label="描述">
-        <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="项目简介" />
-      </el-form-item>
-      <el-form-item label="交付物">
-        <el-input v-model="editForm.deliverables" type="textarea" :rows="2" placeholder="预期交付" />
-      </el-form-item>
-      <el-alert type="warning" :closable="false" show-icon style="margin-top: 8px">
-        仅可修改基础信息，阶段和成员请到项目详情页操作
-      </el-alert>
-    </el-form>
-  </AppDialog>
+    <!-- ============== 后台端：保留原表格 ============== -->
+    <template v-else>
+      <el-card>
+        <div v-loading="projectStore.loading">
+          <template v-if="projectList.length === 0">
+            <EmptyState
+              :description="activeTab === 'mine' ? '你还没参与任何项目' : '还没有项目'"
+              :hint="activeTab === 'mine' ? '请联系管理员把你加入项目，或切换到【全部项目】看看。' : '立项第一个项目，把分散的打印任务组织起来。'"
+            >
+              <el-button v-if="activeTab === 'all'" type="primary" @click="router.push('/project/create')">
+                <el-icon><Plus /></el-icon> 创建项目
+              </el-button>
+              <el-button v-else @click="activeTab = 'all'">查看全部项目</el-button>
+            </EmptyState>
+          </template>
+          <el-table v-else :data="projectList" stripe>
+            <el-table-column prop="projectId" label="ID" width="80" />
+            <el-table-column prop="projectName" label="项目名称" min-width="200" show-overflow-tooltip />
+            <el-table-column label="类型" width="120">
+              <template #default="{ row }">
+                {{ ProjectTypeText[row.projectType as keyof typeof ProjectTypeText] }}
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag size="small" :type="statusTagType(row.status)" effect="dark">
+                  {{ ProjectStatusText[row.status as keyof typeof ProjectStatusText] }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="负责人" width="120">
+              <template #default="{ row }">
+                <el-tooltip :content="`学号：${row.leaderId}`" placement="top">
+                  <span>{{ row.leaderName || row.leaderId }}</span>
+                </el-tooltip>
+              </template>
+            </el-table-column>
+            <el-table-column label="开始日期" width="120">
+              <template #default="{ row }">{{ formatDate(row.startDate, 'YYYY-MM-DD') }}</template>
+            </el-table-column>
+            <el-table-column label="操作" width="280" fixed="right">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="router.push(`/project/${row.projectId}`)">查看</el-button>
+                <template v-if="canOperate(row)">
+                  <el-button text type="warning" size="small" @click="openEditDialog(row)">编辑</el-button>
+                  <el-button v-if="row.status === ProjectStatus.RUNNING" text type="success" size="small" @click="handleComplete(row.projectId)">完成</el-button>
+                  <el-button v-if="row.status !== ProjectStatus.DONE && row.status !== ProjectStatus.CANCELLED" text type="danger" size="small" @click="handleCancel(row.projectId)">取消</el-button>
+                </template>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-card>
+    </template>
+
+    <!-- 编辑项目弹窗 -->
+    <AppDialog
+      v-model="editDialogVisible"
+      title="编辑项目"
+      icon="Edit"
+      type="warning"
+      width="560px"
+      confirm-text="保存"
+      :loading="submittingEdit"
+      @confirm="handleEditConfirm"
+    >
+      <el-form :model="editForm" label-width="100px">
+        <el-form-item label="项目名称" required>
+          <el-input v-model="editForm.projectName" placeholder="项目名称" maxlength="100" />
+        </el-form-item>
+        <el-form-item label="项目类型">
+          <el-select v-model="editForm.projectType" style="width: 100%">
+            <el-option v-for="(label, value) in ProjectTypeText" :key="value" :label="label" :value="Number(value)" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开始日期">
+          <el-input v-model="editForm.startDate" placeholder="YYYY-MM-DD" />
+        </el-form-item>
+        <el-form-item label="结束日期">
+          <el-input v-model="editForm.endDate" placeholder="YYYY-MM-DD" />
+        </el-form-item>
+        <el-form-item label="预算（元）">
+          <el-input-number v-model="editForm.budget" :min="0" :precision="2" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="editForm.description" type="textarea" :rows="3" placeholder="项目简介" />
+        </el-form-item>
+        <el-form-item label="交付物">
+          <el-input v-model="editForm.deliverables" type="textarea" :rows="2" placeholder="预期交付" />
+        </el-form-item>
+        <el-alert type="warning" :closable="false" show-icon style="margin-top: 8px">
+          仅可修改基础信息，阶段和成员请到项目详情页操作
+        </el-alert>
+      </el-form>
+    </AppDialog>
+  </div>
 </template>
 
 <script lang="ts">
@@ -272,6 +361,96 @@ export default { name: 'ProjectListPage' }
 
 <style lang="scss" scoped>
 .project-list-page {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-large;
+}
+
+// ============ 成员端：项目卡片 ============
+.project-cover {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0A2540 0%, #1E3A5F 100%);
+
+  &.type-1 { background: linear-gradient(135deg, #0A2540 0%, #00A88A 100%); }
+  &.type-2 { background: linear-gradient(135deg, #F2A93B 0%, #CCB000 100%); }
+  &.type-3 { background: linear-gradient(135deg, #DC2626 0%, #F472B6 100%); }
+  &.type-4 { background: linear-gradient(135deg, #6366F1 0%, #0A2540 100%); }
+}
+.cover-image {
+  width: 100%;
+  height: 100%;
+}
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0A2540 0%, #1E3A5F 100%);
+}
+.placeholder-icon {
+  font-size: 48px;
+  opacity: 0.5;
+}
+.project-type-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0A2540;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+}
+.project-content {
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.project-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.project-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.project-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
 }
 </style>
