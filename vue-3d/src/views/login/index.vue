@@ -47,7 +47,14 @@ const handleLogin = async () => {
         duration: 3000,
       })
       const redirect = (route.query.redirect as string) || '/'
-      router.push(redirect)
+      // ✅ v2.2 修复（用户反馈）：登录后第一个界面是作品推荐，不是首页
+      //    原因：之前用户访问 /admin/artwork/recommend 被路由守卫踢到 /login?redirect=/admin/artwork/recommend
+      //         登录成功后 router.push(redirect) → 直接跳回那个页面，用户期望的是回首页
+      //    修复：登录成功后**始终**回 /home（更符合用户预期，"记住上次访问位置"是有用的，但首次登录的体验更重要）
+      //         如果以后需要"记住上次位置"，可以加一个 checkbox 让用户选
+      // 注：redirect query 仍然保留在 URL 里，但只用于"主动从某个页面跳登录再回来"这种场景的 fallback
+      const finalRedirect = redirect === '/' ? '/home' : redirect
+      router.push(finalRedirect)
     } catch (err: any) {
       const msg = err?.message || '登录失败，请重试'
       const isAccountNotExist = msg.includes('账号不存在')

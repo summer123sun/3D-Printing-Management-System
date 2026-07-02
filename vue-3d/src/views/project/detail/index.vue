@@ -5,7 +5,7 @@
  * 聚合 4 张表 + 关联任务 + 阶段时间线
  * 项目负责人可编辑阶段/成员/完成/取消
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import PageHeader from '@/components/common/PageHeader.vue'
@@ -86,6 +86,16 @@ const fetchData = async (retryCount = 0) => {
   }
 }
 onMounted(fetchData)
+
+// ✅ v2.2 修复（用户反馈）：从 /project/6 跳到 /project/7 组件复用时不重新加载
+//    之前：AppMain 用 :key="r.fullPath" 应该会重新挂载，但偶尔出现 watch 不到的情况
+//    修复：兜底 watch route.params.id 变化时主动重新拉数据
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    console.log('[项目详情] 路由 id 变化', { from: oldId, to: newId })
+    fetchData()
+  }
+})
 
 /**
  * 通用：判断异常是否是 ElMessageBox 用户取消
@@ -307,6 +317,24 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       </el-button>
       <el-button @click="() => fetchData()">刷新</el-button>
     </PageHeader>
+
+    <!-- ✅ v2.2 修复（用户反馈）：项目查看整页空白
+         之前现象：项目详情页 body 完全空白，刷新才好
+         根因可能：onMounted 未触发 / 路由组件复用 / chunk 加载失败
+         修复：永远显示一个调试条（红底白字），让用户/我们一眼能看出当前状态
+         如果连这个调试条都看不到 → 组件根本没挂载（路由或 chunk 问题）
+         如果看到调试条 → fetchData 逻辑没跑通
+    -->
+    <div style="background:#ff4d4f;color:#fff;padding:8px 16px;border-radius:6px;margin-bottom:12px;font-family:monospace;font-size:12px;line-height:1.6">
+      🐛 DEBUG:
+      token={{ authStore.token ? authStore.token.slice(0, 20) + '...' : '❌空' }}
+      | projectId={{ projectId }}
+      | loadError={{ loadError || 'null' }}
+      | currentProject={{ projectStore.currentProject ? '✓' : '✗' }}
+      | project={{ projectStore.currentProject?.project ? '✓' : '✗' }}
+      | loading={{ projectStore.loading }}
+      | routeId={{ route.params.id }}
+    </div>
 
     <template v-if="loadError">
       <!-- ✅ v2.2 修复：fetchDetail 失败时显示错误信息（之前整页空白） -->
