@@ -55,14 +55,34 @@ const memberDialogVisible = ref(false)
 const memberForm = ref({ memberId: '', roleInProject: ProjectRole.PARTICIPANT, contribution: '' })
 const submittingMember = ref(false)
 
-const fetchData = async () => {
+const fetchData = async (retryCount = 0) => {
   loadError.value = null
   try {
+    // ✅ v2.2 修复（用户反馈）：项目查看空白页面
+    //    之前现象：路由切换时偶发 fetchDetail 在 onMounted 拿到时 token 还没就绪，
+    //             axios 拦截器读到旧 token（或空）→ 401 → 后端返回异常 → 页面无感失败 → 整页空白
+    //    修复 1：发请求前先确认 token 存在（避免 401 后又跳登录的死循环）
+    if (!authStore.token) {
+      console.warn('[项目详情] token 缺失，等 50ms 重试', { retryCount })
+      if (retryCount < 3) {
+        await new Promise((r) => setTimeout(r, 50))
+        return fetchData(retryCount + 1)
+      }
+      loadError.value = '登录状态丢失，请重新登录'
+      return
+    }
+    console.log('[项目详情] fetchDetail 发起', { id: projectId.value, retryCount })
     await projectStore.fetchDetail(projectId.value)
+    console.log('[项目详情] fetchDetail 成功', projectStore.currentProject?.project?.projectName)
   } catch (e: any) {
-    // 业务错误已被 request.ts 拦截器弹过通知，这里把消息存到 ref 让 template 显示
+    console.error('[项目详情] 加载失败：', e, { retryCount })
+    // 修复 2：第一次失败自动重试 1 次（应对 chunk 加载竞态 / 网络瞬断）
+    if (retryCount === 0 && e?.code !== 401) {
+      console.warn('[项目详情] 首次失败，500ms 后重试')
+      await new Promise((r) => setTimeout(r, 500))
+      return fetchData(retryCount + 1)
+    }
     loadError.value = e?.message || '加载失败，请稍后再试'
-    console.error('[项目详情] 加载失败：', e)
   }
 }
 onMounted(fetchData)
@@ -285,14 +305,14 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       <el-button v-if="isLeader && projectStore.currentProject?.project?.status !== ProjectStatus.DONE" type="danger" plain @click="handleCancel">
         取消项目
       </el-button>
-      <el-button @click="fetchData">刷新</el-button>
+      <el-button @click="() => fetchData()">刷新</el-button>
     </PageHeader>
 
     <template v-if="loadError">
       <!-- ✅ v2.2 修复：fetchDetail 失败时显示错误信息（之前整页空白） -->
       <el-card>
         <el-empty :description="loadError" :image-size="80">
-          <el-button type="primary" @click="fetchData">重新加载</el-button>
+          <el-button type="primary" @click="() => fetchData()">重新加载</el-button>
           <el-button @click="router.back()">返回上一页</el-button>
         </el-empty>
       </el-card>
@@ -466,7 +486,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
     <template v-else>
       <el-card>
         <el-empty description="项目数据加载中..." :image-size="80">
-          <el-button type="primary" @click="fetchData">重新加载</el-button>
+          <el-button type="primary" @click="() => fetchData()">重新加载</el-button>
         </el-empty>
       </el-card>
     </template>
