@@ -2,7 +2,9 @@
 /**
  * 项目列表（统一版 v2.2 round 4）
  * v2.3 重构：成员端表格 -> 卡片网格
+ * v2.12 修复：所有 :src 走 fileUrl()
  */
+import { fileUrl } from '@/utils/url'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElNotification } from 'element-plus'
@@ -219,7 +221,7 @@ const statusStyle = (status: number) => {
                 <span class="project-type-tag">{{ ProjectTypeText[proj.projectType as keyof typeof ProjectTypeText] }}</span>
                 <el-image
                   v-if="proj.coverImage"
-                  :src="proj.coverImage"
+                  :src="fileUrl(proj.coverImage)"
                   fit="cover"
                   class="cover-image"
                 >

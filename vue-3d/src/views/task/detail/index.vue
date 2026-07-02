@@ -18,6 +18,8 @@ import { useAuthStore } from '@/stores/auth'
 import { TaskStatus, TaskStatusText } from '@/types/task'
 import { Role } from '@/utils/enum'
 import { formatDate, formatWeight, formatDuration, formatFileSize } from '@/utils/format'
+// ✅ v2.12 修复：STL 文件下载链接走 fileDownloadUrl()，生产环境不再 404
+import { fileDownloadUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -225,7 +227,7 @@ const handleCancel = async () => {
           <!-- STL 文件 -->
           <el-card style="margin-top: 16px" v-if="taskStore.currentTask.stlFilePath">
             <template #header><span>STL 文件</span></template>
-            <el-link :href="taskStore.currentTask.stlFilePath" target="_blank">
+            <el-link :href="fileDownloadUrl(taskStore.currentTask.stlFilePath)" target="_blank">
               {{ taskStore.currentTask.stlFilePath.split('/').pop() }}
             </el-link>
           </el-card>

@@ -12,6 +12,8 @@ import EmptyState from '@/components/common/EmptyState.vue'
 import { useArtworkStore } from '@/stores/artwork'
 import { formatDate } from '@/utils/format'
 import { RecommendedFlag } from '@/utils/enum'
+// ✅ v2.12 修复：所有 :src 走 fileUrl()，生产环境作品预览图不再 404
+import { fileUrl } from '@/utils/url'
 
 const store = useArtworkStore()
 
@@ -89,10 +91,10 @@ const handleToggle = async (item: any) => {
           <template #default="{ row }">
             <el-image
               v-if="row.previewImage"
-              :src="row.previewImage"
+              :src="fileUrl(row.previewImage)"
               fit="cover"
               style="width: 50px; height: 50px; border-radius: 4px"
-              :preview-src-list="[row.previewImage]"
+              :preview-src-list="[fileUrl(row.previewImage)]"
             />
             <span v-else>-</span>
           </template>

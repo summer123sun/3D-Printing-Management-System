@@ -359,6 +359,12 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void updateStageStatus(Integer projectId, Integer progressId, Integer status) {
+        // ✅ v2.12 修复（审查发现）：之前 service 漏调 mustBeLeader()，
+        //    任意登录用户都能改任意项目的阶段状态，恶意社员能把项目阶段全标 DONE
+        //    顺带把项目自动从 PREPARING 切到 RUNNING → 数据脏
+        //    修法：方法首行加 mustBeLeader 校验（与 addStage / updateStage / deleteStage 一致）
+        mustBeLeader(projectId);
+
         ProjectProgress stage = mustGetStage(projectId, progressId);
 
         // 允许任意状态切换：PENDING(0) / RUNNING(1) / DONE(2) 之间可互转

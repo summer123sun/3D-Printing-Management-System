@@ -2,7 +2,9 @@
 /**
  * 我的作品（M4）
  * v2.3 重构：HeroBanner + 卡片样式
+ * v2.12 修复：所有 :src 走 fileUrl()
  */
+import { fileUrl } from '@/utils/url'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElNotification } from 'element-plus'
@@ -118,7 +120,7 @@ const handleDelete = async (id: number) => {
           <div class="artwork-cover">
             <el-image
               v-if="item.previewImage"
-              :src="item.previewImage"
+              :src="fileUrl(item.previewImage)"
               fit="cover"
               class="cover-img"
             >
@@ -188,7 +190,7 @@ const handleDelete = async (id: number) => {
           <div class="artwork-cover">
             <el-image
               v-if="item.previewImage"
-              :src="item.previewImage"
+              :src="fileUrl(item.previewImage)"
               fit="cover"
               class="cover-img"
             >

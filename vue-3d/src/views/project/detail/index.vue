@@ -24,6 +24,8 @@ import {
 } from '@/types/project'
 import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
+// ✅ v2.12 修复：所有 :src 走 fileUrl()，生产环境封面不再 404
+import { fileUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -342,7 +344,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
         <div class="hero-cover">
           <el-image
             v-if="projectStore.currentProject.project.coverImage"
-            :src="projectStore.currentProject.project.coverImage"
+            :src="fileUrl(projectStore.currentProject.project.coverImage)"
             fit="cover"
             class="hero-cover-image"
           >
@@ -395,7 +397,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <div class="left">
             <el-image
               v-if="projectStore.currentProject.project.coverImage"
-              :src="projectStore.currentProject.project.coverImage"
+              :src="fileUrl(projectStore.currentProject.project.coverImage)"
               fit="cover"
               class="cover"
             />

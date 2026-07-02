@@ -3,6 +3,7 @@
  * 作品详情（M4）
  *
  * 大图预览 + 作者信息 + 心得 + 推荐/编辑/删除按钮（按角色）
+ * v2.12 修复：所有 :src 走 fileUrl()
  * "编辑"按钮 → 跳独立编辑页 /artwork/edit/:id
  */
 import { computed, onMounted } from 'vue'
@@ -12,6 +13,7 @@ import { ArrowLeft, Edit, Star, StarFilled, View } from '@element-plus/icons-vue
 import { useArtworkStore } from '@/stores/artwork'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
+import { fileUrl } from '@/utils/url'
 import { RecommendedFlag, Role } from '@/utils/enum'
 
 const route = useRoute()
@@ -115,7 +117,7 @@ const handleDelete = async () => {
       <div v-if="store.current.previewImage || store.current.finishPhotos" class="photos">
         <el-image
           v-if="store.current.previewImage"
-          :src="store.current.previewImage"
+          :src="fileUrl(store.current.previewImage)"
           fit="contain"
           class="main-photo"
         />
@@ -123,7 +125,7 @@ const handleDelete = async () => {
           <el-image
             v-for="(url, i) in store.current.finishPhotos.split(',').filter(Boolean)"
             :key="i"
-            :src="url"
+            :src="fileUrl(url)"
             fit="cover"
             class="sub-photo"
             :preview-src-list="store.current.finishPhotos.split(',').filter(Boolean)"

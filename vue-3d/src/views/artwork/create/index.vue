@@ -21,6 +21,7 @@ import { ErrorCode } from '@/utils/enum'
 import type { PrintTask } from '@/types/task'
 import { formatDate } from '@/utils/format'
 import { getToken } from '@/utils/auth'
+import { fileUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -166,9 +167,10 @@ const closeFail = () => {
   failDialog.value.visible = false
 }
 
-const previewImageUrl = computed(() => form.value.previewImage)
+// ✅ v2.12 修复：所有 :src 走 fileUrl()，生产环境图片不再 404
+const previewImageUrl = computed(() => fileUrl(form.value.previewImage))
 const photosUrls = computed(() =>
-  form.value.finishPhotos ? form.value.finishPhotos.split(',').filter(Boolean) : [],
+  (form.value.finishPhotos ? form.value.finishPhotos.split(',').filter(Boolean) : []).map(fileUrl),
 )
 </script>
 

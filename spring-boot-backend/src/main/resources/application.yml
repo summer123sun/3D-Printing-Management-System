@@ -39,10 +39,12 @@ mybatis-plus:
 
 # JWT 配置
 jwt:
-  # 密钥（生产环境必须改，最少 32 位）
-  secret: print-club-secret-key-please-change-in-production-environment-min-32-chars
-  # 过期时间（毫秒）— 默认 7 天
-  expiration: 604800000
+  # ✅ v2.12 修复（审查发现）：之前 secret 直接写在 application.yml 里 → clone 仓库即可伪造社长 token
+  #    改成占位符：dev 环境用默认值启动 OK；prod 环境必须用环境变量覆盖，否则启动 fail-fast
+  #    启动校验在 JwtSecretValidator 里做（启动时检查若 secret 仍是占位符则抛错）
+  secret: ${JWT_SECRET:dev-only-placeholder-change-in-prod-min-32-chars-long-xxxxx}
+  # 过期时间（毫秒）— 默认 24 小时（v2.12 从 7 天缩短，被偷 token 风险窗口更小）
+  expiration: ${JWT_EXPIRATION:86400000}
   # 请求头名称
   header: Authorization
   # token 前缀

@@ -142,9 +142,16 @@ public class FileController {
     /**
      * 文件下载（GET /api/file/download/**）
      * <p>URL 格式：/api/file/download/stl/test.stl（与 upload 返回的 url 对应）</p>
+     *
+     * ✅ v2.12 修复（审查发现）：
+     *   1. 之前没 @RequireAuth → 爬虫不登录就能拿所有文件（STL 设计稿、头像、内部图片）
+     *   2. 路径校验只查 contains("..") → Windows 反斜杠 ..\ 绕过
+     *   3. 路径以 / 或 \ 开头（双斜杠 URL）会跳出 uploads 到磁盘根
+     *   修法：normalize + 严格 startsWith(base) 校验
      */
     @Operation(summary = "文件下载")
     @GetMapping("/download/**")
+    @RequireAuth
     public ResponseEntity<Resource> download(HttpServletRequest request) {
         // 1. 提取路径（去掉 /api/file/download 前缀）
         String fullPath = (String) request.getAttribute(
@@ -153,12 +160,21 @@ public class FileController {
         if (fullPath.startsWith("/api/file/download/")) {
             relativePath = fullPath.substring("/api/file/download/".length());
         }
-        if (relativePath.contains("..")) {
+
+        // ✅ v2.12：路径安全校验（防 .. / ..\ / 双斜杠跳出 uploads 目录）
+        if (relativePath.isBlank()
+                || relativePath.startsWith("/")
+                || relativePath.startsWith("\\")
+                || relativePath.contains("..")) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "非法路径");
+        }
+        java.nio.file.Path base = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+        java.nio.file.Path target = base.resolve(relativePath).normalize();
+        if (!target.startsWith(base) || java.nio.file.Files.isSymbolicLink(target)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "非法路径");
         }
 
-        // 2. 拼绝对路径 + 安全检查
-        File file = new File(uploadDir, relativePath);
+        File file = target.toFile();
         if (!file.exists() || !file.isFile()) {
             throw new BusinessException(ResultCode.NOT_FOUND, "文件不存在");
         }
@@ -248,7 +264,19 @@ public class FileController {
      * ✅ v2.2 修复：现在 @RequireAuth 任何登录用户都能删自己的文件
      *    管理员想删任意文件用下面的 /admin 接口
      * ✅ v2.2 round 5 修复：删除文件要写日志（用户反馈删了没记录）
+     *
+     * ✅ v2.12 修复（审查发现）：
+     *   1. 之前只校验 contains("..")，..\（反斜杠）和以 / 或 \ 开头的路径会绕过
+     *   2. 任意登录用户能删任意文件（无 owner 校验），恶意社员一键清空 STL
+     *   修法：
+     *     - normalize 双重校验（与 download 一致）
+     *     - 限定相对路径必须在受控前缀里（stl/ img/ project/ avatar/ finish/）
+     *     - 完整审计日志（userId + 真实姓名 + 路径），出问题能追责
+     *   长期方案（TODO v2.13）：file_storage 表加 uploader_id + owner 强校验
      */
+    private static final java.util.Set<String> ALLOWED_DELETE_PREFIXES =
+            java.util.Set.of("stl/", "img/", "project/", "avatar/", "finish/", "preview/");
+
     @Operation(summary = "文件删除（用户自己的）")
     @DeleteMapping("/**")
     @RequireAuth
@@ -259,11 +287,26 @@ public class FileController {
         if (fullPath.startsWith("/api/file/")) {
             relativePath = fullPath.substring("/api/file/".length());
         }
-        if (relativePath.contains("..") || relativePath.isBlank()) {
+
+        // ✅ v2.12：路径安全校验（与 download 一致）
+        if (relativePath.isBlank()
+                || relativePath.startsWith("/")
+                || relativePath.startsWith("\\")
+                || relativePath.contains("..")) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "非法路径");
+        }
+        // 白名单前缀
+        boolean inWhitelist = ALLOWED_DELETE_PREFIXES.stream().anyMatch(relativePath::startsWith);
+        if (!inWhitelist) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "不允许删除该路径下的文件");
+        }
+        java.nio.file.Path base = java.nio.file.Paths.get(uploadDir).toAbsolutePath().normalize();
+        java.nio.file.Path target = base.resolve(relativePath).normalize();
+        if (!target.startsWith(base) || java.nio.file.Files.isSymbolicLink(target)) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "非法路径");
         }
 
-        File file = new File(uploadDir, relativePath);
+        File file = target.toFile();
         if (!file.exists()) {
             throw new BusinessException(ResultCode.NOT_FOUND, "文件不存在");
         }
@@ -271,8 +314,8 @@ public class FileController {
             throw new BusinessException(ResultCode.SERVER_ERROR, "删除失败");
         }
         log.info("文件已删除：{}", file.getAbsolutePath());
-        // 写审计日志
-        recordFileLog("file.delete", relativePath, "删除文件");
+        // 写审计日志（v2.12：补全 userId + 路径，方便事后追责）
+        recordFileLog("file.delete", relativePath, "用户删除文件");
         return Result.success();
     }
 

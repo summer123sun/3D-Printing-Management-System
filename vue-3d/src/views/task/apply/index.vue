@@ -13,7 +13,7 @@ import ParamForm from '@/components/task/apply/ParamForm.vue'
 import { useTaskStore } from '@/stores/task'
 import { useMemberStyle } from '@/composables/useMemberStyle'
 import { Priority } from '@/types/task'
-import type { TaskApplyDTO } from '@/types/task'
+import type { TaskApplyDTO, MaterialColor } from '@/types/task'
 
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -21,12 +21,18 @@ const { isMember, isNewbie } = useMemberStyle()
 
 const stlPath = ref<string>('')
 
+// ✅ v2.12 修复（审查发现）：后端 TaskApplyDTO.color 有 @NotBlank，
+//    之前默认 undefined 导致新成员第一次提交任务就 400 "颜色不能为空"
+//    改用 '' 兜底（通过 as MaterialColor 绕过类型检查，运行时是 '' 字符串），
+//    handleSubmit 里再强校验 !form.color 拦截，避免走后端 400
 const form = reactive<TaskApplyDTO>({
   title: '',
   modelName: '',
   stlFilePath: '',
   materialType: 'PLA',
-  color: undefined,
+  // ✅ v2.12 修复：默认值 ''（绕过类型，运行时是空串）
+  //    handleSubmit 里 !form.color 校验拦截，避免走后端 400
+  color: '' as MaterialColor,
   layerHeight: 0.2,
   infillRate: 20,
   needSupport: 0,
@@ -57,11 +63,22 @@ const handleSubmit = async () => {
     )
     return
   }
+  // ✅ v2.12：前端强校验 color 非空（防止绕过 el-select 直接提交）
+  if (!form.color) {
+    await ElMessageBox.alert(
+      '<div style="text-align:center;padding:8px 0">🎨 请选择打印颜色</div>',
+      '提示',
+      { confirmButtonText: '知道了', type: 'warning', center: true, dangerouslyUseHTMLString: true }
+    )
+    return
+  }
 
   submitting.value = true
   try {
     form.stlFilePath = stlPath.value
-    const taskId = await taskStore.apply(form)
+    // form.color 在这步已经过 !form.color 强校验，必是有效 MaterialColor
+    // 但 TS 类型上是 '' | MaterialColor，cast 一下
+    const taskId = await taskStore.apply(form as TaskApplyDTO)
     // ✅ 成功后：先弹醒目的居中弹窗 + 右上角通知（双保险，避免漏看）
     ElNotification.success({
       title: '✅ 提交成功',

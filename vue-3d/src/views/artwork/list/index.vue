@@ -2,7 +2,9 @@
 /**
  * 作品列表（M4 - 公开浏览）
  * v2.3 重构：增强卡片样式 + HeroBanner
+ * v2.12 修复：所有 :src 走 fileUrl()，生产环境图片不再 404
  */
+import { fileUrl } from '@/utils/url'
 import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox, ElNotification } from 'element-plus'
@@ -150,7 +152,7 @@ const canDelete = () => {
           <div class="artwork-cover">
             <el-image
               v-if="item.previewImage"
-              :src="item.previewImage"
+              :src="fileUrl(item.previewImage)"
               fit="cover"
               class="cover-img"
             >
@@ -211,7 +213,7 @@ const canDelete = () => {
           <div class="artwork-cover">
             <el-image
               v-if="item.previewImage"
-              :src="item.previewImage"
+              :src="fileUrl(item.previewImage)"
               fit="cover"
               class="cover-img"
             >

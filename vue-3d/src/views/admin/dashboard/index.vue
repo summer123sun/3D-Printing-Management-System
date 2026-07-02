@@ -4,15 +4,29 @@
  *
  * 4 个核心数字卡片 + 7 天趋势图 + 多维度统计
  */
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Document, Goods, Operation, Printer, Star, Timer, TrendCharts, User } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import * as statsApi from '@/api/stats'
 import type { DashboardData, TaskStats, MaterialStats, MemberRank, PrinterStats } from '@/types/stats'
+import { TaskStatusText } from '@/types/task'
 import { formatDuration } from '@/utils/format'
 
 const dashboard = ref<DashboardData | null>(null)
 const taskStats = ref<TaskStats | null>(null)
+
+// ✅ v2.12 修复（审查发现）：monthly 全 0 时 Math.max(0,1)=1 → 0/1*100 = 0% 理论 OK，
+//    但当 monthly 数组本身是 undefined 或 item.count 是 undefined 时会出 NaN% / TypeError
+//    修法：computed 提前算 maxCount（兜底 1）+ byStatusTotal 兜底 0，bar 高度永远不会是 NaN
+const monthlyMaxCount = computed(() => {
+  const list = taskStats.value?.monthly ?? []
+  const counts = list.map((m) => Number(m.count) || 0)
+  return Math.max(...counts, 1)
+})
+const byStatusTotal = computed(() => {
+  const list = taskStats.value?.byStatus ?? []
+  return list.reduce((s, x) => s + (Number(x.count) || 0), 0) || 1
+})
 const materialStats = ref<MaterialStats | null>(null)
 const memberRanking = ref<MemberRank[]>([])
 const printerStats = ref<PrinterStats | null>(null)
@@ -151,16 +165,18 @@ watch(dashboard, updateTrend, { immediate: true })
             <span><el-icon><Operation /></el-icon> 任务状态分布</span>
           </template>
           <div class="status-list">
-            <div v-for="item in taskStats?.byStatus" :key="item.status" class="status-item">
+            <div v-for="item in taskStats?.byStatus ?? []" :key="item.status" class="status-item">
               <div class="status-info">
                 <span class="status-dot" :class="`status-${item.status}`"></span>
-                <span>{{ ['', '', '已通过', '已驳回', '排队中', '打印中', '已完成', '已取消'][item.status] || '待审批' }}</span>
+                <!-- ✅ v2.12 顺手修：之前硬编码数组索引错位，status=0/1 显示空字符串
+                     改用 TaskStatusText 枚举映射（与 task/my 等页一致） -->
+                <span>{{ TaskStatusText[item.status as keyof typeof TaskStatusText] || `状态${item.status}` }}</span>
               </div>
               <div class="status-bar">
                 <div
                   class="status-fill"
                   :class="`status-${item.status}`"
-                  :style="{ width: (item.count / (taskStats?.byStatus?.reduce((s, x) => s + x.count, 0) || 1) * 100) + '%' }"
+                  :style="{ width: ((Number(item.count) || 0) / byStatusTotal * 100) + '%' }"
                 />
               </div>
               <div class="status-count">{{ item.count }}</div>
@@ -178,11 +194,11 @@ watch(dashboard, updateTrend, { immediate: true })
             <span><el-icon><TrendCharts /></el-icon> 最近 6 个月任务数</span>
           </template>
           <div class="month-chart">
-            <div v-for="item in taskStats?.monthly" :key="item.month" class="month-bar">
+            <div v-for="item in taskStats?.monthly ?? []" :key="item.month" class="month-bar">
               <span class="month-value">{{ item.count }}</span>
               <div
                 class="month-fill"
-                :style="{ height: (item.count / Math.max(...(taskStats?.monthly || []).map(m => m.count), 1) * 100) + '%' }"
+                :style="{ height: ((Number(item.count) || 0) / monthlyMaxCount * 100) + '%' }"
               />
               <div class="month-label">{{ item.month }}</div>
             </div>

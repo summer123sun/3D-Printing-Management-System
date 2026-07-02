@@ -176,7 +176,10 @@ public class StatsServiceImpl implements StatsService {
                 .eq("status", 5)
                 .groupBy("applicant_id")
                 .orderByDesc("done_count")
-                .last("LIMIT " + limit);
+                // ✅ v2.12 修复（审查发现）：wrapper.last() 是字符串拼接（非预编译），
+                //    limit 直接来自 controller ?limit=10 参数 → SQL 注入
+                //    修法：强制截断到 [1, 100] 区间，是 int 后再拼（不再走字符串 SQL 注入向量）
+                .last("LIMIT " + Math.min(Math.max(limit, 1), 100));
         List<Map<String, Object>> rows = taskMapper.selectMaps(wrapper);
 
         // v2：批量注入社员姓名（前端 Top 8 展示用，跟 AppHeader 显示姓名一致）

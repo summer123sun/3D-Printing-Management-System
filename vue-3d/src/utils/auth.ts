@@ -2,8 +2,11 @@
  * Token 存取工具
  */
 
-const TOKEN_KEY = 'print_club_token'
-const USER_KEY = 'print_club_user'
+// ✅ v2.12 修复（审查发现）：之前 TOKEN_KEY = 'print_club_token'，
+//    stores/auth.ts:70 监听的是 'auth-token' —— 两个 key 对不上导致多 Tab 同步从未真生效过
+//    统一改用 'auth-token'（与 stores/auth.ts 注释和监听器一致）
+const TOKEN_KEY = 'auth-token'
+const USER_KEY = 'auth-user'
 
 export const getToken = (): string | null => {
   return localStorage.getItem(TOKEN_KEY)

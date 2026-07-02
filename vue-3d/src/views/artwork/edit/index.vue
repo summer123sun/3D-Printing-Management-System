@@ -22,6 +22,7 @@ import type { Artwork } from '@/types/artwork'
 import { ErrorCode } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
 import { getToken } from '@/utils/auth'
+import { fileUrl } from '@/utils/url'
 
 const route = useRoute()
 const router = useRouter()
@@ -50,10 +51,10 @@ const original = ref<Artwork | null>(null)
 const uploadHeaders = computed(() => ({ Authorization: `Bearer ${getToken()}` }))
 const uploadUrl = '/api/file/upload'
 
-// 计算属性
-const previewImageUrl = computed(() => form.value.previewImage)
+// ✅ v2.12 修复：所有 :src 走 fileUrl()，生产环境图片不再 404
+const previewImageUrl = computed(() => fileUrl(form.value.previewImage))
 const photosUrls = computed(() =>
-  form.value.finishPhotos ? form.value.finishPhotos.split(',').filter(Boolean) : [],
+  (form.value.finishPhotos ? form.value.finishPhotos.split(',').filter(Boolean) : []).map(fileUrl),
 )
 
 const loadData = async () => {
