@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.stream.Collectors;
 
@@ -57,5 +58,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Result.error(ResultCode.SERVER_ERROR));
+    }
+
+    /**
+     * ✅ v2.13 修复（审查发现）：之前文件超过 max-file-size 直接 500，
+     *    前端 catch 静默失败，用户反复提交都"没反应"
+     *    修法：单独捕获 MaxUploadSizeExceededException，返回友好错误
+     *    同时处理 FileSizeLimitExceededException（Tomcat 内部抛的）
+     */
+    @ExceptionHandler({MaxUploadSizeExceededException.class,
+                       org.apache.tomcat.util.http.fileupload.FileSizeLimitExceededException.class,
+                       org.apache.tomcat.util.http.fileupload.FileUploadBase.SizeException.class})
+    public Result<Void> handleUploadSizeExceeded(Exception e) {
+        log.warn("文件上传超过大小限制：{}", e.getMessage());
+        return Result.error(ResultCode.BAD_REQUEST.getCode(),
+                "文件过大，单个文件最大 50MB");
     }
 }

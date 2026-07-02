@@ -11,12 +11,16 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
-import StatusTag from '@/components/common/EmptyState.vue'
+// ✅ v2.13 修复（审查发现）：之前误把 EmptyState import 为 StatusTag
+//    误导变量名 + 未来重构会爆，改回原名
+import EmptyState from '@/components/common/EmptyState.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { memberList, updateMemberRole, updateMemberSkill, addMember } from '@/api/user'
 import { Role, RoleText, SkillLevel, SkillLevelText, type Member } from '@/types/member'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate } from '@/utils/format'
+// ✅ v2.13 修复：新增成员用严格 10 位学号（与登录宽松版分开，统一到 validate.ts）
+import { validateStudentIdStrict } from '@/utils/validate'
 
 const authStore = useAuthStore()
 
@@ -172,7 +176,8 @@ const addForm = reactive({
 const addFormRules = {
   studentId: [
     { required: true, message: '学号不能为空', trigger: 'blur' },
-    { pattern: /^\d{10}$/, message: '学号必须是 10 位数字', trigger: 'blur' },
+    // ✅ v2.13 修复：用 validateStudentIdStrict 严格 10 位（统一到 validate.ts）
+    { validator: validateStudentIdStrict, trigger: 'blur' },
   ],
   name: [
     { required: true, message: '姓名不能为空', trigger: 'blur' },
@@ -347,7 +352,7 @@ const handleAdd = async () => {
       </el-table>
 
       <div v-if="list.length === 0 && !loading" class="empty">
-        <StatusTag description="没有匹配的成员" hint="试试清空搜索条件" />
+        <EmptyState description="没有匹配的成员" hint="试试清空搜索条件" />
       </div>
 
       <div v-if="total > filter.size" class="pagination-wrap">

@@ -27,6 +27,15 @@ export const myTasks = (query: TaskQuery) => {
   return get<PageResult<PrintTask>>('/task/my', query as Record<string, unknown>)
 }
 
+/**
+ * ✅ v2.13 新增：可登记作品的任务列表（status=5/8 且未登记）
+ * 替代之前 artwork/create 复用 myTasks + 前端 filter 的做法，
+ * 避免 myTasks 默认过滤已登记任务导致用户误以为任务消失
+ */
+export const registrableTasks = (query: TaskQuery) => {
+  return get<PageResult<PrintTask>>('/task/registrable', query as Record<string, unknown>)
+}
+
 /** 待审批任务（技术骨干） */
 export const pendingTasks = (query: TaskQuery) => {
   return get<PageResult<PrintTask>>('/task/pending', query as Record<string, unknown>)

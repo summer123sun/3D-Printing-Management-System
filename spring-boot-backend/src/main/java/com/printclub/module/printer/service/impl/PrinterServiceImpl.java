@@ -8,6 +8,7 @@ import com.printclub.common.result.PageResult;
 import com.printclub.common.util.PageUtils;
 import com.printclub.common.result.ResultCode;
 import com.printclub.module.printer.dto.MaintenanceCreateDTO;
+import com.printclub.module.printer.dto.PrinterUpdateDTO;
 import com.printclub.module.printer.entity.Maintenance;
 import com.printclub.module.printer.entity.Printer;
 import com.printclub.module.printer.mapper.MaintenanceMapper;
@@ -79,13 +80,24 @@ public class PrinterServiceImpl implements PrinterService {
     }
 
     @Override
-    public void update(Printer printer) {
-        Printer exist = printerMapper.selectById(printer.getPrinterId());
+    public void update(PrinterUpdateDTO dto, String printerId) {
+        // ✅ v2.13 修复（审查发现）：之前 update(Printer) 用 entity 接 DTO，
+        //    status / totalPrintHours / createTime 等字段被前端 form 缺失 → updateById 清成 null
+        //    修法：只把 dto 里非 null 的字段 merge 到已存在的 entity
+        Printer exist = printerMapper.selectById(printerId);
         if (exist == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "打印机不存在");
         }
-        printerMapper.updateById(printer);
-        log.info("更新打印机：{}", printer.getPrinterId());
+        if (dto.getModel() != null) exist.setModel(dto.getModel());
+        if (dto.getBrand() != null) exist.setBrand(dto.getBrand());
+        if (dto.getNozzleSize() != null) exist.setNozzleSize(dto.getNozzleSize());
+        if (dto.getBuildVolume() != null) exist.setBuildVolume(dto.getBuildVolume());
+        if (dto.getLocation() != null) exist.setLocation(dto.getLocation());
+        if (dto.getPurchaseDate() != null) exist.setPurchaseDate(dto.getPurchaseDate());
+        if (dto.getRemark() != null) exist.setRemark(dto.getRemark());
+        // status / totalPrintHours / createTime 保留原值（不允许前端直接改）
+        printerMapper.updateById(exist);
+        log.info("更新打印机：{}", printerId);
     }
 
     @Override

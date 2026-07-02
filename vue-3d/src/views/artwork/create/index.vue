@@ -16,9 +16,10 @@ import { Plus, Picture, UploadFilled, Delete } from '@element-plus/icons-vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import AppDialog from '@/components/common/AppDialog.vue'
 import { createArtwork } from '@/api/artwork'
-import { myTasks } from '@/api/task'
+import { myTasks, registrableTasks } from '@/api/task'
 import { ErrorCode } from '@/utils/enum'
 import type { PrintTask } from '@/types/task'
+import { TaskStatus } from '@/types/task'
 import { formatDate } from '@/utils/format'
 import { getToken } from '@/utils/auth'
 import { fileUrl } from '@/utils/url'
@@ -59,7 +60,10 @@ const photosFileList = ref<any[]>([])
 const loadAvailableTasks = async () => {
   loadingTasks.value = true
   try {
-    const res = await myTasks({ status: '5,8' as any, size: 100 })  // DONE(5) + PICKED_UP(8)：取件后也能登记
+    // ✅ v2.13 修复（审查发现）：status 类型扩展为 TaskStatus | number | string 后可以去掉 as any
+    //    改用专用 /task/registrable 接口（已 DONE/PICKED_UP 且未登记过作品），
+    //    避免 myTasks 默认过滤已登记任务导致用户回 /task/my 看不到
+    const res = await registrableTasks({ size: 100 })
     availableTasks.value = res.list || []  // PageResult 字段是 list 不是 records
   } finally {
     loadingTasks.value = false

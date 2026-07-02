@@ -6,6 +6,7 @@ import com.printclub.common.result.PageResult;
 import com.printclub.common.result.Result;
 import com.printclub.common.util.SecurityContext;
 import com.printclub.module.printer.dto.MaintenanceCreateDTO;
+import com.printclub.module.printer.dto.PrinterUpdateDTO;
 import com.printclub.module.printer.entity.Maintenance;
 import com.printclub.module.printer.entity.Printer;
 import com.printclub.module.printer.service.PrinterService;
@@ -69,9 +70,10 @@ public class PrinterController {
     @PutMapping("/{id}")
     @RequireAuth
     @RequireRole({1})
-    public Result<Void> update(@PathVariable("id") String id, @RequestBody @Valid Printer printer) {
-        printer.setPrinterId(id);
-        printerService.update(printer);
+    // ✅ v2.13 修复：之前用 @RequestBody Printer entity → status / totalPrintHours 被清 null
+    //    改用 PrinterUpdateDTO，只接前端表单字段，service 手动 merge 保留原值
+    public Result<Void> update(@PathVariable("id") String id, @RequestBody @Valid PrinterUpdateDTO dto) {
+        printerService.update(dto, id);
         return Result.success();
     }
 

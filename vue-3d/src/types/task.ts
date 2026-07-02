@@ -147,8 +147,13 @@ export interface PickupDTO {
 export interface TaskQuery {
   page?: number
   size?: number
-  /** 任务状态（可选，按状态筛选） */
-  status?: TaskStatus | number
+  /**
+   * 任务状态（可选，按状态筛选）
+   * ✅ v2.13 修复（审查发现）：之前 status?: TaskStatus | number 太严，
+   *   artwork/create 用 '5,8' as any 强转绕过类型检查 → 后端 split(',') 解析为 in(5,8) OK 但 TS 类型不一致
+   *   改用 TaskStatus | number | string 后端多值支持（逗号分隔）
+   */
+  status?: TaskStatus | number | string
   /** 打印机编号 */
   printerId?: string
   /** 申请人学号 */

@@ -35,18 +35,23 @@ const loading = ref(false)
 const fetchData = async () => {
   loading.value = true
   try {
-    const [d, t, m, p, r] = await Promise.all([
+    // ✅ v2.13 修复（审查发现）：之前用 Promise.all 任何一个失败整批 UI 空白
+    //    5 个统计接口任一 500（后端新部署未接 ES 聚合等）→ dashboard 整页空白
+    //    修法：Promise.allSettled + 失败的接口用空对象兜底，保证用户看到部分数据
+    const results = await Promise.allSettled([
       statsApi.dashboard(),
       statsApi.taskStats(),
       statsApi.materialStats(),
       statsApi.printerStats(),
       statsApi.memberRanking(8),
     ])
-    dashboard.value = d
-    taskStats.value = t
-    materialStats.value = m
-    printerStats.value = p
-    memberRanking.value = r
+    const unwrap = <T>(r: PromiseSettledResult<T>, fallback: T): T =>
+      r.status === 'fulfilled' ? r.value : fallback
+    dashboard.value = unwrap(results[0], null)
+    taskStats.value = unwrap(results[1], null)
+    materialStats.value = unwrap(results[2], null)
+    printerStats.value = unwrap(results[3], null)
+    memberRanking.value = unwrap(results[4], [])
   } finally {
     loading.value = false
   }

@@ -19,9 +19,14 @@ public interface TaskService {
     String apply(TaskApplyDTO dto);
 
     /**
-     * 我的任务列表（分页）
+     * 我的任务列表（分页）— v2.13 不过滤已登记作品任务
      */
     PageResult<PrintTask> myTasks(TaskQuery query);
+
+    /**
+     * 可登记作品的任务列表（status=5/8 且未登记）— v2.13 新增
+     */
+    PageResult<PrintTask> registrableTasks(TaskQuery query);
 
     /**
      * 待审批任务列表（技术骨干用）

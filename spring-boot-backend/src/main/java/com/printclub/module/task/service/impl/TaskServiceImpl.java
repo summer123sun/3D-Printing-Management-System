@@ -4,6 +4,7 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.printclub.common.exception.BusinessException;
 import com.printclub.common.result.PageResult;
@@ -67,9 +68,26 @@ public class TaskServiceImpl implements TaskService {
             throw new BusinessException(ResultCode.UNAUTHORIZED);
         }
 
-        // 1. 生成任务编号：P + yyyyMMdd + 3位序号（演示用 UUID 简化）
+        // 1. 生成任务编号：P + yyyyMMdd + 4位序号
+        // ✅ v2.13 修复（审查发现）：之前用 UUID 前 4 位只有 16^4 = 65536 种，
+        //    演示用没问题，但 30+ 人小社团同一天可能撞 PK → 500 报错
+        //    修法：查今天已申请任务数 +1 做序号后缀（4位 0000-9999，足够）
         String dateStr = LocalDate.now().format(TASK_ID_DATE);
-        String taskId = "P" + dateStr + "-" + IdUtil.fastSimpleUUID().substring(0, 4).toUpperCase();
+        String taskId;
+        int maxRetry = 5;
+        for (int retry = 0; retry < maxRetry; retry++) {
+            long todayCount = taskMapper.selectCount(
+                    new LambdaQueryWrapper<PrintTask>().likeRight(PrintTask::getTaskId, "P" + dateStr));
+            taskId = String.format("P%s-%04d", dateStr, todayCount + 1);
+            // 二次校验：万一序号已被并发占用，查重
+            if (taskMapper.selectById(taskId) == null) {
+                break;
+            }
+            if (retry == maxRetry - 1) {
+                // 重试 5 次都撞 → 用 UUID 后缀兜底
+                taskId = "P" + dateStr + "-" + IdUtil.fastSimpleUUID().substring(0, 4).toUpperCase();
+            }
+        }
 
         // 2. DTO → Entity
         PrintTask task = new PrintTask();
@@ -110,15 +128,33 @@ public class TaskServiceImpl implements TaskService {
         wrapper.eq(PrintTask::getApplicantId, studentId)
                 .orderByDesc(PrintTask::getApplyTime);
 
-        // v2 修复：/task/my 默认排除"已登记过作品"的任务（task_id 不在 artwork 表里）
-        // 业务语义：/task/my = "可登记任务列表"，已登记的去 /artwork/my 看
-        // 避免用户重复选同一个任务登记（后端虽然有 UNIQUE 约束会报错，但前端体验更差）
-        wrapper.notInSql(PrintTask::getTaskId,
-                "SELECT task_id FROM artwork WHERE task_id IS NOT NULL");
+        // ✅ v2.13 修复（审查发现）：之前默认排除"已登记过作品"的任务，
+        //    用户登记作品后回 /task/my 看不到那个任务 → 误以为任务消失
+        //    修法：/task/my 不过滤；作品登记用单独的 /task/registrable 端点过滤
 
         applyCommonFilters(wrapper, query);
         PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
         // v2：批量注入申请人/审批人/打印机 名字
+        fillTaskRelationalNames(result.getList());
+        return result;
+    }
+
+    @Override
+    public PageResult<PrintTask> registrableTasks(TaskQuery query) {
+        String studentId = SecurityContext.getCurrentUserId();
+        Page<PrintTask> page = new Page<>(query.getPage(), query.getSize());
+
+        LambdaQueryWrapper<PrintTask> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PrintTask::getApplicantId, studentId)
+                // status 5 (DONE) + 8 (PICKED_UP)：取件后也能登记
+                .in(PrintTask::getStatus, PrintTask.STATUS_DONE, PrintTask.STATUS_PICKED_UP)
+                // 排除已登记过作品的（task_id 在 artwork 表里）
+                .notInSql(PrintTask::getTaskId,
+                        "SELECT task_id FROM artwork WHERE task_id IS NOT NULL")
+                .orderByDesc(PrintTask::getFinishTime);
+
+        applyCommonFilters(wrapper, query);
+        PageResult<PrintTask> result = PageUtils.toResult(taskMapper.selectPage(page, wrapper));
         fillTaskRelationalNames(result.getList());
         return result;
     }
@@ -537,10 +573,18 @@ public class TaskServiceImpl implements TaskService {
     public Object stats() {
         // 简单版：返回各状态的任务数
         Map<String, Object> result = new HashMap<>();
-        for (int s = 0; s <= 6; s++) {
-            long count = taskMapper.selectCount(
-                    new LambdaQueryWrapper<PrintTask>().eq(PrintTask::getStatus, s));
-            result.put("status_" + s, count);
+        // ✅ v2.13 修复（审查发现）：之前循环 7 次 selectCount 走 7 个 SQL，
+        //    而且 hardcode status 0-6 漏了 PICKED_UP(8) → 已取件永远显示 0
+        //    修法：1 个 GROUP BY SQL 一次查完所有状态
+        QueryWrapper<PrintTask> wrapper = new QueryWrapper<>();
+        wrapper.select("status", "COUNT(*) AS cnt").groupBy("status");
+        List<Map<String, Object>> rows = taskMapper.selectMaps(wrapper);
+        for (Map<String, Object> row : rows) {
+            Object s = row.get("status");
+            Object cnt = row.get("cnt");
+            if (s != null) {
+                result.put("status_" + s, cnt);
+            }
         }
         return result;
     }

@@ -5,6 +5,7 @@ import com.printclub.module.artwork.entity.Artwork;
 import com.printclub.module.artwork.mapper.ArtworkMapper;
 import com.printclub.module.material.entity.MaterialLog;
 import com.printclub.module.material.mapper.MaterialLogMapper;
+import com.printclub.module.material.service.MaterialService;
 import com.printclub.module.printer.entity.Printer;
 import com.printclub.module.printer.mapper.PrinterMapper;
 import com.printclub.module.stats.service.StatsService;
@@ -35,6 +36,8 @@ public class StatsServiceImpl implements StatsService {
     private final MaterialLogMapper materialLogMapper;
     private final PrinterMapper printerMapper;
     private final com.printclub.module.user.mapper.MemberMapper memberMapper;
+    // ✅ v2.13：复用 MaterialService.stockList() 拿真实 MaterialStockVO
+    private final MaterialService materialService;
 
     @Override
     public Object dashboard() {
@@ -141,7 +144,11 @@ public class StatsServiceImpl implements StatsService {
         result.put("byMaterial", materialLogMapper.selectMaps(wrapper));
 
         // 当前库存
-        result.put("currentStock", materialLogMapper.selectList(null));  // 简化：返回所有流水
+        // ✅ v2.13 修复（审查发现）：之前 materialLogMapper.selectList(null) 把整个流水表 dump 给前端，
+        //    前端期望 MaterialStock[]（materialType/color/currentStock/lastUpdateTime）但拿到的是 MaterialLog（logId/weightChange/balance/operationType...）
+        //    字段名完全对不上 → dashboard "当前库存" 区域显示错位
+        //    修法：调 materialService.stockList() 拿真实 MaterialStockVO
+        result.put("currentStock", materialService.stockList(null));
 
         return result;
     }

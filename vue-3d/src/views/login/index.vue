@@ -12,6 +12,8 @@ import { ElMessage, ElMessageBox, ElNotification, type FormInstance } from 'elem
 import { User, Lock } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { validateStudentId, validatePassword } from '@/utils/validate'
+// ✅ v2.13 修复（XSS）：错误消息可能来自后端拼接 user input，转义防注入
+import { escapeHtml } from '@/utils/escape'
 
 const router = useRouter()
 const route = useRoute()
@@ -79,7 +81,7 @@ const handleLogin = async () => {
                 ? '密码错误'
                 : '登录失败'
             }</h3>
-            <p class="login-error-msg">${msg}</p>
+            <p class="login-error-msg">${escapeHtml(msg)}</p>
             ${
               isPasswordWrong
                 ? '<p class="login-error-hint">默认密码：<b>123456</b></p>'

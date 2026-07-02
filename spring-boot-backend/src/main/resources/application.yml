@@ -8,6 +8,10 @@ spring:
     time-zone: GMT+8
     default-property-inclusion: non_null
     charset: UTF-8
+    # ✅ v2.13 修复（审查发现）：nozzleSize / buildVolume 等 BigDecimal 默认序列化成科学计数法（4E-1）或带 .toString() 形式
+    #    WRITE_BIGDECIMAL_AS_PLAIN 让 BigDecimal 序列化为普通小数（0.4 而不是 4E-1）
+    serialization:
+      write-bigdecimal-as-plain: true
 
   # 文件上传大小限制
   servlet:

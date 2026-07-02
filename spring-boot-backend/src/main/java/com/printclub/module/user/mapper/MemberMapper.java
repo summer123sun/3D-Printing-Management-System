@@ -20,9 +20,12 @@ public interface MemberMapper extends BaseMapper<Member> {
 
     /**
      * 统计某成员参与的项目数（通过 project_member 表）
+     * ✅ v2.13 修复（审查发现）：之前 WHERE pm.status = 1 只统计进行中，
+     *    已完成项目不计入"参与项目数"，个人中心"累计参与项目"永远少
+     *    修法：去掉 status 限制，统计所有状态（用户语义是"参与过"的所有项目）
      */
     @Select("SELECT COUNT(DISTINCT pm.project_id) FROM project_member pm " +
-            "WHERE pm.member_id = #{studentId} AND pm.status = 1")
+            "WHERE pm.member_id = #{studentId}")
     Long countProjectsByStudentId(String studentId);
 
     /**

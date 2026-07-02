@@ -14,6 +14,8 @@ import { useTaskStore } from '@/stores/task'
 import { useMemberStyle } from '@/composables/useMemberStyle'
 import { Priority } from '@/types/task'
 import type { TaskApplyDTO, MaterialColor } from '@/types/task'
+// ✅ v2.13 修复（XSS）：成功弹窗里的 taskId 走 escapeHtml
+import { escapeHtml } from '@/utils/escape'
 
 const router = useRouter()
 const taskStore = useTaskStore()
@@ -123,9 +125,10 @@ const handleSubmit = async () => {
 
           <div class="success-taskid-card">
             <div class="success-taskid-label">任务编号</div>
-            <div class="success-taskid-value" onclick="navigator.clipboard.writeText('${taskId}'); this.classList.add('copied'); setTimeout(()=>this.classList.remove('copied'), 1200)" title="点击复制">
-              ${taskId}
-              <span class="success-taskid-copy">📋 点击复制</span>
+            <!-- ✅ v2.13 修复（XSS）：之前 onclick 字符串拼接 ${taskId}，后端若生成恶意 taskId 直接 JS 注入
+                 修法：去掉点击复制（XSS 风险源），taskId 走 escapeHtml 防 HTML 注入 -->
+            <div class="success-taskid-value" title="任务编号（请截图保存）">
+              ${escapeHtml(taskId)}
             </div>
           </div>
 

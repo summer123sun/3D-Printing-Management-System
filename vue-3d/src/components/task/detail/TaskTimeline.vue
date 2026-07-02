@@ -48,7 +48,9 @@ const nodes = computed<Node[]>(() => {
       current: current === TaskStatus.DONE,
     },
     {
-      status: TaskStatus.PRINTING, label: '已签收', time: t.pickupTime,
+      // ✅ v2.13 修复（审查发现）：已签收节点 status 之前写 PRINTING 错（应是 PICKED_UP=8）
+      //    done 字段用 !!t.pickupTime 兜底，渲染正常；但 TS 类型推导错位会被后续重构坑
+      status: TaskStatus.PICKED_UP, label: '已签收', time: t.pickupTime,
       done: !!t.pickupTime,
       current: false,
     },

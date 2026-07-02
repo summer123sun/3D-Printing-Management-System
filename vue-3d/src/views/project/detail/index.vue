@@ -22,10 +22,15 @@ import {
   StageStatus, StageStatusText,
   ProjectMemberStatus, ProjectType, ProjectTypeText,
 } from '@/types/project'
+// ✅ v2.13 修复：硬编码任务状态数组索引错位（status=0/1 显示空字符串）
+//    改用 TaskStatusText 枚举映射
+import { TaskStatusText } from '@/types/task'
 import { Role } from '@/utils/enum'
 import { formatDate } from '@/utils/format'
 // ✅ v2.12 修复：所有 :src 走 fileUrl()，生产环境封面不再 404
 import { fileUrl } from '@/utils/url'
+// ✅ v2.13 修复（XSS）：确认弹窗里的 user-controlled 字段（项目名）走 escapeHtml
+import { escapeHtml } from '@/utils/escape'
 
 const route = useRoute()
 const router = useRouter()
@@ -119,10 +124,10 @@ const handleComplete = async () => {
     await ElMessageBox.confirm(
       `<div style="line-height:1.9;padding:4px 0">
         <p style="font-size:14px;margin:0 0 12px">
-          确认标记项目 <b style="color:#67c23a">「${proj?.project.projectName ?? '该项目'}」</b> 为已完成？
+          确认标记项目 <b style="color:#67c23a">「${escapeHtml(proj?.project.projectName ?? '该项目')}」</b> 为已完成？
         </p>
         <div style="background: var(--bg-base);padding:10px 14px;border-radius:6px;font-size:13px;color:var(--text-regular);margin-bottom:8px">
-          <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#67c23a">已完成</b></div>
+          <div>📊 当前状态：<b>${escapeHtml(currentStatus)}</b>　→　<b style="color:#67c23a">已完成</b></div>
           <div>👥 关联成员：<b>${memberCount}</b> 人</div>
           <div>📋 关联任务：<b>${taskCount}</b> 个</div>
         </div>
@@ -163,10 +168,10 @@ const handleCancel = async () => {
     await ElMessageBox.confirm(
       `<div style="line-height:1.9;padding:4px 0">
         <p style="font-size:14px;margin:0 0 12px">
-          确认取消项目 <b style="color:#f56c6c">「${proj?.project.projectName ?? '该项目'}」</b>？
+          确认取消项目 <b style="color:#f56c6c">「${escapeHtml(proj?.project.projectName ?? '该项目')}」</b>？
         </p>
         <div style="background: color-mix(in srgb, var(--danger-color) 8%, transparent);padding:10px 14px;border-radius:6px;font-size:13px;color:var(--text-regular);margin-bottom:8px">
-          <div>📊 当前状态：<b>${currentStatus}</b>　→　<b style="color:#f56c6c">已取消</b></div>
+          <div>📊 当前状态：<b>${escapeHtml(currentStatus)}</b>　→　<b style="color:#f56c6c">已取消</b></div>
           <div>👥 关联成员：<b>${memberCount}</b> 人</div>
           <div>📋 关联任务：<b>${taskCount}</b> 个</div>
         </div>
@@ -227,7 +232,7 @@ const handleRemoveMember = async (mid: string) => {
   try {
     await ElMessageBox.confirm(
       `<div style="line-height:1.8">
-        <p style="margin:0 0 8px">确认移除成员 <b style="color:#f56c6c">${memberName}</b>（学号：${mid}）？</p>
+        <p style="margin:0 0 8px">确认移除成员 <b style="color:#f56c6c">${escapeHtml(memberName)}</b>（学号：${escapeHtml(mid)}）？</p>
         <p style="color:var(--text-secondary);font-size:13px;margin:0">
           该成员将无法再访问此项目，但其本人的账号不会被删除。
         </p>
@@ -547,7 +552,7 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
           <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
           <el-table-column label="状态" width="100">
             <template #default="{ row }">
-              <el-tag size="small" effect="dark">{{ ['', '', '已通过', '已驳回', '排队中', '打印中', '已完成', '已取消'][row.status] || '待审批' }}</el-tag>
+              <el-tag size="small" effect="dark">{{ TaskStatusText[row.status as keyof typeof TaskStatusText] || `状态${row.status}` }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="申请时间" width="160">

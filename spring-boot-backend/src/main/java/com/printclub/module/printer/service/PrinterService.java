@@ -3,6 +3,7 @@ package com.printclub.module.printer.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.printclub.common.result.PageResult;
 import com.printclub.module.printer.dto.MaintenanceCreateDTO;
+import com.printclub.module.printer.dto.PrinterUpdateDTO;
 import com.printclub.module.printer.entity.Maintenance;
 import com.printclub.module.printer.entity.Printer;
 
@@ -26,8 +27,8 @@ public interface PrinterService {
     /** 新增打印机（仅 ADMIN） */
     void create(Printer printer);
 
-    /** 修改打印机（仅 ADMIN） */
-    void update(Printer printer);
+    /** 修改打印机（仅 ADMIN） — v2.13 改用 DTO 接参，保留 status/totalPrintHours 不被清空 */
+    void update(PrinterUpdateDTO dto, String printerId);
 
     /** 删除打印机（仅 ADMIN，限制：状态必须为报废） */
     void delete(String printerId);

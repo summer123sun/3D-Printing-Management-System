@@ -76,7 +76,8 @@ export const useProjectStore = defineStore('project', () => {
 
   // 成员
   const addMember = async (id: number, dto: AddMemberDTO) => {
-    await projectApi.addMember(id, dto)
+    // ✅ v2.13 修复：api/project.ts 的 addMember 改名为 addProjectMember
+    await projectApi.addProjectMember(id, dto)
   }
 
   const removeMember = async (id: number, mid: string) => {

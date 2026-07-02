@@ -38,8 +38,12 @@ export const updateProject = (id: number, dto: ProjectCreateDTO) =>
 export const cancelProject = (id: number) =>
   put<void>(`/project/${id}/cancel`)
 
-/** 添加成员 */
-export const addMember = (id: number, dto: AddMemberDTO) =>
+/**
+ * 添加项目成员
+ * ✅ v2.13 修复（审查发现）：之前叫 addMember，和 api/user.ts 的 addMember（添加成员账号）重名
+ *    命名空间调用容易错位（参数签名完全不同），改名 addProjectMember 明确语义
+ */
+export const addProjectMember = (id: number, dto: AddMemberDTO) =>
   post<void>(`/project/${id}/member`, dto)
 
 /** 移除成员 */

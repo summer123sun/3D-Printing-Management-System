@@ -59,10 +59,24 @@ const fetchData = async () => {
 onMounted(fetchData)
 
 // 操作
+// ✅ v2.13 修复（审查发现）：之前 handler 都没 try/catch，错误只弹 ElMessage，
+//    Promise reject 上浮到 template 被 Vue 静默吞，按钮 loading 状态没回滚
+//    修法：所有 handler 加 try/catch/finally（request.ts 拦截器已自动弹错误通知）
+async function safeAction(fn: () => Promise<void>) {
+  try {
+    await fn()
+  } catch (e) {
+    console.error('[task/detail] 操作失败', e)
+    // request.ts 拦截器已弹 ElNotification 错误，这里只 console 记录
+  }
+}
+
 const handleApprove = async () => {
-  await taskStore.approve(taskId.value)
-  ElMessage.success('审批通过')
-  fetchData()
+  await safeAction(async () => {
+    await taskStore.approve(taskId.value)
+    ElMessage.success('审批通过')
+    await fetchData()
+  })
 }
 
 const handleReject = async () => {
@@ -70,11 +84,13 @@ const handleReject = async () => {
     ElMessage.warning('请填写驳回原因')
     return
   }
-  await taskStore.reject(taskId.value, rejectForm.value)
-  ElMessage.success('已驳回')
-  rejectDialogVisible.value = false
-  rejectForm.value = { approveComment: '' }
-  fetchData()
+  await safeAction(async () => {
+    await taskStore.reject(taskId.value, rejectForm.value)
+    ElMessage.success('已驳回')
+    rejectDialogVisible.value = false
+    rejectForm.value = { approveComment: '' }
+    await fetchData()
+  })
 }
 
 const handleAssign = async () => {
@@ -92,6 +108,8 @@ const handleAssign = async () => {
     })
     assignDialogVisible.value = false
     await fetchData()
+  } catch (e) {
+    console.error('[task/detail] 分配失败', e)
   } finally {
     submittingAssign.value = false
   }
@@ -99,9 +117,11 @@ const handleAssign = async () => {
 
 const handleStart = async () => {
   await ElMessageBox.confirm('确认开始打印？', '提示', { type: 'warning' })
-  await taskStore.startPrint(taskId.value)
-  ElMessage.success('已开始打印')
-  fetchData()
+  await safeAction(async () => {
+    await taskStore.startPrint(taskId.value)
+    ElMessage.success('已开始打印')
+    await fetchData()
+  })
 }
 
 const handleFinish = async () => {
@@ -119,6 +139,8 @@ const handleFinish = async () => {
     })
     finishDialogVisible.value = false
     await fetchData()
+  } catch (e) {
+    console.error('[task/detail] 完成失败', e)
   } finally {
     submittingFinish.value = false
   }
@@ -126,16 +148,20 @@ const handleFinish = async () => {
 
 const handlePickup = async () => {
   await ElMessageBox.confirm('确认取件？', '提示', { type: 'warning' })
-  await taskStore.pickup(taskId.value)
-  ElMessage.success('签收成功')
-  fetchData()
+  await safeAction(async () => {
+    await taskStore.pickup(taskId.value)
+    ElMessage.success('签收成功')
+    await fetchData()
+  })
 }
 
 const handleCancel = async () => {
   await ElMessageBox.confirm('确认取消此任务？', '提示', { type: 'warning' })
-  await taskStore.cancel(taskId.value)
-  ElMessage.success('已取消')
-  fetchData()
+  await safeAction(async () => {
+    await taskStore.cancel(taskId.value)
+    ElMessage.success('已取消')
+    await fetchData()
+  })
 }
 </script>
 

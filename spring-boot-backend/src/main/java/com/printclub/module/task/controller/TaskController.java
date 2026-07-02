@@ -41,6 +41,19 @@ public class TaskController {
         return Result.success(taskService.myTasks(query));
     }
 
+    /**
+     * ✅ v2.13 修复（审查发现）：之前 /task/my 默认排除"已登记作品"的任务，
+     *    导致用户登记作品后回 /task/my 看不到那个任务，**误以为任务消失**
+     *    修法：/task/my 不过滤已登记任务（让用户能看到自己的全部任务历史），
+     *    作品登记页用单独的 /task/registrable 端点拿可登记任务列表
+     */
+    @Operation(summary = "可登记作品的任务列表（status=5/8 且未登记）")
+    @GetMapping("/registrable")
+    @RequireAuth
+    public Result<PageResult<PrintTask>> registrableTasks(TaskQuery query) {
+        return Result.success(taskService.registrableTasks(query));
+    }
+
     @Operation(summary = "待审批任务列表（技术骨干）")
     @GetMapping("/pending")
     @RequireRole({1, 2})
