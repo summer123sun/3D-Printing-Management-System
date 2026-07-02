@@ -10,20 +10,21 @@ const transitionName = computed(() => (route.meta?.transition as string) || 'pag
 
 <template>
   <router-view v-slot="{ Component, route: r }">
-    <transition :name="transitionName" mode="out-in" appear>
-      <component :is="Component" :key="r.fullPath" />
-    </transition>
+    <!--
+      ✅ v2.2 修复（用户反馈）：点击"查看"整页空白，刷新才正常
+      之前用 <transition mode="out-in" appear> + :key="r.fullPath"：
+        - mode="out-in" 让旧组件先 leave 完成（200ms）后新组件才 enter
+        - appear 让首次挂载也跑 enter 动画
+        - 某些情况下 enter 动画的 opacity:0 → 1 转换失败，元素卡在 opacity:0 → 整页白屏
+        - 用户感受：路由切换时第一次总看不到，刷新后才行
+      修法：去掉 mode="out-in" 和 appear（让组件直接替换，无动画 + 无 appear 状态）
+        - 视觉上少一点动效，但稳如老狗，绝对不会卡住
+        - 如果以后想加动效，每个页面用自己的 v-motion 或 GSAP，不在 AppMain 这层卡路由
+    -->
+    <component :is="Component" :key="r.fullPath" />
   </router-view>
 </template>
 
 <style lang="scss" scoped>
-// 这里只放 transition 的 fallback（具体动画在 styles/index.scss 全局定义）
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+/* 保留样式占位（后续若要恢复动效可以参考） */
 </style>

@@ -312,7 +312,13 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
       <el-button v-if="isLeader && projectStore.currentProject?.project?.status === ProjectStatus.RUNNING" type="success" @click="handleComplete">
         标记完成
       </el-button>
-      <el-button v-if="isLeader && projectStore.currentProject?.project?.status !== ProjectStatus.DONE" type="danger" plain @click="handleCancel">
+      <!-- ✅ v2.2 修复（用户反馈）：已取消的项目仍显示"取消项目"按钮
+           之前：v-if 只排除 status === DONE（2），没排除 CANCELLED（3）
+                 → 已取消的项目（status=3）还能再点"取消"，进入异常流程
+           修复：v-if 排除 DONE 和 CANCELLED 两种终态
+                 只有 PREPARING (0) / RUNNING (1) 的项目才显示"取消项目"按钮
+      -->
+      <el-button v-if="isLeader && projectStore.currentProject?.project?.status !== ProjectStatus.DONE && projectStore.currentProject?.project?.status !== ProjectStatus.CANCELLED" type="danger" plain @click="handleCancel">
         取消项目
       </el-button>
       <el-button @click="() => fetchData()">刷新</el-button>
