@@ -339,6 +339,22 @@ html.dark {
     border-color: color-mix(in srgb, $primary-color 90%, white 0%) !important;
     box-shadow: 0 6px 16px color-mix(in srgb, $primary-color 35%, transparent) !important;
   }
+  // ✅ v2.16 修复（用户反馈）：plain primary 按钮文字看不清
+  //    之前 primary=#0A2540（深海蓝），EP 默认 plain 是"浅底深字"
+  //    但因为 primary 太深，plain 背景是 --el-color-primary-light-9=#0A2540（深海蓝），
+  //    文字也是 --el-color-primary=#0A2540（深海蓝）→ 字糊
+  //    修法：覆写 plain primary 文字色为浅色（--el-color-primary-light-3=#6F8AA3 浅蓝灰）
+  //    同时 border 用 light-5（半透），保持视觉一致
+  &.is-plain {
+    background: var(--el-color-primary-light-9) !important;
+    border-color: var(--el-color-primary-light-5) !important;
+    color: #ffffff !important;
+    &:hover {
+      background: var(--el-color-primary) !important;
+      border-color: var(--el-color-primary) !important;
+      color: #ffffff !important;
+    }
+  }
 }
 
 // success 按钮 hover 薄荷青阴影

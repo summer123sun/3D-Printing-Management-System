@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMemberStyle } from '@/composables/useMemberStyle'
 import {
-  Printer, Bell, Operation, Folder, Picture, User, ArrowRight, ArrowDown,
+  Printer, Bell, Operation, Folder, Picture, User, ArrowRight, ArrowDown, Right,
 } from '@element-plus/icons-vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { getUserStats } from '@/api/user'
@@ -65,11 +65,12 @@ const quickEntries = [
 
 // ✅ v2.11 修复（用户反馈）：之前是写死 mock 全 0，账号有作品也显示 0
 //    改成调真实接口 getUserStats（profile 在用）+ 本地 filter myTasks 算待处理
+// ✅ v2.16 加 to 字段：4 个统计卡可点击跳转（用户反馈"为什么不能点进去"）
 const stats = ref([
-  { key: 'myTasks', label: '我的任务', value: 0, icon: Bell, color: '#0A2540' },
-  { key: 'pending', label: '待处理', value: 0, icon: Printer, color: '#F2A93B' },
-  { key: 'projects', label: '参与项目', value: 0, icon: Folder, color: '#00A88A' },
-  { key: 'artworks', label: '我的作品', value: 0, icon: Picture, color: '#DC2626' },
+  { key: 'myTasks', label: '我的任务', value: 0, icon: Bell, color: '#0A2540', to: '/task/my' },
+  { key: 'pending', label: '待处理', value: 0, icon: Printer, color: '#F2A93B', to: '/task/my?filter=pending' },
+  { key: 'projects', label: '参与项目', value: 0, icon: Folder, color: '#00A88A', to: '/project/list' },
+  { key: 'artworks', label: '我的作品', value: 0, icon: Picture, color: '#DC2626', to: '/artwork/my' },
 ])
 
 /** 拉首页统计：3 个数走 user/stats，"待处理"从 myTasks 本地 filter */
@@ -138,7 +139,12 @@ onMounted(async () => {
       <!-- 内容区：4 统计 + 6 快捷入口 -->
       <section class="home-content">
         <div class="stats-row">
-          <div v-for="s in stats" :key="s.key" class="stat-card">
+          <div
+            v-for="s in stats"
+            :key="s.key"
+            class="stat-card clickable"
+            @click="router.push(s.to)"
+          >
             <div class="stat-icon" :style="{ background: s.color + '18', color: s.color }">
               <el-icon :size="24"><component :is="s.icon" /></el-icon>
             </div>
@@ -146,6 +152,8 @@ onMounted(async () => {
               <div class="stat-value">{{ s.value }}</div>
               <div class="stat-label">{{ s.label }}</div>
             </div>
+            <!-- ✅ v2.16 加跳转箭头，明确"可点击"语义 -->
+            <el-icon class="stat-arrow" :size="16"><Right /></el-icon>
           </div>
         </div>
 
@@ -363,10 +371,21 @@ export default { name: 'HomePage' }
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(10, 37, 64, 0.15);
   transition: transform 0.25s, box-shadow 0.25s;
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 14px 32px rgba(10, 37, 64, 0.22);
+  position: relative;
+  // ✅ v2.16：明确"可点击"语义（cursor + hover 强化）
+  &.clickable { cursor: pointer; }
+  &.clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(10, 37, 64, 0.28);
   }
+  &:hover .stat-arrow { opacity: 1; transform: translateX(0); }
+}
+.stat-arrow {
+  margin-left: auto;
+  color: #94A3B8;
+  opacity: 0.5;
+  transform: translateX(-4px);
+  transition: all 0.25s;
 }
 .stat-icon {
   width: 52px;
