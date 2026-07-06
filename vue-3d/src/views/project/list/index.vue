@@ -39,7 +39,8 @@ const isStaff = computed(() => {
 const canOperate = (row: any) => {
   if (!authStore.user) return false
   if (isStaff.value) return true
-  return row.leaderId === authStore.user.studentId
+  // ✅ v2.19 加可选链：computed 重复求值时 user 可能被清空
+  return row.leaderId === authStore.user?.studentId
 }
 
 const fetchData = async () => {

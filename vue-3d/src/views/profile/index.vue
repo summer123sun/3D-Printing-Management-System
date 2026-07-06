@@ -24,7 +24,8 @@ onMounted(async () => {
   // 拉取个人统计数据
   if (authStore.user?.studentId) {
     try {
-      const result = await getUserStats(authStore.user.studentId)
+      // ✅ v2.19 加可选链：异步过程 user 可能被清空（路由跳走时）
+      const result = await getUserStats(authStore.user?.studentId!)
       stats.value = result
     } catch {
       // 统计接口失败不提示（保持默认值 0）

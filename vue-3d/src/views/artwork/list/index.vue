@@ -82,7 +82,8 @@ const handleDelete = async (id: number) => {
 import { Role } from '@/utils/enum'
 const canDelete = () => {
   if (!authStore.user) return false
-  return authStore.user.role === Role.PRESIDENT || authStore.user.role === Role.TECH_LEAD
+  // ✅ v2.19 加可选链：函数可能被反复调用，user 被清空时安全返回 false
+  return authStore.user?.role === Role.PRESIDENT || authStore.user?.role === Role.TECH_LEAD
 }
 </script>
 

@@ -74,12 +74,17 @@ const goHome = () => {
             <el-icon><User /></el-icon>
           </el-avatar>
           <span class="user-name">{{ authStore.user?.name }}</span>
+          <!-- ✅ v2.19 修复（用户反馈"退出登录弹渲染出错"）：
+               之前 v-if="authStore.user" 守卫了外层，但内层属性访问 (user.role) 没保护
+               Vue 模板渲染时如果 user 在异步过程中变 null（logout 时序），
+               .role === Role.TECH_LEAD 会抛 NPE → main.ts errorHandler 弹"页面渲染出错"
+               修法：所有 authStore.user.x 访问都加可选链 -->
           <span v-if="authStore.user" class="user-role" :class="{
-            'role-staff': authStore.user.role === Role.TECH_LEAD,
-            'role-member': authStore.user.role === Role.MEMBER,
-            'role-newbie': authStore.user.role >= Role.NEWBIE,
+            'role-staff': authStore.user?.role === Role.TECH_LEAD,
+            'role-member': authStore.user?.role === Role.MEMBER,
+            'role-newbie': (authStore.user?.role ?? 0) >= Role.NEWBIE,
           }">
-            {{ RoleText[authStore.user.role] }}
+            {{ RoleText[authStore.user?.role ?? 0] }}
           </span>
         </div>
         <template #dropdown>

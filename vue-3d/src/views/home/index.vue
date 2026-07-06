@@ -78,7 +78,8 @@ const fetchStats = async () => {
   if (!authStore.user?.studentId) return
   // 1) 3 个总数（我的任务 / 参与项目 / 我的作品）
   try {
-    const result = await getUserStats(authStore.user.studentId)
+    // ✅ v2.19 加可选链：onMounted 异步过程中 user 可能被清空（路由跳走时）
+    const result = await getUserStats(authStore.user?.studentId!)
     stats.value[0]!.value = result.totalPrints ?? 0      // 我的任务（累计打印）
     stats.value[2]!.value = result.totalProjects ?? 0    // 参与项目
     stats.value[3]!.value = result.totalArtworks ?? 0    // 我的作品
