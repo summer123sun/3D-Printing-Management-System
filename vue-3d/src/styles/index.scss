@@ -438,6 +438,24 @@ html.dark {
   }
 }
 
+// ✅ v2.17 修复（用户反馈）：el-tag effect="dark" 在亮色主题下文字看不清
+//    之前 .el-tag--dark { color: #fff !important } 只写在 html.dark 块内（line 127）
+//    亮色主题下没有这层保护 → 项目里 30+ 处 effect="dark" 的 tag 文字色被
+//    EP 默认色覆盖（实际背景是 light-9 同色文字同色 → 字糊）
+//    修法：复制 line 127 规则到全局（不放在 html.dark 内）+ 加 text-shadow 防压缩/低对比
+//    覆盖范围（grep 30+ 处）：
+//    - task/my · task/queue · task/detail（任务状态 + 优先级）
+//    - project/list · project/detail（项目状态 + 阶段状态 + 文件类型）
+//    - admin/task/* · admin/printer/* · admin/material/* · admin/log/*
+//    - admin/member（角色 + 技能）
+//    - admin/artwork/recommend · admin/project/manage · admin/file/manage
+//    - profile · components/common/StatusTag
+.el-tag.el-tag--dark {
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  border-color: transparent !important;
+}
+
 // ============================================
 // 全局滚动条美化（深海蓝配色）
 // ============================================
