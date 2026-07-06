@@ -477,6 +477,22 @@ html.dark {
   background-color: #0A2540 !important;  // 深海蓝实色
 }
 
+// ✅ v2.18 防御：light effect el-tag 在亮色主题下文字看不清
+//    EP 默认 light effect 用 light-9（最深档 = 原色）做背景，color 也是原色 → 字糊
+//    之前 task/my 后台端 <el-tag :type="success"> 没加 effect="dark" → 截图看不清字
+//    修法：light effect 的 el-tag 强制用 EP theme color 的"深档"做背景 + 白字
+//    覆盖范围（grep 全项目只有 task/my:188 一处漏网）：现在加防御性规则保护未来
+//    不用 dark 也能清晰显示（牺牲"浅底深字"的视觉但保持可读性）
+.el-tag:not(.el-tag--dark):not(.el-tag--plain) {
+  // 用深档色（light-9 原色）做背景 + 白字 — 与 dark effect 视觉一致
+  // 但保留默认 success/warning/danger 等 type 区分
+  &.el-tag--success { background-color: #00805F !important; color: #fff !important; }
+  &.el-tag--warning { background-color: #B8860B !important; color: #fff !important; }
+  &.el-tag--danger  { background-color: #DC2626 !important; color: #fff !important; }
+  &.el-tag--info    { background-color: #4B5563 !important; color: #fff !important; }
+  &.el-tag--primary { background-color: #0A2540 !important; color: #fff !important; }
+}
+
 // ============================================
 // 全局滚动条美化（深海蓝配色）
 // ============================================

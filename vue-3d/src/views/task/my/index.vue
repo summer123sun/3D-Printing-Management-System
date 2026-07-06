@@ -185,7 +185,11 @@ onMounted(fetchData)
               <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
               <el-table-column label="状态" width="100">
                 <template #default="{ row }">
-                  <el-tag :type="statusTagType(row.status)">
+                  <!-- ✅ v2.18 修复（用户反馈"看不清字"）：
+                       之前没 effect="dark"，EP 默认 light effect 的 success
+                       background=#00D4AA + color=#00D4AA（深底深字）→ 字糊
+                       加 effect="dark" 复用 v2.17 全局深色背景规则 -->
+                  <el-tag :type="statusTagType(row.status)" effect="dark">
                     {{ TaskStatusText[row.status as keyof typeof TaskStatusText] }}
                   </el-tag>
                 </template>
