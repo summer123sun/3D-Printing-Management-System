@@ -450,10 +450,31 @@ html.dark {
 //    - admin/member（角色 + 技能）
 //    - admin/artwork/recommend · admin/project/manage · admin/file/manage
 //    - profile · components/common/StatusTag
+//
+// ✅ v2.17 二次增强：把每种 type 的背景色强制加深（不用 EP 默认 light-9）
+//    根因：element-theme.ts 的 success=#00D4AA 偏浅，白字在浅绿上对比度差
+//    加上用户的浏览器可能用 light-9（原色）渲染，但截图显示偏浅
+//    → 强制改用更深色 #00805F / 等深色调
 .el-tag.el-tag--dark {
   color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   border-color: transparent !important;
+}
+// 每种 type 强制用更深色背景（不用 light-9 的浅薄荷）
+.el-tag.el-tag--dark.el-tag--success {
+  background-color: #00805F !important;  // 比 #00D4AA 深 50%，白字清晰
+}
+.el-tag.el-tag--dark.el-tag--warning {
+  background-color: #B8860B !important;  // 比 #FFD700 深 60%
+}
+.el-tag.el-tag--dark.el-tag--danger {
+  background-color: #DC2626 !important;  // 红色实色
+}
+.el-tag.el-tag--dark.el-tag--info {
+  background-color: #4B5563 !important;  // 蓝灰实色（不用 info 浅色）
+}
+.el-tag.el-tag--dark.el-tag--primary {
+  background-color: #0A2540 !important;  // 深海蓝实色
 }
 
 // ============================================
