@@ -110,12 +110,32 @@ onBeforeUnmount(() => {
 .member-bg-image {
   position: absolute;
   inset: 0;
+  // 📱 v2.21 背景图优化（用户反馈"加载慢"）：
+  // 原始 PNG 2732x1534 = 2.4 MB，3G 网络下加载 5+ 秒
+  // 改为按视口宽度选 WebP（<768 用 720p，768-1199 用 1080p，≥1200 用 2K）：
+  //   - 2K WebP  (677 KB) → 桌面 ≥1200px
+  //   - 1080p WebP (400 KB) → 平板 768-1199px
+  //   - 720p WebP (186 KB) → 手机 <768px（减小 92% 加载量）
+  // 老浏览器 fallback：默认 background-image 用原 PNG
   background-image: url('@/assets/member/beijing.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   // 轻微缩放 + 缓慢漂移，让背景"活"起来
   animation: bg-drift 30s ease-in-out infinite alternate;
+
+  // 手机端（<768px）：720p WebP（186 KB，相对原 PNG 减 92%）
+  @media (max-width: #{$breakpoint-sm - 1px}) {
+    background-image: url('@/assets/member/beijing-720.webp');
+  }
+  // 平板 / 小桌面（768-1199px）：1080p WebP（400 KB，减 83%）
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-lg - 1px}) {
+    background-image: url('@/assets/member/beijing-1080.webp');
+  }
+  // 桌面 ≥1200px：2K WebP（677 KB，减 71%）
+  @media (min-width: #{$breakpoint-lg}) {
+    background-image: url('@/assets/member/beijing-2k.webp');
+  }
 }
 .member-bg-overlay {
   // 半透明深色蒙版，确保前景文字可读
