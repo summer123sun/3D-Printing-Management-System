@@ -87,7 +87,7 @@ watch(dashboard, updateTrend, { immediate: true })
 
     <!-- 4 个核心数字 -->
     <el-row :gutter="16" class="stat-row">
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="12" :lg="6">
         <el-card class="stat-card stat-1">
           <div class="stat-icon"><el-icon><Document /></el-icon></div>
           <div class="stat-info">
@@ -97,7 +97,7 @@ watch(dashboard, updateTrend, { immediate: true })
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="12" :lg="6">
         <el-card class="stat-card stat-2">
           <div class="stat-icon"><el-icon><Timer /></el-icon></div>
           <div class="stat-info">
@@ -107,7 +107,7 @@ watch(dashboard, updateTrend, { immediate: true })
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="12" :lg="6">
         <el-card class="stat-card stat-3">
           <div class="stat-icon"><el-icon><Goods /></el-icon></div>
           <div class="stat-info">
@@ -117,7 +117,7 @@ watch(dashboard, updateTrend, { immediate: true })
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="12" :lg="6">
         <el-card class="stat-card stat-4">
           <div class="stat-icon"><el-icon><Star /></el-icon></div>
           <div class="stat-info">
@@ -131,7 +131,7 @@ watch(dashboard, updateTrend, { immediate: true })
 
     <el-row :gutter="16" class="chart-row">
       <!-- 7 天任务趋势 -->
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="24" :lg="16">
         <el-card>
           <template #header>
             <div class="chart-header">
@@ -164,7 +164,7 @@ watch(dashboard, updateTrend, { immediate: true })
       </el-col>
 
       <!-- 任务状态分布 -->
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="24" :lg="8">
         <el-card>
           <template #header>
             <span><el-icon><Operation /></el-icon> 任务状态分布</span>
@@ -193,7 +193,7 @@ watch(dashboard, updateTrend, { immediate: true })
 
     <el-row :gutter="16" class="chart-row">
       <!-- 月度趋势 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12">
         <el-card>
           <template #header>
             <span><el-icon><TrendCharts /></el-icon> 最近 6 个月任务数</span>
@@ -212,7 +212,7 @@ watch(dashboard, updateTrend, { immediate: true })
       </el-col>
 
       <!-- 材料消耗 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12">
         <el-card>
           <template #header>
             <span><el-icon><Goods /></el-icon> 材料消耗排行</span>
@@ -236,7 +236,7 @@ watch(dashboard, updateTrend, { immediate: true })
 
     <el-row :gutter="16" class="chart-row">
       <!-- 打印机使用率 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12">
         <el-card>
           <template #header>
             <span><el-icon><Printer /></el-icon> 打印机状态</span>
@@ -259,7 +259,7 @@ watch(dashboard, updateTrend, { immediate: true })
       </el-col>
 
       <!-- 活跃排行 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12" :lg="12">
         <el-card>
           <template #header>
             <span><el-icon><User /></el-icon> 活跃社员 Top 8</span>

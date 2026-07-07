@@ -31,12 +31,15 @@ import { formatDate } from '@/utils/format'
 import { fileUrl } from '@/utils/url'
 // ✅ v2.13 修复（XSS）：确认弹窗里的 user-controlled 字段（项目名）走 escapeHtml
 import { escapeHtml } from '@/utils/escape'
+// 📱 v2.20 手机端适配：mobile 下用 el-collapse 手风琴替代 el-tabs
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const authStore = useAuthStore()
 const { isMember } = useMemberStyle()
+const { isMobile } = useMediaQuery()
 
 const projectId = computed(() => Number(route.params.id))
 
@@ -424,13 +427,22 @@ const memberRoleTagType = (r: number): 'danger' | 'warning' | 'primary' => {
 
       <!-- Tab 切换（v2.11 修复：包进 MemberCard 避免坐在背景图上看不清） -->
       <MemberCard padding="0" :radius="16">
-        <el-tabs v-model="activeTab" class="detail-tabs">
+        <!-- 📱 v2.20 手机端：el-tabs 改 el-collapse 手风琴（节省顶部空间） -->
+        <el-tabs v-if="!isMobile" v-model="activeTab" class="detail-tabs">
           <el-tab-pane label="概览" name="overview" />
           <el-tab-pane :label="`成员 (${projectStore.currentProject.members.length})`" name="members" />
           <el-tab-pane :label="`阶段 (${projectStore.currentProject.stages.length})`" name="stages" />
           <el-tab-pane :label="`文件 (${projectStore.currentProject.files.length})`" name="files" />
           <el-tab-pane :label="`关联任务 (${projectStore.currentProject.relatedTasks.length})`" name="tasks" />
         </el-tabs>
+        <!-- 📱 mobile collapse-item（5 个面板，对应原 5 个 tab） -->
+        <el-collapse v-else v-model="activeTab" accordion class="detail-collapse">
+          <el-collapse-item title="概览" name="overview" />
+          <el-collapse-item :title="`成员 (${projectStore.currentProject.members.length})`" name="members" />
+          <el-collapse-item :title="`阶段 (${projectStore.currentProject.stages.length})`" name="stages" />
+          <el-collapse-item :title="`文件 (${projectStore.currentProject.files.length})`" name="files" />
+          <el-collapse-item :title="`关联任务 (${projectStore.currentProject.relatedTasks.length})`" name="tasks" />
+        </el-collapse>
       </MemberCard>
 
       <!-- 概览 Tab -->
@@ -720,6 +732,27 @@ export default { name: 'ProjectDetailPage' }
   .hero-body { padding: $spacing-large; }
   .hero-title { font-size: 24px; }
   .hero-cover { height: 180px; }
+}
+
+/* 📱 v2.20 mobile：el-collapse 手风琴样式 + 暗色/亮色兼容 */
+.detail-collapse {
+  --el-collapse-header-bg-color: var(--bg-card);
+  --el-collapse-content-bg-color: var(--bg-card);
+  border: none;
+
+  :deep(.el-collapse-item__header) {
+    color: var(--text-primary);
+    font-weight: 600;
+    padding-left: 16px;
+    border-bottom: 1px solid var(--border-extra-light);
+  }
+  :deep(.el-collapse-item__content) {
+    color: var(--text-regular);
+    padding-bottom: 0;
+  }
+  :deep(.el-collapse-item__wrap) {
+    border-bottom: 1px solid var(--border-extra-light);
+  }
 }
   padding: 0;
 }

@@ -20,12 +20,15 @@ import { Role } from '@/utils/enum'
 import { formatDate, formatWeight, formatDuration, formatFileSize } from '@/utils/format'
 // ✅ v2.12 修复：STL 文件下载链接走 fileDownloadUrl()，生产环境不再 404
 import { fileDownloadUrl } from '@/utils/url'
+// 📱 v2.20 手机端适配
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const route = useRoute()
 const router = useRouter()
 const taskStore = useTaskStore()
 const printerStore = usePrinterStore()
 const authStore = useAuthStore()
+const { isMobile } = useMediaQuery()
 
 const taskId = computed(() => route.params.id as string)
 
@@ -182,7 +185,7 @@ const handleCancel = async () => {
                 <StatusTag status-type="task" :status="taskStore.currentTask.status" />
               </div>
             </template>
-            <el-descriptions :column="2" border>
+            <el-descriptions :column="isMobile ? 1 : 2" border>
               <el-descriptions-item label="任务编号">{{ taskStore.currentTask.taskId }}</el-descriptions-item>
               <el-descriptions-item label="申请人">{{ taskStore.currentTask.applicantId }}</el-descriptions-item>
               <el-descriptions-item label="模型名称">{{ taskStore.currentTask.modelName }}</el-descriptions-item>

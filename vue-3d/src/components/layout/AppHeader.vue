@@ -147,6 +147,7 @@ const goHome = () => {
   display: flex;
   align-items: center;
   gap: $spacing-base;
+  @include mobile { gap: $spacing-small; }
 }
 .user-info {
   display: flex;
@@ -209,6 +210,14 @@ const goHome = () => {
 
 // 移动端隐藏用户角色标签（节省空间）
 .user-role {
+  @include mobile { display: none; }
+}
+
+/* 📱 v2.20 手机端：隐藏 header-title / user-name（顶部空间太挤，留给 logo + 主题切换 + 头像） */
+.header-title {
+  @include mobile { display: none; }
+}
+.user-name {
   @include mobile { display: none; }
 }
 

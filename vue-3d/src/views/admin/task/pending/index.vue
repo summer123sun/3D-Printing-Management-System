@@ -13,9 +13,12 @@ import AppDialog from '@/components/common/AppDialog.vue'
 import { useTaskStore } from '@/stores/task'
 import { Priority } from '@/types/task'
 import { formatRelativeTime } from '@/utils/format'
+// 📱 v2.20 手机端适配
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const router = useRouter()
 const taskStore = useTaskStore()
+const { isMobile } = useMediaQuery()
 
 const rejectDialogVisible = ref(false)
 const rejectForm = reactive({ taskId: '', approveComment: '' })
@@ -83,29 +86,30 @@ const handleReject = async () => {
           共 <b>{{ taskStore.pendingTasks.total }}</b> 条待审批任务
         </el-alert>
 
+        <!-- 📱 v2.20 手机端：次要列（材料/颜色/优先级/申请时间）隐藏，标题列固定 -->
         <el-table :data="taskStore.pendingTasks.list" stripe>
-          <el-table-column prop="taskId" label="任务编号" width="180" />
+          <el-table-column prop="taskId" label="任务编号" :width="isMobile ? 130 : 180" fixed="left" />
           <el-table-column prop="title" label="标题" min-width="180" show-overflow-tooltip />
-          <el-table-column label="申请人" width="100">
+          <el-table-column v-if="!isMobile" label="申请人" width="100">
             <template #default="{ row }">{{ row.applicantId }}</template>
           </el-table-column>
-          <el-table-column prop="materialType" label="材料" width="80" />
-          <el-table-column prop="color" label="颜色" width="80" />
-          <el-table-column label="优先级" width="80">
+          <el-table-column v-if="!isMobile" prop="materialType" label="材料" width="80" />
+          <el-table-column v-if="!isMobile" prop="color" label="颜色" width="80" />
+          <el-table-column label="优先级" :width="isMobile ? 70 : 80">
             <template #default="{ row }">
               <el-tag v-if="row.priority === Priority.URGENT" type="danger" size="small" effect="dark">紧急</el-tag>
               <el-tag v-else-if="row.priority === Priority.LOW" size="small" effect="dark">低优</el-tag>
               <span v-else>-</span>
             </template>
           </el-table-column>
-          <el-table-column label="申请时间" width="140">
+          <el-table-column v-if="!isMobile" label="申请时间" width="140">
             <template #default="{ row }">{{ formatRelativeTime(row.applyTime) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="220" fixed="right">
+          <el-table-column label="操作" :width="isMobile ? 160 : 220" fixed="right">
             <template #default="{ row }">
-              <el-button text type="primary" @click="router.push(`/task/${row.taskId}`)">详情</el-button>
-              <el-button text type="success" @click="handleApprove(row.taskId)">通过</el-button>
-              <el-button text type="danger" @click="openReject(row.taskId)">驳回</el-button>
+              <el-button :size="isMobile ? 'small' : 'default'" text type="primary" @click="router.push(`/task/${row.taskId}`)">详情</el-button>
+              <el-button :size="isMobile ? 'small' : 'default'" text type="success" @click="handleApprove(row.taskId)">通过</el-button>
+              <el-button :size="isMobile ? 'small' : 'default'" text type="danger" @click="openReject(row.taskId)">驳回</el-button>
             </template>
           </el-table-column>
         </el-table>
